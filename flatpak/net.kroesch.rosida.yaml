@@ -1,0 +1,50 @@
+app-id: ch.kroesch.rosida
+runtime: org.kde.Platform
+runtime-version: '6.8'
+sdk: org.kde.Sdk
+command: rosida
+
+finish-args:
+  # Wayland und X11-Fallback
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  # Hardware-Beschleunigung (GPU)
+  - --device=dri
+  # Zugriff auf Dateien des Nutzers zum Öffnen/Speichern von .md
+  - --filesystem=home
+
+modules:
+  - name: rosida-python-deps
+    buildsystem: simple
+    build-commands:
+      # Abhängigkeiten via pip in das isolierte /app-Präfix installieren
+      - pip3 install --no-cache-dir --prefix=/app pyside6 sympy numpy matplotlib
+
+  - name: rosida
+    buildsystem: simple
+    build-commands:
+      # Anwendungsdateien installieren
+      - install -d /app/lib/rosida
+      - install -m 644 rosida_app.py /app/lib/rosida/
+      - install -m 644 document.py /app/lib/rosida/
+
+      # Startskript in /app/bin verlinken
+      - install -d /app/bin
+      - |
+        cat << 'EOF' > /app/bin/rosida
+        #!/bin/sh
+        export PYTHONPATH="/app/lib/rosida:$PYTHONPATH"
+        exec python3 /app/lib/rosida/rosida_app.py "$@"
+        EOF
+      - chmod +x /app/bin/rosida
+
+      # Desktop-Datei und Metainfo
+      - install -D -m 644 ch.kroesch.rosida.desktop /app/share/applications/ch.kroesch.rosida.desktop
+      - install -D -m 644 ch.kroesch.rosida.metainfo.xml /app/share/metainfo/ch.kroesch.rosida.metainfo.xml
+
+      # SVG-Icon im Standard-Freedesktop-Pfad installieren
+      - install -D -m 644 assets/rosida.svg /app/share/icons/hicolor/scalable/apps/ch.kroesch.rosida.svg
+    sources:
+      - type: dir
+        path: .

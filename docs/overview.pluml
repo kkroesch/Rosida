@@ -1,0 +1,218 @@
+@startuml Rosida_Architecture
+skinparam monochrome false
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam defaultFontName "JetBrains Mono", sans-serif
+skinparam defaultFontSize 12
+skinparam classBackgroundColor #ffffff
+skinparam classBorderColor #94a3b8
+skinparam packageBackgroundColor #f8fafc
+skinparam packageBorderColor #cbd5e1
+
+' ================= Qt Base Classes =================
+class QMainWindow <<Qt>>
+class QWidget <<Qt>>
+class QDockWidget <<Qt>>
+class QFrame <<Qt>>
+class QPlainTextEdit <<Qt>>
+class QAction <<Qt>>
+class QUndoStack <<Qt>>
+
+' ================= Package: app =================
+package "app" {
+    class RosidaApp {
+        - canvas: DocumentCanvas
+        - palette_dock: LatexPaletteDock
+        - actions: list
+        + __init__()
+        - _setup_menus()
+        - _setup_toolbars()
+        - _setup_docks()
+    }
+}
+
+' ================= Package: document =================
+package "document" {
+    class DocumentCanvas {
+        - cells: list
+        - undo_stack: QUndoStack
+        - kernel: KernelSession
+        - current_file_path: Path
+        + add_cell(text, mode, run): InPlaceCell
+        + remove_cell(cell: InPlaceCell)
+        + run_active_cell()
+        + toggle_active_cell_mode()
+        + load_markdown(path: Path)
+        + save_markdown(path: Path)
+        + export_pdf(path: Path)
+        + export_html(path: Path)
+        + ensure_trailing_cell()
+    }
+
+    class InPlaceCell {
+        - stack: QStackedLayout
+        - editor: InlineEditor
+        - view_frame: ClickableOutputFrame
+        - kernel: KernelSession
+        - mode: str
+        - has_rendered_once: bool
+        - last_rendered_height: int
+        + render()
+        + switch_to_edit()
+        + cancel_edit()
+        - _detect_mode(content: str): str
+        - _render_markdown(text: str)
+        - _render_python(code: str)
+    }
+
+    class InlineEditor {
+        - grip: MacResizeGrip
+        + run_requested: Signal
+        + escape_pressed: Signal
+        + adjust_initial_height()
+        # keyPressEvent(event: QKeyEvent)
+        # resizeEvent(event: QResizeEvent)
+    }
+
+    class MacResizeGrip {
+        - target: QPlainTextEdit
+        - is_dragging: bool
+        # mousePressEvent(event: QMouseEvent)
+        # mouseMoveEvent(event: QMouseEvent)
+        # mouseReleaseEvent(event: QMouseEvent)
+        # paintEvent(event: QPaintEvent)
+    }
+
+    class ClickableOutputFrame {
+        + clicked: Signal
+        # mousePressEvent(event: QMouseEvent)
+    }
+
+    class MathRenderer <<utility>> {
+        {static} +render_markdown_with_math(text: str, browser: QTextBrowser)
+        {static} +math_to_svg_bytes(latex_expr: str): bytes
+        {static} +svg_bytes_to_qimage(svg_bytes: bytes): tuple
+    }
+}
+
+' ================= Package: kernel =================
+package "kernel" {
+    class KernelSession {
+        - namespace: dict
+        - stdout_buffer: StringIO
+        + __init__(initial_namespace: dict)
+        + execute(code: str): ExecutionResult
+        + reset()
+        + get_namespace(): dict
+    }
+
+    class ExecutionResult {
+        + stdout: str
+        + return_value: Any
+        + error: Exception
+    }
+}
+
+' ================= Package: palette =================
+package "palette" {
+    class LatexPaletteDock {
+        + insert_requested: Signal
+        - _build_calculus_widget(): QWidget
+        - _build_greek_widget(): QWidget
+        - _build_symbols_widget(): QWidget
+        - _build_matrices_widget(): QWidget
+    }
+
+    class CollapsibleSection {
+        - toggle_btn: QPushButton
+        - content_widget: QWidget
+        - is_expanded: bool
+        + _toggle(checked: bool)
+        + _update_state()
+    }
+}
+
+' ================= Package: actions =================
+package "actions" {
+    abstract class RosidaAction {
+        + __init__(text: str, parent: QWidget)
+    }
+
+    class SaveAction {
+        - doc: DocumentCanvas
+        - _update_state(is_clean: bool)
+    }
+
+    class RunCellAction {
+        - callback: Callable
+    }
+
+    class ToggleModeAction {
+        - callback: Callable
+    }
+
+    class UndoAction {
+        - stack: QUndoStack
+    }
+
+    class RedoAction {
+        - stack: QUndoStack
+    }
+
+    class ExportPdfAction {
+        - doc: DocumentCanvas
+    }
+
+    class ExportHtmlAction {
+        - doc: DocumentCanvas
+    }
+}
+
+' ================= Vererbung: Qt Basisklassen =================
+QMainWindow <|-- RosidaApp
+QWidget <|-- DocumentCanvas
+QWidget <|-- InPlaceCell
+QPlainTextEdit <|-- InlineEditor
+QWidget <|-- MacResizeGrip
+QFrame <|-- ClickableOutputFrame
+QDockWidget <|-- LatexPaletteDock
+QWidget <|-- CollapsibleSection
+QAction <|-- RosidaAction
+
+' ================= Vererbung: Actions =================
+RosidaAction <|-- SaveAction
+RosidaAction <|-- RunCellAction
+RosidaAction <|-- ToggleModeAction
+RosidaAction <|-- UndoAction
+RosidaAction <|-- RedoAction
+RosidaAction <|-- ExportPdfAction
+RosidaAction <|-- ExportHtmlAction
+
+' ================= Assoziationen & Abhängigkeiten =================
+RosidaApp *-- DocumentCanvas
+RosidaApp *-- LatexPaletteDock
+RosidaApp o-- RosidaAction
+
+DocumentCanvas *-- InPlaceCell
+DocumentCanvas o-- QUndoStack
+DocumentCanvas *-- KernelSession
+
+InPlaceCell *-- InlineEditor
+InPlaceCell *-- ClickableOutputFrame
+InPlaceCell ..> MathRenderer
+InPlaceCell ..> KernelSession
+InlineEditor *-- MacResizeGrip
+
+LatexPaletteDock *-- CollapsibleSection
+
+SaveAction ..> DocumentCanvas
+RunCellAction ..> DocumentCanvas
+ToggleModeAction ..> DocumentCanvas
+ExportPdfAction ..> DocumentCanvas
+ExportHtmlAction ..> DocumentCanvas
+UndoAction ..> QUndoStack
+RedoAction ..> QUndoStack
+LatexPaletteDock ..> DocumentCanvas : insert_requested
+
+KernelSession ..> ExecutionResult
+@enduml

@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+
+CONTENTS_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+RESOURCES_DIR="$CONTENTS_DIR/Resources"
+
+VENV_PYTHON="$RESOURCES_DIR/venv/bin/python"
+MAIN_SCRIPT="$RESOURCES_DIR/app.py"
+
+export PYTHONPATH="$RESOURCES_DIR:$PYTHONPATH"
+exec "$VENV_PYTHON" "$MAIN_SCRIPT" "$@"
