@@ -221,3 +221,7 @@ __marimo__/
 
 .DS_Store
 *.dmg
+Rosida.app/Contents/Resources/*.py
+Rosida.app/Contents/Resources/palettes
+Rosida.app/Contents/Resources/actions
+Rosida.app/Contents/Resources/python

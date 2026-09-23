@@ -25,20 +25,44 @@ icons:
 @python:
     #!/bin/bash
     set -eo pipefail
-    if [ ! -d "{{PY_DIR}}" ]; then
+    TARGET_DIR="Rosida.app/Contents/Resources/python"
+
+    if [ ! -d "$TARGET_DIR" ]; then
         echo "Kopiere Standalone-Python in das Bundle..."
         PY_BIN=$(uv python find 3.12)
         PY_ROOT=$(dirname $(dirname "$PY_BIN"))
-        mkdir -p "{{PY_DIR}}"
-        cp -a "$PY_ROOT/"* "{{PY_DIR}}/"
-        rm -f "{{PY_DIR}}"/lib/python3.*/EXTERNALLY-MANAGED
+        mkdir -p "$TARGET_DIR"
+        cp -a "$PY_ROOT/"* "$TARGET_DIR/"
+        rm -f "$TARGET_DIR"/lib/python3.*/EXTERNALLY-MANAGED
     fi
 
-    echo "Installiere Abhängigkeiten..."
-    uv pip install --break-system-packages --python "{{PY_DIR}}/bin/python3" \
-        pyside6 sympy matplotlib numpy
+    echo "Installiere Core-Abhängigkeiten..."
+    # pyside6-essentials statt vollem pyside6
+    uv pip install --break-system-packages --python "$TARGET_DIR/bin/python3" \
+        pyside6-essentials sympy matplotlib numpy
 
-    "{{PY_DIR}}/bin/python3" -c "import PySide6, sympy, matplotlib, numpy; print('OK: Alle Module geladen')"
+    echo "Entferne Ballast und Test-Suiten..."
+    # 1. Unnötige Python-Standardmodule löschen
+    rm -rf "$TARGET_DIR"/lib/python3.*/test
+    rm -rf "$TARGET_DIR"/lib/python3.*/idlelib
+    rm -rf "$TARGET_DIR"/lib/python3.*/turtledemo
+    rm -rf "$TARGET_DIR"/lib/python3.*/ensurepip
+    rm -rf "$TARGET_DIR"/lib/python3.*/site-packages/PySide6/Qt/libexec
+
+    # 2. Test-Verzeichnisse aller installierten Pakete entfernen
+    find "$TARGET_DIR"/lib/python3.*/site-packages -type d \( -name "tests" -o -name "test" \) -prune -exec rm -rf {} +
+
+    # 3. Qt-Tools & Übersetzungen entfernen, die eine Desktop-App nicht braucht
+    rm -rf "$TARGET_DIR"/lib/python3.*/site-packages/PySide6/Qt/translations
+    rm -rf "$TARGET_DIR"/lib/python3.*/site-packages/PySide6/scripts
+    rm -rf "$TARGET_DIR"/bin/pyside6-*
+
+    # 4. Objekt- und Archivdateien bereinigen (verhindert Notarization-Fehler)
+    find "$TARGET_DIR" -type f \( -name "*.o" -o -name "*.a" \) -delete
+
+    # Check
+    "$TARGET_DIR/bin/python3" -c "import PySide6, sympy, matplotlib, numpy; print('OK: Schlanke Runtime bereit')"
+    du -ms "$TARGET_DIR"
 
 # Nur Python-Skripte und UI-Assets in das Bundle kopieren
 macapp:
@@ -47,11 +71,19 @@ macapp:
 
 # 1. Schwere C-Extensions und Binaries signieren (NUR nötig nach 'just python')
 sign-runtime:
-    find Rosida.app/Contents/Resources/python -type f \( -name "*.o" -o -name "*.a" \) -delete
-    find "{{PY_DIR}}" -type f \( -name "*.so" -o -name "*.dylib" \) -exec \
-        codesign --force --timestamp --options runtime --entitlements entitlements.plist --sign "{{SIGN_ID}}" {} +
-    find "{{PY_DIR}}/bin" -type f -perm +111 -exec \
-        codesign --force --timestamp --options runtime --entitlements entitlements.plist --sign "{{SIGN_ID}}" {} +
+    #!/bin/bash
+    set -eo pipefail
+
+    echo "Entferne Relikte und Compiler-Artefakte..."
+    find "{{PY_DIR}}" -type f \( -name "*.o" -o -name "*.a" \) -delete
+
+    echo "Suche und signiere alle Mach-O-Dateien..."
+    while IFS= read -r -d '' f; do
+        if file -b "$f" | grep -q "Mach-O"; then
+            codesign --force --timestamp --options runtime \
+                --entitlements entitlements.plist --sign "{{SIGN_ID}}" "$f"
+        fi
+    done < <(find "{{PY_DIR}}" -type f -print0)
 
 # 2. Schneller Entwicklungs-Signier-Schritt: Aktualisiert Assets und versiegelt nur das Bundle
 sign: macapp
@@ -64,7 +96,7 @@ sign: macapp
 sign-all: sign-runtime sign
 
 # DMG erstellen und signieren
-dmg: sign
+dmg: sign-all
     rm -f Rosida.dmg
     create-dmg \
         --volname "Rosida" \
