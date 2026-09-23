@@ -1,0 +1,79 @@
+name: Release macOS DMG
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - name: Quellcode auschecken
+        uses: actions/checkout@v4
+
+      - name: Astral uv einrichten
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: System-Tools installieren (librsvg, create-dmg, just)
+        run: |
+          brew install librsvg create-dmg just
+
+      - name: Bundle-Verzeichnisse absichern
+        run: |
+          mkdir -p Rosida.app/Contents/MacOS
+          mkdir -p Rosida.app/Contents/Resources
+          chmod +x Rosida.app/Contents/MacOS/launch
+
+      - name: Rosida.app bauen via Justfile
+        run: |
+          just macapp
+
+      - name: DMG-Installer erzeugen
+        run: |
+          VERSION="${GITHUB_REF_NAME:-v0.1.0}"
+          DMG_NAME="Rosida-${VERSION}-macos.dmg"
+
+          # Temporärer Staging-Ordner für das DMG-Layout
+          mkdir -p dmg_root
+          cp -a Rosida.app dmg_root/
+
+          # Erzeugt das interaktive Drag-and-Drop-Installationsfenster
+          create-dmg \
+            --volname "Rosida" \
+            --window-pos 200 120 \
+            --window-size 600 400 \
+            --icon-size 100 \
+            --icon "Rosida.app" 160 190 \
+            --hide-extension "Rosida.app" \
+            --app-drop-link 440 190 \
+            --no-internet-enable \
+            "$DMG_NAME" \
+            dmg_root
+
+          echo "DMG_PATH=$DMG_NAME" >> $GITHUB_ENV
+
+      - name: Release erstellen und DMG hochladen
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: ${{ env.DMG_PATH }}
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+
+      - name: DMG als Workflow-Artefakt bereitstellen (für manuelle Testläufe)
+        uses: actions/upload-artifact@v4
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        with:
+          name: rosida-macos-dmg
+          path: ${{ env.DMG_PATH }}
+          if-no-files-found: error
+
