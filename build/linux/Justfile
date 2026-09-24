@@ -1,0 +1,94 @@
+MOD_DIR    := justfile_directory()
+REPO_ROOT  := clean(MOD_DIR / "../..")
+APP_DIR    := MOD_DIR / "AppDir"
+DIST_DIR   := MOD_DIR / "dist"
+VERSION    := "0.2.0"
+OUTPUT_IMG := DIST_DIR / "Rosida-" + VERSION + "-x86_64.AppImage"
+
+default: appimage
+
+# AppDir zusammenstellen, Python & Wheels installieren und strippen
+prepare:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    rm -rf "{{APP_DIR}}"
+    mkdir -p "{{APP_DIR}}/usr/bin" "{{APP_DIR}}/usr/lib" "{{APP_DIR}}/usr/share/icons/hicolor/scalable/apps"
+
+    echo "==> 1. Standalone Python über uv einrichten..."
+    # 1. Portables CPython herunterladen (landet in ~/.local/share/uv/python/...)
+    uv python install 3.12
+
+    # 2. System-Python strikt ignorieren und nur uv-managed Python suchen
+    PY_BIN=$(uv python find --python-preference only-managed 3.12)
+    PY_ROOT=$(dirname $(dirname "$PY_BIN"))
+
+    # Sicherheits-Guard: Niemals versehentlich /usr kopieren
+    if [ "$PY_ROOT" = "/usr" ] || [ -z "$PY_ROOT" ]; then
+        echo "FEHLER: Unerwarteter Pfad '$PY_ROOT'. System-Python darf nicht kopiert werden!" >&2
+        exit 1
+    fi
+    echo "Verwende Standalone-Python aus: $PY_ROOT"
+    cp -a "$PY_ROOT/"* "{{APP_DIR}}/usr/"
+
+    echo "==> 2. Minimale Abhängigkeiten installieren..."
+    uv pip install --no-cache --break-system-packages --python "{{APP_DIR}}/usr/bin/python3" \
+        pyside6-essentials polars sympy matplotlib numpy qtawesome
+
+    echo "==> 3. Anwendungsdateien kopieren..."
+    mkdir -p "{{APP_DIR}}/usr/lib/rosida"
+    cp -a "{{REPO_ROOT}}"/src/* "{{APP_DIR}}/usr/lib/rosida/"
+    test -d "{{REPO_ROOT}}/fonts" && cp -a "{{REPO_ROOT}}/fonts" "{{APP_DIR}}/usr/lib/rosida/" || true
+
+    echo "==> 4. Desktop-Integration und Starter..."
+    cp "{{MOD_DIR}}/AppRun" "{{APP_DIR}}/AppRun"
+    cp "{{MOD_DIR}}/rosida.desktop" "{{APP_DIR}}/rosida.desktop"
+    cp "{{REPO_ROOT}}/logo.svg" "{{APP_DIR}}/rosida.svg"
+    cp "{{REPO_ROOT}}/logo.svg" "{{APP_DIR}}/usr/share/icons/hicolor/scalable/apps/rosida.svg"
+    chmod +x "{{APP_DIR}}/AppRun"
+
+    echo "==> 5. Ballast strippen..."
+    SITE="{{APP_DIR}}/usr/lib/python3.12/site-packages"
+    PY_LIB="{{APP_DIR}}/usr/lib/python3.12"
+
+    # Python-Standard-Ballast
+    rm -rf "$PY_LIB"/test "$PY_LIB"/idlelib "$PY_LIB"/turtledemo "$PY_LIB"/ensurepip
+    rm -rf "$PY_LIB"/lib2to3 "$PY_LIB"/tkinter "$PY_LIB"/turtle.py
+
+    # PySide6-Ballast (Translations, ungenutzte Binaries)
+    rm -rf "$SITE"/PySide6/Qt/translations
+    rm -rf "$SITE"/PySide6/Qt/libexec
+    rm -rf "$SITE"/PySide6/scripts
+    rm -rf "{{APP_DIR}}"/usr/bin/pyside6-*
+
+    # Generelle Test-Ordner in allen Packages (z. B. numpy, sympy, polars)
+    find "$SITE" -type d \( -name "tests" -o -name "test" -o -name "testing" \) -prune -exec rm -rf {} +
+
+    # Build-Reste, C-Header, statische Bibliotheken
+    find "{{APP_DIR}}" -type f \( -name "*.a" -o -name "*.o" -o -name "*.h" -o -name "*.cmake" \) -delete
+    find "{{APP_DIR}}" -type d -name "__pycache__" -prune -exec rm -rf {} +
+
+# Baut das fertige AppImage
+appimage: prepare
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p "{{DIST_DIR}}"
+
+    # appimagetool bereitstellen falls nicht im System vorhanden
+    TOOL="{{MOD_DIR}}/appimagetool"
+    if ! command -v appimagetool >/dev/null 2>&1; then
+        if [ ! -f "$TOOL" ]; then
+            echo "Lade appimagetool herunter..."
+            curl -L -o "$TOOL" "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+            chmod +x "$TOOL"
+        fi
+        EXEC_TOOL="$TOOL"
+    else
+        EXEC_TOOL="appimagetool"
+    fi
+
+    echo "==> Baue komprimiertes AppImage..."
+    ARCH=x86_64 "$EXEC_TOOL" --comp zstd "{{APP_DIR}}" "{{OUTPUT_IMG}}"
+    echo "Fertig: {{OUTPUT_IMG}}"
+
+clean:
+    rm -rf "{{APP_DIR}}" "{{DIST_DIR}}" "{{MOD_DIR}}/appimagetool"

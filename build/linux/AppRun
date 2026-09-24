@@ -1,0 +1,16 @@
+#!/bin/sh
+set -e
+
+# Verzeichnis ermitteln, in dem das gemountete AppImage liegt
+HERE="$(dirname "$(readlink -f "${0}")")"
+
+export PATH="${HERE}/usr/bin:${PATH}"
+export LD_LIBRARY_PATH="${HERE}/usr/lib:${HERE}/usr/lib/python3.12/site-packages/PySide6/Qt/lib:${LD_LIBRARY_PATH}"
+export QT_PLUGIN_PATH="${HERE}/usr/lib/python3.12/site-packages/PySide6/Qt/plugins"
+export QML2_IMPORT_PATH="${HERE}/usr/lib/python3.12/site-packages/PySide6/Qt/qml"
+export PYTHONPATH="${HERE}/usr/lib/python3.12/site-packages:${HERE}/usr/lib/rosida:${PYTHONPATH}"
+
+# Wayland- und Font-Integration für Qt6
+export QT_QPA_PLATFORM="wayland;xcb"
+
+exec "${HERE}/usr/bin/python3" "${HERE}/usr/lib/rosida/app.py" "$@"

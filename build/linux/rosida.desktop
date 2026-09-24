@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Rosida
+Comment=Interaktive Rechen- und Markdown-Umgebung
+Exec=AppRun %F
+Icon=rosida
+Terminal=false
+Categories=Development;Science;Education;
+MimeType=text/markdown;application/x-ipynb+json;
