@@ -28,6 +28,7 @@ class NewDocumentAction(RosidaAction):
     doc.undo_stack.clear()
     doc.undo_stack.setClean()
     doc.insert_cell()
+    doc.set_modified(False)
     self.win.statusbar.showMessage("Neues Dokument erstellt", 2000)
 
 
@@ -76,12 +77,12 @@ class SaveAction(RosidaAction):
 
     self.triggered.connect(self._execute)
 
-    # Reaktiv an UndoStack koppeln
-    self.win.doc.undo_stack.cleanChanged.connect(self._update_state)
-    self._update_state(self.win.doc.undo_stack.isClean())
+    # Reaktiv an den Änderungsstatus des Dokuments koppeln
+    self.win.doc.modified_changed.connect(self._update_state)
+    self._update_state(self.win.doc.is_modified())
 
-  def _update_state(self, is_clean: bool):
-    self.setEnabled(not is_clean)
+  def _update_state(self, is_modified: bool):
+    self.setEnabled(is_modified)
 
   def _execute(self):
     if not self.win.current_filepath:

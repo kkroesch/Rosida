@@ -3,7 +3,7 @@ import sys
 from PySide6.QtCore import QCoreApplication
 from PySide6.QtWidgets import QApplication
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSize
 from PySide6.QtWidgets import (
     QApplication,
     QLabel,
@@ -80,7 +80,7 @@ class RosidaApp(QMainWindow):
         self.doc.active_cell_changed.connect(self._on_active_cell_changed)
         self.doc.structure_changed.connect(self.dock_structure.update_outline)
         self.doc.cell_executed.connect(self._on_cell_executed)
-        self.doc.undo_stack.cleanChanged.connect(lambda _: self._update_window_title())
+        self.doc.modified_changed.connect(lambda _: self._update_window_title())
 
         self._load_document_on_start()
 
@@ -179,19 +179,20 @@ class RosidaApp(QMainWindow):
     def _setup_toolbars(self):
         toolbar = QToolBar("Hauptaktionen", self)
         toolbar.setMovable(False)
+        toolbar.setIconSize(QSize(18, 18))
         toolbar.setStyleSheet("""
             QToolBar {
                 background: #ffffff;
                 border-bottom: 1px solid #e2e8f0;
-                padding: 3px 6px;
-                spacing: 6px;
+                padding: 2px 4px;
+                spacing: 4px;
             }
             QToolButton {
                 background: transparent;
                 border: 1px solid transparent;
                 border-radius: 4px;
-                padding: 4px 8px;
-                font-size: 12px;
+                padding: 3px 6px;
+                font-size: 9px;
                 color: #334155;
             }
             QToolButton:hover {
@@ -229,7 +230,7 @@ class RosidaApp(QMainWindow):
         self._update_window_title()
 
     def _update_window_title(self):
-        dirty_flag = " *" if hasattr(self, 'doc') and not self.doc.undo_stack.isClean() else ""
+        dirty_flag = " *" if hasattr(self, 'doc') and self.doc.is_modified() else ""
         if self.current_filepath:
             name = os.path.basename(self.current_filepath)
             self.setWindowTitle(f"Rosida – {name}{dirty_flag}")
@@ -273,6 +274,7 @@ class RosidaApp(QMainWindow):
 
         self.doc.undo_stack.clear()
         self.doc.undo_stack.setClean()
+        self.doc.set_modified(False)
         self._update_window_title()
         self.dock_structure.update_outline(self.doc.cells)
 
