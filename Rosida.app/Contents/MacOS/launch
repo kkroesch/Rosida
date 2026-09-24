@@ -2,4 +2,4 @@
 DIR="$(cd "$(dirname "$0")" && pwd)"
 RESOURCES="$DIR/../Resources"
 
-exec "$RESOURCES/python/bin/python3" "$RESOURCES/rosida_app.py" "$@"
+exec "$RESOURCES/python/bin/python3" "$RESOURCES/app.py" "$@"
