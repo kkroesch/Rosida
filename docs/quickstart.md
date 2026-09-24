@@ -131,6 +131,7 @@ statt inline.
   geändert wurde. Bei einem neuen, noch nie gespeicherten Dokument öffnet `Cmd+S` automatisch den
   „Speichern unter…“-Dialog.
 - `Cmd+O` öffnet eine bestehende `.md`-Datei und baut daraus wieder interaktive Zellen auf.
+- **Datei → Zuletzt geöffnet** listet die letzten Dateien, die geöffnet oder gespeichert wurden.
 
 Weil das Format reines Markdown ist, funktionieren normale Git-Diffs und Merges ohne Reibung.
 
@@ -186,3 +187,11 @@ fig
 
 Das ist im Kern schon alles, was du für den Einstieg brauchst – der Rest ergibt sich beim
 Ausprobieren.
+
+## Hilfe-Menü
+
+- **Handbuch...** (`F1`) zeigt genau diese Anleitung in einem Dialog – nützlich, wenn kein
+  Terminal/Browser griffbereit ist. Direkt nach der allerersten Installation öffnet sich dieser
+  Dialog automatisch einmalig.
+- **Über Rosida** zeigt Versionsnummer und Lizenz.
+- **Einstellungen...** (`Cmd+,`) ist aktuell ein Platzhalter ohne Inhalt.

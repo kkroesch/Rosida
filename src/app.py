@@ -28,9 +28,12 @@ from actions.file import (
     NewDocumentAction,
     OpenDocumentAction,
     QuitAction,
+    RecentFilesMenu,
     SaveAction,
     SaveAsAction,
+    add_recent_file,
 )
+from actions.help import AboutAction, ManualAction, SettingsAction, maybe_show_manual_on_first_run
 from actions.view import ToggleStructureDockAction, TogglePaletteDockAction
 from docks.latex import LatexPaletteDock
 from docks.structure_outline import StructureOutlineDock
@@ -122,7 +125,9 @@ class RosidaApp(QMainWindow):
         self.act_save_as = SaveAsAction(self, self)
         self.act_export_pdf = ExportPdfAction(self, self)
         self.act_export_qmd = ExportQmdAction(self, self)
+        self.act_settings = SettingsAction(self, self)
         self.act_quit = QuitAction(self, self)
+        self.menu_recent_files = RecentFilesMenu(self, self)
 
         # Bearbeiten
         self.act_undo = UndoAction(self.doc, self)
@@ -140,12 +145,17 @@ class RosidaApp(QMainWindow):
         self.act_toggle_structure = ToggleStructureDockAction(self.dock_structure, self)
         self.act_toggle_palette = TogglePaletteDockAction(self.dock_palette, self)
 
+        # Hilfe
+        self.act_manual = ManualAction(self, self)
+        self.act_about = AboutAction(self, self)
+
     def _setup_menus(self):
         menubar = self.menuBar()
 
         menu_file = menubar.addMenu("&Datei")
         menu_file.addAction(self.act_new)
         menu_file.addAction(self.act_open)
+        menu_file.addMenu(self.menu_recent_files)
         menu_file.addSeparator()
         menu_file.addAction(self.act_save)
         menu_file.addAction(self.act_save_as)
@@ -155,6 +165,8 @@ class RosidaApp(QMainWindow):
         menu_export.addAction(self.act_export_pdf)
         menu_export.addAction(self.act_export_qmd)
 
+        menu_file.addSeparator()
+        menu_file.addAction(self.act_settings)
         menu_file.addSeparator()
         menu_file.addAction(self.act_quit)
 
@@ -175,6 +187,11 @@ class RosidaApp(QMainWindow):
         menu_view = menubar.addMenu("&Ansicht")
         menu_view.addAction(self.act_toggle_structure)
         menu_view.addAction(self.act_toggle_palette)
+
+        menu_help = menubar.addMenu("&Hilfe")
+        menu_help.addAction(self.act_manual)
+        menu_help.addSeparator()
+        menu_help.addAction(self.act_about)
 
     def _setup_toolbars(self):
         toolbar = QToolBar("Hauptaktionen", self)
@@ -227,6 +244,8 @@ class RosidaApp(QMainWindow):
 
     def set_current_filepath(self, filepath: str | None):
         self.current_filepath = filepath
+        if filepath:
+            add_recent_file(filepath)
         self._update_window_title()
 
     def _update_window_title(self):
@@ -266,6 +285,7 @@ class RosidaApp(QMainWindow):
         if self.current_filepath and os.path.exists(self.current_filepath):
             try:
                 self.doc.load_from_markdown(self.current_filepath)
+                add_recent_file(self.current_filepath)
             except Exception as err:
                 self.statusbar.showMessage(f"Warnung: {err}", 3000)
                 self.doc.insert_cell()
@@ -289,6 +309,7 @@ def main():
     initial_file = sys.argv[1] if len(sys.argv) > 1 and os.path.exists(sys.argv[1]) else None
     win = RosidaApp(initial_filepath=initial_file)
     win.show()
+    maybe_show_manual_on_first_run(win)
     sys.exit(app.exec())
 
 

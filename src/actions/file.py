@@ -1,8 +1,31 @@
-from PySide6.QtCore import Qt
+import os
+
+from PySide6.QtCore import Qt, QSettings
 from PySide6.QtGui import QKeySequence
-from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QApplication, QFileDialog, QMenu, QMessageBox
 
 from .base import RosidaAction
+
+MAX_RECENT_FILES = 8
+_RECENT_FILES_SETTINGS_KEY = "recent_files"
+
+
+def add_recent_file(filepath: str):
+  """Trägt filepath vorne in die persistierte Liste der zuletzt geöffneten Dateien ein."""
+  settings = QSettings()
+  files = [f for f in get_recent_files() if f != filepath]
+  files.insert(0, filepath)
+  settings.setValue(_RECENT_FILES_SETTINGS_KEY, files[:MAX_RECENT_FILES])
+
+
+def get_recent_files() -> list[str]:
+  """Liest die persistierte Liste zuletzt geöffneter Dateien, ohne inzwischen gelöschte Pfade."""
+  raw = QSettings().value(_RECENT_FILES_SETTINGS_KEY)
+  if isinstance(raw, str):
+    files = [raw] if raw else []
+  else:
+    files = list(raw or [])
+  return [f for f in files if f and os.path.exists(f)]
 
 
 class NewDocumentAction(RosidaAction):
@@ -63,6 +86,45 @@ class OpenDocumentAction(RosidaAction):
       QMessageBox.critical(self.win, "Fehler beim Öffnen", f"Datei konnte nicht geöffnet werden:\n{err}")
     finally:
       QApplication.restoreOverrideCursor()
+
+
+class RecentFilesMenu(QMenu):
+  """Datei-Untermenü "Zuletzt geöffnet", wird bei jedem Öffnen neu aus QSettings gebaut."""
+
+  def __init__(self, main_window, parent=None):
+    super().__init__("Zuletzt &geöffnet", parent)
+    self.win = main_window
+    self.aboutToShow.connect(self._rebuild)
+
+  def _rebuild(self):
+    self.clear()
+    files = get_recent_files()
+    if not files:
+      empty_action = self.addAction("(keine)")
+      empty_action.setEnabled(False)
+      return
+
+    for filepath in files:
+      action = self.addAction(os.path.basename(filepath))
+      action.setToolTip(filepath)
+      action.triggered.connect(lambda checked=False, p=filepath: self._open(p))
+
+    self.addSeparator()
+    self.addAction("Liste leeren").triggered.connect(self._clear)
+
+  def _open(self, filepath: str):
+    try:
+      QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+      self.win.doc.load_from_markdown(filepath)
+      self.win.set_current_filepath(filepath)
+      self.win.statusbar.showMessage(f"Geöffnet: {filepath}", 3000)
+    except Exception as err:
+      QMessageBox.critical(self.win, "Fehler beim Öffnen", f"Datei konnte nicht geöffnet werden:\n{err}")
+    finally:
+      QApplication.restoreOverrideCursor()
+
+  def _clear(self):
+    QSettings().remove(_RECENT_FILES_SETTINGS_KEY)
 
 
 class SaveAction(RosidaAction):

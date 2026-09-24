@@ -33,6 +33,9 @@ macapp: icons
     cp "{{MOD_DIR}}/Info.plist" "{{APP}}/Contents/Info.plist"
     cp "{{MOD_DIR}}/launch" "{{APP}}/Contents/MacOS/launch"
     chmod +x "{{APP}}/Contents/MacOS/launch"
+    # Handbuch einbacken, damit die "Handbuch"-Aktion und der Erststart-Dialog im Bundle funktionieren
+    mkdir -p "{{RES}}/docs"
+    cp "{{REPO_ROOT}}/docs/quickstart.md" "{{RES}}/docs/quickstart.md"
 
 # Standalone-Python und Abhängigkeiten in das Bundle installieren
 @python: macapp

@@ -19,6 +19,7 @@ Eine ausführlichere Einführung mit Beispielen (Python, NumPy, Matplotlib, SymP
 * **LaTeX- & Quarto-Kürzelpalette:** Einklappbare Akkordeon-Seitenleiste mit mathematischen Operatoren, griechischen Buchstaben, Kalkül- und Matrix-Kürzeln sowie Quarto-Callouts, Fußnoten- und Cross-Reference-Bausteinen für den schnellen Einschub.
 * **Dokumentstruktur-Übersicht:** Einklappbare Gliederungs-Seitenleiste aus den Überschriften und Zellen des Dokuments, Klick springt direkt zur Zelle.
 * **Export:** Verlustfreier Vektor-PDF-Druck sowie Export als Quarto-Dokument (`.qmd`, inkl. ausgewerteter `{{ }}`-Ausdrücke, Tabellen und Grafiken) direkt aus dem Dokument.
+* **Hilfe-Menü:** Eingebautes Handbuch (`F1`, öffnet beim allerersten Start automatisch), Über-Dialog und zuletzt geöffnete Dateien.
 
 ---
 
