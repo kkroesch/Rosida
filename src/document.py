@@ -1,23 +1,17 @@
 import ast
-import base64
 import contextlib
 from io import BytesIO, StringIO
-import os
 import re
-import sys
 
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.font_manager import FontProperties
 from matplotlib.mathtext import math_to_image
-import matplotlib.pyplot as plt
-import numpy as np
 import sympy as sp
 import polars as pl
 
-from PySide6.QtCore import QByteArray, QMarginsF, QPoint, QRect, QSize, Qt, QUrl, Signal
+from PySide6.QtCore import QMarginsF, Qt, QUrl, Signal
 from PySide6.QtGui import (
-    QAction,
     QColor,
     QCursor,
     QFont,
@@ -31,7 +25,6 @@ from PySide6.QtGui import (
     QPixmap,
     QTextCursor,
     QTextDocument,
-    QUndoCommand,
     QUndoStack,
 )
 from PySide6.QtWidgets import (
@@ -39,7 +32,6 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
-    QMainWindow,
     QPlainTextEdit,
     QPushButton,
     QScrollArea,
@@ -50,6 +42,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from actions.edit import DeleteCellCommand, InsertCellCommand
 from widgets.data import PolarsTableWidget
 
 
@@ -89,21 +82,6 @@ def math_to_png_qimage(
     logical_w = max(1, int(img.width() / scale))
     logical_h = max(1, int(img.height() / scale))
     return img, logical_w, logical_h
-
-
-def math_to_svg_bytes(
-    latex_expr: str,
-    fontsize: int = 15,
-    color: str = "#0f172a",
-) -> bytes:
-    """Renders a LaTeX expression into an SVG byte stream using Matplotlib's mathtext engine."""
-    clean_expr = _clean_latex_for_mathtext(latex_expr)
-    fig = Figure(figsize=(0.01, 0.01))
-    fig.text(0, 0, f"${clean_expr}$", fontsize=fontsize, color=color, va="baseline")
-    buf = BytesIO()
-    fig.savefig(buf, format="svg", bbox_inches="tight", pad_inches=0.03, transparent=True)
-    plt.close(fig)
-    return buf.getvalue()
 
 
 class MathTextBrowser(QTextBrowser):
@@ -719,153 +697,6 @@ class InPlaceCell(QWidget):
             self.view_layout.addWidget(err_lbl)
             self.view_frame.attach_click_listeners(err_lbl)
 
-    def generate_html_fragment(self) -> str:
-        """Generates self-contained HTML for this cell with embedded base64 SVG assets."""
-        content = self.editor.toPlainText().strip()
-        if not content:
-            return ""
-
-        effective = self._detect_effective_mode(content)
-
-        if effective == "markdown":
-            text = content
-
-            def _export_block_math(match):
-                raw = match.group(1).strip()
-                try:
-                    svg_bytes = math_to_svg_bytes(raw, fontsize=18)
-                    b64 = base64.b64encode(svg_bytes).decode("ascii")
-                    return f'<div style="text-align: center; margin: 18px 0;"><img src="data:image/svg+xml;base64,{b64}" style="max-width: 100%; height: auto;"></div>'
-                except Exception:
-                    return f'<pre style="color: red;">$${raw}$$</pre>'
-
-            def _export_inline_math(match):
-                raw = match.group(1).strip()
-                try:
-                    svg_bytes = math_to_svg_bytes(raw, fontsize=13)
-                    b64 = base64.b64encode(svg_bytes).decode("ascii")
-                    return f'<img src="data:image/svg+xml;base64,{b64}" style="vertical-align: middle; margin: 0 2px;">'
-                except Exception:
-                    return f'<code>${raw}$</code>'
-
-            text = re.sub(r"\$\$(.+?)\$\$", _export_block_math, text, flags=re.DOTALL)
-            text = re.sub(r"(?<!\$)\$([^\$\n]+?)\$(?!\$)", _export_inline_math, text)
-
-            html_lines = []
-            for para in text.split("\n\n"):
-                para = para.strip()
-                if not para:
-                    continue
-                if para.startswith("# "):
-                    html_lines.append(f'<h1 style="color: #0f172a; margin: 18px 0 8px 0; font-size: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">{para[2:]}</h1>')
-                elif para.startswith("## "):
-                    html_lines.append(f'<h2 style="color: #1e293b; margin: 14px 0 6px 0; font-size: 19px;">{para[3:]}</h2>')
-                elif para.startswith("### "):
-                    html_lines.append(f'<h3 style="color: #334155; margin: 12px 0 4px 0; font-size: 15px;">{para[4:]}</h3>')
-                elif para.startswith("> "):
-                    html_lines.append(f'<blockquote style="color: #64748b; border-left: 3px solid #cbd5e1; margin: 10px 0; padding: 4px 12px; font-style: italic;">{para[2:]}</blockquote>')
-                elif para.startswith("<div style=\"text-align: center;"):
-                    html_lines.append(para)
-                else:
-                    html_lines.append(f'<p style="color: #334155; line-height: 1.6; margin: 8px 0; font-size: 14px;">{para.replace(chr(10), "<br>")}</p>')
-            return "\n".join(html_lines)
-
-        else:
-            escaped_code = content.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-            out_parts = [
-                '<div style="margin: 16px 0; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; background: #ffffff;">',
-                '<div style="background: #f8fafc; padding: 5px 12px; font-size: 11px; font-family: monospace; color: #64748b; border-bottom: 1px solid #e2e8f0;">⚡ Python</div>',
-                f'<pre style="margin: 0; padding: 10px 14px; font-family: monospace; font-size: 12px; background: #f8fafc; color: #0f172a; overflow-x: auto;">{escaped_code}</pre>',
-            ]
-
-            has_output = False
-            output_body = []
-
-            if self.last_stdout:
-                has_output = True
-                escaped_stdout = self.last_stdout.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                output_body.append(f'<div style="font-family: monospace; font-size: 12px; color: #475569; margin-bottom: 8px; white-space: pre-wrap;">{escaped_stdout}</div>')
-
-            if self.last_val is not None:
-                has_output = True
-                if isinstance(self.last_val, sp.Basic):
-                    latex_str = sp.latex(self.last_val)
-                    svg_bytes = math_to_svg_bytes(latex_str, fontsize=20)
-                    b64 = base64.b64encode(svg_bytes).decode("ascii")
-                    output_body.append(f'<div style="text-align: center; margin: 12px 0;"><img src="data:image/svg+xml;base64,{b64}"></div>')
-                elif isinstance(self.last_val, Figure):
-                    buf = BytesIO()
-                    self.last_val.savefig(buf, format="svg", bbox_inches="tight", transparent=True)
-                    b64 = base64.b64encode(buf.getvalue()).decode("ascii")
-                    output_body.append(f'<div style="text-align: center; margin: 12px 0;"><img src="data:image/svg+xml;base64,{b64}" style="max-width: 100%; height: auto;"></div>')
-                else:
-                    output_body.append(f'<div style="font-family: monospace; font-size: 13px; color: #0284c7;">{self.last_val}</div>')
-
-            if has_output:
-                out_parts.append('<div style="padding: 12px; border-top: 1px solid #e2e8f0; background: #ffffff;">')
-                out_parts.extend(output_body)
-                out_parts.append('</div>')
-
-            out_parts.append('</div>')
-            return "\n".join(out_parts)
-
-
-class InsertCellCommand(QUndoCommand):
-    """Undoable command for inserting a notebook cell."""
-
-    def __init__(self, doc_canvas, index: int, text: str = "", mode: str = "auto", auto_run: bool = False, description: str = "Zelle einfügen"):
-        super().__init__(description)
-        self.doc = doc_canvas
-        self.index = index
-        self.text = text
-        self.mode = mode
-        self.auto_run = auto_run
-        self.cell = None
-
-    def redo(self):
-        if self.cell is None:
-            self.cell = self.doc._create_cell_widget(self.text, self.mode)
-            if self.auto_run:
-                self.cell.render()
-        self.doc._attach_cell_widget(self.cell, self.index)
-        self.cell.switch_to_edit()
-        self.doc.set_active_cell(self.cell)
-        self.doc.structure_changed.emit(self.doc.cells)
-
-    def undo(self):
-        if self.cell and self.cell in self.doc.cells:
-            self.doc._detach_cell_widget(self.cell)
-            if self.doc.cells:
-                prev_idx = max(0, min(self.index - 1, len(self.doc.cells) - 1))
-                self.doc.set_active_cell(self.doc.cells[prev_idx])
-            self.doc.structure_changed.emit(self.doc.cells)
-
-
-class DeleteCellCommand(QUndoCommand):
-    """Undoable command for deleting a notebook cell."""
-
-    def __init__(self, doc_canvas, cell: InPlaceCell, description: str = "Zelle löschen"):
-        super().__init__(description)
-        self.doc = doc_canvas
-        self.cell = cell
-        self.index = self.doc.cells.index(cell) if cell in self.doc.cells else -1
-
-    def redo(self):
-        if self.cell in self.doc.cells:
-            self.index = self.doc.cells.index(self.cell)
-            self.doc._detach_cell_widget(self.cell)
-            if self.doc.cells:
-                next_idx = min(self.index, len(self.doc.cells) - 1)
-                self.doc.set_active_cell(self.doc.cells[next_idx])
-            self.doc.structure_changed.emit(self.doc.cells)
-
-    def undo(self):
-        if self.index >= 0:
-            self.doc._attach_cell_widget(self.cell, self.index)
-            self.doc.set_active_cell(self.cell)
-            self.cell.switch_to_edit()
-            self.doc.structure_changed.emit(self.doc.cells)
-
 
 class DocumentCanvas(QWidget):
     """Central interactive canvas managing the cell stack, execution, exports, and active states."""
@@ -1019,53 +850,6 @@ class DocumentCanvas(QWidget):
             cell.switch_to_edit()
             self.set_active_cell(cell)
 
-    def export_html(self, filepath: str):
-        """Exports the complete document to a standalone responsive HTML file."""
-        body_fragments = []
-        for cell in self.cells:
-            fragment = cell.generate_html_fragment()
-            if fragment:
-                body_fragments.append(fragment)
-
-        full_html = f"""<!DOCTYPE html>
-<html lang="de">
-<head>
-  <meta charset="utf-8">
-  <title>Rosida Dokument</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    @media print {{
-      body {{ margin: 0; padding: 0; background: #ffffff; }}
-      .document-paper {{ box-shadow: none; border: none; padding: 0; }}
-      .no-print {{ display: none; }}
-    }}
-    body {{
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: #f8fafc;
-      color: #1e293b;
-      margin: 0;
-      padding: 40px 20px;
-    }}
-    .document-paper {{
-      max-width: 820px;
-      margin: 0 auto;
-      background: #ffffff;
-      padding: 50px 60px;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    }}
-  </style>
-</head>
-<body>
-  <div class="document-paper">
-    {"".join(body_fragments)}
-  </div>
-</body>
-</html>"""
-        with open(filepath, "w", encoding="utf-8") as f:
-            f.write(full_html)
-
     def export_pdf(self, filepath: str):
         """Exports the document directly to a vector-grade A4 PDF using Qt QPdfWriter."""
         doc = QTextDocument()
@@ -1196,37 +980,3 @@ class DocumentCanvas(QWidget):
         self.structure_changed.emit(self.cells)
         self.undo_stack.clear()
         self.undo_stack.setClean()
-
-
-class PaperNotebook(QMainWindow):
-    """Standalone runner for pure native document mode without sidebars."""
-
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Rosida – Native Document Mode")
-        self.resize(900, 940)
-
-        self.namespace = {
-            "sp": sp,
-            "np": np,
-            "plt": plt,
-            "pl": pl,
-        }
-
-        self.scroll = QScrollArea(self)
-        self.scroll.setWidgetResizable(True)
-        self.scroll.setStyleSheet("QScrollArea { border: none; background: #f8fafc; }")
-
-        self.doc = DocumentCanvas(self.namespace, parent=self)
-        self.scroll.setWidget(self.doc)
-        self.setCentralWidget(self.scroll)
-
-        # Starts with a single empty input cell ready to type
-        self.doc.ensure_trailing_cell()
-
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    win = PaperNotebook()
-    win.show()
-    sys.exit(app.exec())

@@ -48,7 +48,7 @@ macapp: icons
 
     echo "Installiere Core-Abhängigkeiten..."
     uv pip install --break-system-packages --python "{{PY_DIR}}/bin/python3" \
-        pyside6-essentials sympy matplotlib numpy polars
+        pyside6-essentials sympy matplotlib numpy polars qtawesome
 
     echo "Entferne Ballast und Build-Tools..."
     rm -rf "{{PY_DIR}}"/lib/python3.*/test
@@ -62,7 +62,7 @@ macapp: icons
     find "{{PY_DIR}}"/lib/python3.*/site-packages -type d \( -name "tests" -o -name "test" \) -prune -exec rm -rf {} +
     find "{{PY_DIR}}" -type f \( -name "*.o" -o -name "*.a" \) -delete
 
-    "{{PY_DIR}}/bin/python3" -c "import PySide6, sympy, matplotlib, numpy, polars; print('OK: Schlanke Runtime bereit')"
+    "{{PY_DIR}}/bin/python3" -c "import PySide6, sympy, matplotlib, numpy, polars, qtawesome; print('OK: Schlanke Runtime bereit')"
 
 # 1. Mach-O Binaries in der Runtime signieren (nach python-Änderungen)
 sign-runtime: python

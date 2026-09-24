@@ -4,18 +4,14 @@ from PySide6.QtCore import QCoreApplication
 from PySide6.QtWidgets import QApplication
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (
     QApplication,
     QDockWidget,
-    QFileDialog,
     QFrame,
     QGridLayout,
     QHBoxLayout,
     QLabel,
     QMainWindow,
-    QMessageBox,
-    QPlainTextEdit,
     QPushButton,
     QScrollArea,
     QStatusBar,
@@ -27,24 +23,30 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from actions.cell import RunAllAction, RunCellAction
+from actions.edit import (
+    DeleteCellAction,
+    InsertCellAboveAction,
+    InsertCellBelowAction,
+    RedoAction,
+    ToggleModeAction,
+    UndoAction,
+)
+from actions.file import (
+    ExportPdfAction,
+    NewDocumentAction,
+    OpenDocumentAction,
+    QuitAction,
+    SaveAction,
+    SaveAsAction,
+)
+from actions.view import ToggleStructureDockAction, TogglePaletteDockAction
 from palettes.latex import LatexPaletteDock
 
 try:
-    from document import (
-        DocumentCanvas,
-        InPlaceCell,
-        math_to_png_qimage,
-        math_to_svg_bytes,
-        render_markdown_with_math,
-    )
+    from document import DocumentCanvas, InPlaceCell
 except ImportError:
-    from native_document import (
-        DocumentCanvas,
-        InPlaceCell,
-        math_to_png_qimage,
-        math_to_svg_bytes,
-        render_markdown_with_math,
-    )
+    from native_document import DocumentCanvas, InPlaceCell
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -205,90 +207,45 @@ class RosidaApp(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dock_palette)
 
     def _setup_actions(self):
-        self.act_undo = QAction("↶ Rückgängig", self)
-        self.act_undo.setShortcut(QKeySequence.StandardKey.Undo)
-        self.act_undo.setStatusTip("Letzte Aktion rückgängig machen (Ctrl+Z)")
-        self.act_undo.triggered.connect(self._smart_undo)
+        # Datei
+        self.act_new = NewDocumentAction(self, self)
+        self.act_open = OpenDocumentAction(self, self)
+        self.act_save = SaveAction(self, self)
+        self.act_save_as = SaveAsAction(self, self)
+        self.act_export_pdf = ExportPdfAction(self, self)
+        self.act_quit = QuitAction(self, self)
 
-        self.act_redo = QAction("↷ Wiederholen", self)
-        self.act_redo.setShortcut(QKeySequence.StandardKey.Redo)
-        self.act_redo.setStatusTip("Letzte rückgängig gemachte Aktion wiederholen (Ctrl+Y)")
-        self.act_redo.triggered.connect(self._smart_redo)
+        # Bearbeiten
+        self.act_undo = UndoAction(self.doc, self)
+        self.act_redo = RedoAction(self.doc, self)
+        self.act_insert_above = InsertCellAboveAction(self.doc, self)
+        self.act_insert_below = InsertCellBelowAction(self.doc, self)
+        self.act_delete_cell = DeleteCellAction(self.doc, self)
+        self.act_toggle_mode = ToggleModeAction(self.doc, self)
 
-        self.act_run_cell = QAction("▶ Zelle ausführen", self)
-        self.act_run_cell.setShortcut(QKeySequence("Shift+Return"))
-        self.act_run_cell.triggered.connect(self.doc.run_active_cell)
+        # Zelle
+        self.act_run_cell = RunCellAction(self.doc, self)
+        self.act_run_all = RunAllAction(self.doc, self)
 
-        self.act_run_all = QAction("⏩ Alle ausführen", self)
-        self.act_run_all.setShortcut(QKeySequence("Ctrl+Shift+Return"))
-        self.act_run_all.triggered.connect(self.doc.run_all_cells)
-
-        self.act_insert_above = QAction("⇧ Zelle darüber einfügen", self)
-        self.act_insert_above.setShortcut(QKeySequence("Ctrl+Shift+A"))
-        self.act_insert_above.triggered.connect(self.doc.insert_cell_above)
-
-        self.act_insert_below = QAction("⇩ Zelle darunter einfügen", self)
-        self.act_insert_below.setShortcut(QKeySequence("Ctrl+Shift+B"))
-        self.act_insert_below.triggered.connect(self.doc.insert_cell_below)
-
-        self.act_delete_cell = QAction("🗑 Zelle löschen", self)
-        self.act_delete_cell.setShortcut(QKeySequence("Ctrl+Shift+D"))
-        self.act_delete_cell.triggered.connect(self.doc.delete_active_cell)
-
-        self.act_toggle_mode = QAction("⇄ Modus umschalten (Auto/Python/Text)", self)
-        self.act_toggle_mode.setShortcut(QKeySequence("Ctrl+M"))
-        self.act_toggle_mode.triggered.connect(self.doc.toggle_active_mode)
-
-        self.act_open = QAction("📂 Dokument öffnen...", self)
-        self.act_open.setShortcut(QKeySequence.StandardKey.Open)
-        self.act_open.triggered.connect(self._on_open_file)
-
-        self.act_save = QAction("💾 Speichern", self)
-        self.act_save.setShortcut(QKeySequence.StandardKey.Save)
-        self.act_save.triggered.connect(self._on_save_file)
-
-        self.act_save_as = QAction("💾 Speichern unter...", self)
-        self.act_save_as.setShortcut(QKeySequence.StandardKey.SaveAs)
-        self.act_save_as.triggered.connect(self._on_save_as_file)
-
-        self.act_export_html = QAction("🌐 Als HTML exportieren...", self)
-        self.act_export_html.setShortcut(QKeySequence("Ctrl+Shift+H"))
-        self.act_export_html.triggered.connect(self._on_export_html)
-
-        self.act_export_pdf = QAction("📄 Als PDF exportieren...", self)
-        self.act_export_pdf.setShortcut(QKeySequence("Ctrl+Shift+P"))
-        self.act_export_pdf.triggered.connect(self._on_export_pdf)
-
-        self.act_toggle_structure = self.dock_structure.toggleViewAction()
-        self.act_toggle_structure.setText("Dokumentstruktur (Sidebar)")
-        self.act_toggle_structure.setShortcut(QKeySequence("F3"))
-
-        self.act_toggle_palette = self.dock_palette.toggleViewAction()
-        self.act_toggle_palette.setText("LaTeX-Palette (Sidebar)")
-        self.act_toggle_palette.setShortcut(QKeySequence("F4"))
+        # Ansicht
+        self.act_toggle_structure = ToggleStructureDockAction(self.dock_structure, self)
+        self.act_toggle_palette = TogglePaletteDockAction(self.dock_palette, self)
 
     def _setup_menus(self):
         menubar = self.menuBar()
 
         menu_file = menubar.addMenu("&Datei")
-        act_new = menu_file.addAction("&Neues Dokument")
-        act_new.setShortcut(QKeySequence.StandardKey.New)
-        act_new.triggered.connect(self._on_new_document)
-
+        menu_file.addAction(self.act_new)
         menu_file.addAction(self.act_open)
         menu_file.addSeparator()
         menu_file.addAction(self.act_save)
         menu_file.addAction(self.act_save_as)
 
         menu_file.addSeparator()
-        menu_export = menu_file.addMenu("E&xportieren")
-        menu_export.addAction(self.act_export_html)
-        menu_export.addAction(self.act_export_pdf)
+        menu_file.addAction(self.act_export_pdf)
 
         menu_file.addSeparator()
-        act_quit = menu_file.addAction("&Beenden")
-        act_quit.setShortcut(QKeySequence.StandardKey.Quit)
-        act_quit.triggered.connect(self.close)
+        menu_file.addAction(self.act_quit)
 
         menu_edit = menubar.addMenu("&Bearbeiten")
         menu_edit.addAction(self.act_undo)
@@ -350,29 +307,14 @@ class RosidaApp(QMainWindow):
         toolbar.addAction(self.act_run_all)
         toolbar.addAction(self.act_toggle_mode)
         toolbar.addSeparator()
-        toolbar.addAction(self.act_export_html)
         toolbar.addAction(self.act_export_pdf)
         toolbar.addSeparator()
         toolbar.addAction(self.act_toggle_structure)
         toolbar.addAction(self.act_toggle_palette)
 
-    def _smart_undo(self):
-        focus_w = QApplication.focusWidget()
-        if isinstance(focus_w, QPlainTextEdit) and focus_w.document().isUndoAvailable():
-            focus_w.undo()
-            return
-        if self.doc.undo_stack.canUndo():
-            self.doc.undo_stack.undo()
-            self._update_window_title()
-
-    def _smart_redo(self):
-        focus_w = QApplication.focusWidget()
-        if isinstance(focus_w, QPlainTextEdit) and focus_w.document().isRedoAvailable():
-            focus_w.redo()
-            return
-        if self.doc.undo_stack.canRedo():
-            self.doc.undo_stack.redo()
-            self._update_window_title()
+    def set_current_filepath(self, filepath: str | None):
+        self.current_filepath = filepath
+        self._update_window_title()
 
     def _update_window_title(self):
         dirty_flag = " *" if hasattr(self, 'doc') and not self.doc.undo_stack.isClean() else ""
@@ -406,95 +348,6 @@ class RosidaApp(QMainWindow):
         self.lbl_kernel_status.setText("● Kernel: Zelle berechnet")
         self.lbl_kernel_status.setStyleSheet("color: #0284c7; font-weight: bold; padding: 0 10px;")
         self.statusbar.showMessage("Ausführung abgeschlossen", 2500)
-
-    def _on_open_file(self):
-        filepath, _ = QFileDialog.getOpenFileName(
-            self,
-            "Rosida Dokument öffnen",
-            "",
-            "Markdown-Dateien (*.md *.markdown);;Alle Dateien (*)",
-        )
-        if filepath:
-            try:
-                QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
-                self.doc.load_from_markdown(filepath)
-                self.current_filepath = filepath
-                self._update_window_title()
-                self.statusbar.showMessage(f"Geöffnet: {filepath}", 3000)
-            except Exception as err:
-                QMessageBox.critical(self, "Fehler beim Öffnen", f"Datei konnte nicht geöffnet werden:\n{err}")
-            finally:
-                QApplication.restoreOverrideCursor()
-
-    def _on_save_file(self):
-        if self.current_filepath:
-            try:
-                self.doc.save_to_markdown(self.current_filepath)
-                self._update_window_title()
-                self.statusbar.showMessage(f"Gespeichert: {self.current_filepath}", 3000)
-            except Exception as err:
-                QMessageBox.critical(self, "Fehler beim Speichern", f"Datei konnte nicht gespeichert werden:\n{err}")
-        else:
-            self._on_save_as_file()
-
-    def _on_save_as_file(self):
-        filepath, _ = QFileDialog.getSaveFileName(
-            self,
-            "Dokument speichern unter",
-            "berechnung.md",
-            "Markdown-Dokument (*.md);;Alle Dateien (*)",
-        )
-        if filepath:
-            try:
-                self.doc.save_to_markdown(filepath)
-                self.current_filepath = filepath
-                self._update_window_title()
-                self.statusbar.showMessage(f"Gespeichert: {filepath}", 3000)
-            except Exception as err:
-                QMessageBox.critical(self, "Fehler beim Speichern", f"Datei konnte nicht gespeichert werden:\n{err}")
-
-    def _on_export_html(self):
-        filepath, _ = QFileDialog.getSaveFileName(
-            self,
-            "Dokument als HTML exportieren",
-            "rosida_dokument.html",
-            "HTML-Dokument (*.html *.htm)",
-        )
-        if filepath:
-            try:
-                self.doc.export_html(filepath)
-                self.statusbar.showMessage(f"HTML-Export erfolgreich: {filepath}", 4000)
-            except Exception as err:
-                QMessageBox.critical(self, "Exportfehler", f"Fehler beim HTML-Export:\n{err}")
-
-    def _on_export_pdf(self):
-        filepath, _ = QFileDialog.getSaveFileName(
-            self,
-            "Dokument als PDF exportieren",
-            "rosida_dokument.pdf",
-            "PDF-Dokument (*.pdf)",
-        )
-        if filepath:
-            try:
-                QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
-                self.doc.export_pdf(filepath)
-                self.statusbar.showMessage(f"PDF-Export erfolgreich: {filepath}", 4000)
-            except Exception as err:
-                QMessageBox.critical(self, "Exportfehler", f"Fehler beim PDF-Export:\n{err}")
-            finally:
-                QApplication.restoreOverrideCursor()
-
-    def _on_new_document(self):
-        while self.doc.cells:
-            c = self.doc.cells.pop()
-            self.doc.layout.removeWidget(c)
-            c.deleteLater()
-        self.current_filepath = None
-        self.doc.undo_stack.clear()
-        self.doc.undo_stack.setClean()
-        self._update_window_title()
-        self.doc.insert_cell()
-        self.statusbar.showMessage("Neues Dokument erstellt", 2000)
 
     def _load_document_on_start(self):
         if self.current_filepath and os.path.exists(self.current_filepath):
