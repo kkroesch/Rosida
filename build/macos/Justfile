@@ -6,7 +6,9 @@ DIST_DIR  := MOD_DIR / "dist"
 APP       := DIST_DIR / "Rosida.app"
 RES       := APP / "Contents/Resources"
 PY_DIR    := RES / "python"
-DMG_FILE  := DIST_DIR / "Rosida.dmg"
+ENTITLEMENTS := MOD_DIR / "entitlements.plist"
+VERSION   := "0.2.0"
+DMG_FILE  := DIST_DIR / "Rosida-" + VERSION + "-macos-arm64.dmg"
 
 # Standard-Target im Modul
 default: dmg
@@ -64,25 +66,41 @@ macapp: icons
 
     "{{PY_DIR}}/bin/python3" -c "import PySide6, sympy, matplotlib, numpy, polars, qtawesome; print('OK: Schlanke Runtime bereit')"
 
-# 1. Mach-O Binaries in der Runtime signieren (nach python-Änderungen)
-sign-runtime: python
-    #!/bin/bash
-    set -eo pipefail
-    find "{{PY_DIR}}" -type f \( -name "*.o" -o -name "*.a" \) -delete
-
-    while IFS= read -r -d '' f; do
-        if file -b "$f" | grep -q "Mach-O"; then
-            codesign --force --timestamp --options runtime \
-                --entitlements "{{MOD_DIR}}/entitlements.plist" --sign "{{SIGN_ID}}" "$f"
-        fi
-    done < <(find "{{PY_DIR}}" -type f -print0)
-
 # 2. Bundle versiegeln
-sign: macapp
-    find "{{APP}}" -maxdepth 1 -type f -delete
-    find "{{APP}}" -name ".DS_Store" -delete
+sign: python
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    echo "==> 1. Schreibrechte für alle Dateien erzwingen..."
+    chmod -R u+w "{{APP}}"
+
+    echo "==> 2. Quarantäne & Attribute entfernen..."
+    xattr -cr "{{APP}}"
+
+    echo "==> 3. Tcl/Tk-Reste entfernen (wird für PySide nicht gebraucht)..."
+    rm -rf "{{APP}}/Contents/Resources/python/lib/thread"* || true
+    rm -rf "{{APP}}/Contents/Resources/python/lib/tcl"* || true
+    rm -rf "{{APP}}/Contents/Resources/python/lib/tk"* || true
+
+    echo "==> 4. Alle Mach-O-Binärdateien finden und einzeln signieren..."
+    # Findet ALLE echten Binaries (unabhängig von der Dateiendung)
+    while IFS= read -r bin; do
+        if file -b "$bin" | grep -q "Mach-O"; then
+            echo "Signiere Binary: $bin"
+            # Alte Signaturen sauber entfernen
+            codesign --remove-signature "$bin" 2>/dev/null || true
+            codesign --force --timestamp --options runtime \
+                --sign "{{SIGN_ID}}" "$bin"
+        fi
+    done < <(find "{{APP}}/Contents" -type f)
+
+    echo "==> 5. Gesamtes App-Bundle mit Entitlements versiegeln..."
     codesign --force --timestamp --options runtime \
-        --entitlements "{{MOD_DIR}}/entitlements.plist" --sign "{{SIGN_ID}}" "{{APP}}"
+        --entitlements "{{ENTITLEMENTS}}" \
+        --sign "{{SIGN_ID}}" \
+        "{{APP}}"
+
+    echo "==> 6. Bundle-Signatur prüfen..."
     codesign --verify --deep --strict --verbose=2 "{{APP}}"
 
 # DMG im dist-Verzeichnis erstellen
@@ -105,15 +123,21 @@ dmg: sign
 # Notarisieren und Ticket stapeln
 notarize: dmg
     xcrun notarytool submit "{{DMG_FILE}}" --keychain-profile "rosida-profile" --wait
+    @echo "Warte 15 Sekunden auf Ticket-Bereitstellung im Apple CDN..."
+    sleep 15
     xcrun stapler staple "{{DMG_FILE}}"
     spctl --assess --type open --context context:primary-signature --verbose "{{DMG_FILE}}"
 
-build:
-    just macapp
-    just python
-    just sign
-    just dmg
-    just notarize
+build: notarize
 
 clean:
     rm -rf "{{DIST_DIR}}"
+
+release version="0.2.0":
+    git tag -a v{{version}} -m "v{{version}}"
+    git push origin v{{version}}
+
+    gh release create v{{version}} \
+      "{{DMG_FILE}}" \
+      --title "Rosida v{{version}}" \
+      --notes "Erster signierter macOS-Build (Apple Silicon) mit nativer Polars- und Quarto-Unterstützung."
