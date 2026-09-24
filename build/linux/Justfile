@@ -42,10 +42,18 @@ prepare:
     echo "==> 4. Desktop-Integration und Starter..."
     cp "{{MOD_DIR}}/AppRun" "{{APP_DIR}}/AppRun"
     cp "{{MOD_DIR}}/rosida.desktop" "{{APP_DIR}}/rosida.desktop"
-    cp "{{REPO_ROOT}}/logo.svg" "{{APP_DIR}}/rosida.svg"
-    cp "{{REPO_ROOT}}/logo.svg" "{{APP_DIR}}/usr/share/icons/hicolor/scalable/apps/rosida.svg"
     chmod +x "{{APP_DIR}}/AppRun"
 
+    # Icons für Desktop & AppImage
+    mkdir -p "{{APP_DIR}}/usr/share/icons/hicolor/scalable/apps"
+    cp "{{REPO_ROOT}}/logo.svg" "{{APP_DIR}}/rosida.svg"
+    cp "{{REPO_ROOT}}/logo.svg" "{{APP_DIR}}/usr/share/icons/hicolor/scalable/apps/rosida.svg"
+
+    # .DirIcon sorgt für das Datei-Thumbnail im File-Manager
+    ln -sf rosida.svg "{{APP_DIR}}/.DirIcon"
+
+    # Logo auch direkt ins App-Verzeichnis kopieren (für den internen Zugriff)
+    cp "{{REPO_ROOT}}/logo.svg" "{{APP_DIR}}/usr/lib/rosida/logo.svg"
     echo "==> 5. Ballast strippen..."
     SITE="{{APP_DIR}}/usr/lib/python3.12/site-packages"
     PY_LIB="{{APP_DIR}}/usr/lib/python3.12"

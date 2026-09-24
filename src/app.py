@@ -1,5 +1,8 @@
 import os
 import sys
+from pathlib import Path
+
+from PySide6.QtGui import QIcon
 from PySide6.QtCore import QCoreApplication
 from PySide6.QtWidgets import QApplication
 
@@ -300,16 +303,25 @@ class RosidaApp(QMainWindow):
 
 
 def main():
+    # Icon & App Name for MacOS
     sys.argv[0] = "Rosida"
     QCoreApplication.setApplicationName("Rosida")
     QCoreApplication.setOrganizationName("Rosida")
 
     app = QApplication(["Rosida"] + sys.argv[1:])
 
+    # Icon for Linux/Wayland
+    icon_path = Path(__file__).parent / "logo.svg"
+    if icon_path.exists():
+            app.setWindowIcon(QIcon(str(icon_path)))
+
+    # Load file
     initial_file = sys.argv[1] if len(sys.argv) > 1 and os.path.exists(sys.argv[1]) else None
     win = RosidaApp(initial_filepath=initial_file)
     win.show()
+
     maybe_show_manual_on_first_run(win)
+
     sys.exit(app.exec())
 
 
