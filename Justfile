@@ -96,7 +96,7 @@ sign: macapp
 sign-all: sign-runtime sign
 
 # DMG erstellen und signieren
-dmg: sign-all
+dmg: sign
     rm -f Rosida.dmg
     create-dmg \
         --volname "Rosida" \
