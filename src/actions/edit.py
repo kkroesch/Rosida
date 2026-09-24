@@ -64,7 +64,7 @@ class DeleteCellCommand(QUndoCommand):
 class UndoAction(RosidaAction):
 
   def __init__(self, document_canvas, parent=None):
-    super().__init__("↶ Rückgängig", parent)
+    super().__init__("&Rückgängig", parent)
     self.doc = document_canvas
 
     self.setShortcut(QKeySequence.StandardKey.Undo)
@@ -86,7 +86,7 @@ class UndoAction(RosidaAction):
 class RedoAction(RosidaAction):
 
   def __init__(self, document_canvas, parent=None):
-    super().__init__("↷ Wiederholen", parent)
+    super().__init__("&Wiederholen", parent)
     self.doc = document_canvas
 
     self.setShortcut(QKeySequence.StandardKey.Redo)
@@ -107,7 +107,7 @@ class RedoAction(RosidaAction):
 class InsertCellAboveAction(RosidaAction):
 
   def __init__(self, document_canvas, parent=None):
-    super().__init__("⇧ Zelle darüber einfügen", parent)
+    super().__init__("Zelle darüber einfügen", parent)
     self.doc = document_canvas
 
     self.setShortcut(QKeySequence("Ctrl+Shift+A"))
@@ -120,7 +120,7 @@ class InsertCellAboveAction(RosidaAction):
 class InsertCellBelowAction(RosidaAction):
 
   def __init__(self, document_canvas, parent=None):
-    super().__init__("⇩ Zelle darunter einfügen", parent)
+    super().__init__("Zelle darunter einfügen", parent)
     self.doc = document_canvas
 
     self.setShortcut(QKeySequence("Ctrl+Shift+B"))
@@ -133,7 +133,7 @@ class InsertCellBelowAction(RosidaAction):
 class DeleteCellAction(RosidaAction):
 
   def __init__(self, document_canvas, parent=None):
-    super().__init__("🗑 Zelle löschen", parent)
+    super().__init__("Zelle löschen", parent)
     self.doc = document_canvas
 
     self.setShortcut(QKeySequence("Ctrl+Shift+D"))
@@ -146,7 +146,7 @@ class DeleteCellAction(RosidaAction):
 class ToggleModeAction(RosidaAction):
 
   def __init__(self, document_canvas, parent=None):
-    super().__init__("⇄ Modus umschalten (Auto/Python/Text)", parent)
+    super().__init__("Modus umschalten (Auto/Python/Text)", parent)
     self.doc = document_canvas
 
     self.setShortcut(QKeySequence("Ctrl+M"))

@@ -1,12 +1,15 @@
 import ast
 import contextlib
 from io import BytesIO, StringIO
+from pathlib import Path
 import re
 
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 import sympy as sp
 import polars as pl
+
+from exporters.qmd import QmdRenderer
 
 from PySide6.QtCore import QMarginsF, Qt, QUrl, Signal
 from PySide6.QtGui import (
@@ -240,7 +243,7 @@ class InPlaceCell(QWidget):
         browser.setStyleSheet("background-color: transparent;")
         browser.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        render_markdown_with_math(text, browser, fontsize=13)
+        render_markdown_with_math(text, browser, fontsize=13, namespace=self.namespace)
         doc = browser.document()
         doc.setTextWidth(720)
         browser.setFixedHeight(int(doc.size().height()) + 10)
@@ -495,7 +498,7 @@ class DocumentCanvas(QWidget):
 
             if effective == "markdown":
                 browser = MathTextBrowser()
-                render_markdown_with_math(content, browser, fontsize=12)
+                render_markdown_with_math(content, browser, fontsize=12, namespace=cell.namespace)
                 for url_str, qimg in browser._resources.items():
                     doc.addResource(QTextDocument.ResourceType.ImageResource, QUrl(url_str), qimg)
                 sub_doc = browser.document()
@@ -537,6 +540,45 @@ class DocumentCanvas(QWidget):
         writer.setPageSize(QPageSize(QPageSize.PageSizeId.A4))
         writer.setPageMargins(QMarginsF(15, 15, 15, 15), QPageLayout.Unit.Millimeter)
         doc.print_(writer)
+
+    def export_qmd(self, filepath: str):
+        """Exports the document as a Quarto (.qmd) file, evaluating {{ }} templates in markdown cells
+        and embedding tables/figures/LaTeX for already-computed Python cell results."""
+        out_path = Path(filepath)
+        renderer = QmdRenderer(output_dir=out_path.parent)
+
+        body_chunks = []
+        for cell in self.cells:
+            content = cell.editor.toPlainText().strip()
+            if not content:
+                continue
+
+            effective = cell._detect_effective_mode(content)
+
+            if effective == "markdown":
+                body_chunks.append(renderer.render(template=content, context=cell.namespace))
+            else:
+                code = content
+                if not (code.startswith("```python") or code.startswith("```py")):
+                    code = f"```python\n{code}\n```"
+                body_chunks.append(code)
+
+                if cell.last_stdout:
+                    body_chunks.append(f"```\n{cell.last_stdout}\n```")
+                if cell.last_val is not None:
+                    body_chunks.append(renderer.format_value(cell.last_val, is_block=True))
+
+        frontmatter = (
+            "---\n"
+            "title: Rosida Dokument\n"
+            "format:\n"
+            "  html: default\n"
+            "  typst: default\n"
+            "---\n\n"
+        )
+
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(frontmatter + "\n\n".join(body_chunks) + "\n", encoding="utf-8")
 
     def save_to_markdown(self, filepath: str):
         """Saves notebook as a clean, human-readable Markdown file (.md)."""

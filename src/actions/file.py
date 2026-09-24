@@ -154,6 +154,34 @@ class ExportPdfAction(RosidaAction):
       QApplication.restoreOverrideCursor()
 
 
+class ExportQmdAction(RosidaAction):
+
+  def __init__(self, main_window, parent=None):
+    super().__init__("&Quarto exportieren...", parent)
+    self.win = main_window
+
+    self.setShortcut(QKeySequence("Ctrl+Shift+Q"))
+    self.setToolTip("Dokument als Quarto-Datei (.qmd) exportieren (Ctrl+Shift+Q)")
+    self.set_icon_name("fa5s.file-alt")
+
+    self.triggered.connect(self._execute)
+
+  def _execute(self):
+    filepath, _ = QFileDialog.getSaveFileName(
+      self.win,
+      "Dokument als Quarto exportieren",
+      "rosida_dokument.qmd",
+      "Quarto-Dokument (*.qmd)",
+    )
+    if not filepath:
+      return
+    try:
+      self.win.doc.export_qmd(filepath)
+      self.win.statusbar.showMessage(f"Quarto-Export erfolgreich: {filepath}", 4000)
+    except Exception as err:
+      QMessageBox.critical(self.win, "Exportfehler", f"Fehler beim Quarto-Export:\n{err}")
+
+
 class QuitAction(RosidaAction):
 
   def __init__(self, main_window, parent=None):

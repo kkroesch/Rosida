@@ -6,7 +6,7 @@ from .base import RosidaAction
 class RunCellAction(RosidaAction):
 
   def __init__(self, document_canvas, parent=None):
-    super().__init__("▶ Zelle ausführen", parent)
+    super().__init__("Zelle ausführen", parent)
     self.doc = document_canvas
 
     self.setShortcut(QKeySequence("Shift+Return"))
@@ -19,7 +19,7 @@ class RunCellAction(RosidaAction):
 class RunAllAction(RosidaAction):
 
   def __init__(self, document_canvas, parent=None):
-    super().__init__("⏩ Alle ausführen", parent)
+    super().__init__("Alle ausführen", parent)
     self.doc = document_canvas
 
     self.setShortcut(QKeySequence("Ctrl+Shift+Return"))

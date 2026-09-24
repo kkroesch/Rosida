@@ -138,6 +138,11 @@ class LatexPaletteDock(QDockWidget):
                 "Matrizen", self._build_matrices_widget(), is_expanded=True
             )
         )
+        main_layout.addWidget(
+            CollapsibleSection(
+                "Quarto (.qmd)", self._build_quarto_widget(), is_expanded=False
+            )
+        )
 
         # Stretch am Ende drückt alle Sektionen und Buttons nach oben
         main_layout.addStretch()
@@ -266,4 +271,26 @@ class LatexPaletteDock(QDockWidget):
         grid.addWidget(
             self._create_btn("Vektor (Zeile)", vec_row, "Zeilenvektor"), 1, 1
         )
+        return container
+
+    def _build_quarto_widget(self) -> QWidget:
+        container = QWidget()
+        grid = QGridLayout(container)
+        grid.setContentsMargins(0, 2, 0, 4)
+        grid.setSpacing(4)
+        snippets = [
+            ("Note", "::: {.callout-note}\n\n:::", "Callout: Hinweis"),
+            ("Tip", "::: {.callout-tip}\n\n:::", "Callout: Tipp"),
+            ("Warning", "::: {.callout-warning}\n\n:::", "Callout: Warnung"),
+            ("Important", "::: {.callout-important}\n\n:::", "Callout: Wichtig"),
+            ("Caution", "::: {.callout-caution}\n\n:::", "Callout: Vorsicht"),
+            ("Div", "::: {.className}\n\n:::", "Generischer Fenced Div (Klasse anpassen)"),
+            ("Fußnote", "Text[^1]\n\n[^1]: Fußnotentext", "Fußnote mit Referenz und Definition"),
+            ("Abb.-Anker", "{#fig-label}", "Cross-Ref-Anker unter eine Bildunterschrift setzen"),
+            ("Tab.-Anker", "{#tbl-label}", "Cross-Ref-Anker in eine Tabellenbeschriftung setzen"),
+            ("Abb.-Verweis", "@fig-label", 'Verweis auf eine Abbildung, z. B. "siehe @fig-label"'),
+            ("Tab.-Verweis", "@tbl-label", 'Verweis auf eine Tabelle, z. B. "siehe @tbl-label"'),
+        ]
+        for idx, (lbl, code, tip) in enumerate(snippets):
+            grid.addWidget(self._create_btn(lbl, code, tip), idx // 2, idx % 2)
         return container

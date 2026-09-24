@@ -3,6 +3,7 @@ import re
 
 from matplotlib.font_manager import FontProperties
 from matplotlib.mathtext import math_to_image
+import sympy as sp
 
 from PySide6.QtCore import QUrl
 from PySide6.QtGui import QImage, QTextDocument
@@ -83,8 +84,39 @@ def _format_text_line(text: str, inlines: dict[str, str]) -> str:
     return text
 
 
-def render_markdown_with_math(md_text: str, browser: MathTextBrowser, fontsize: int = 13) -> None:
-    """Robust two-pass parser for Markdown with inline ($...$) and block ($$...$$) math."""
+def _evaluate_template_expressions(text: str, namespace: dict) -> str:
+    """Replaces {{ expr }} with the evaluated Python expression from namespace.
+
+    A SymPy result is turned into LaTeX math markup ($...$ or, if the
+    expression stands alone on its own line, $$...$$) so the surrounding
+    math pipeline renders it; anything else is inserted via str().
+    """
+
+    def _replace(match):
+        expr = match.group(1).strip()
+
+        start = match.string.rfind("\n", 0, match.start()) + 1
+        end = match.string.find("\n", match.end())
+        prefix = match.string[start:match.start()].strip()
+        suffix = match.string[match.end():end].strip() if end != -1 else match.string[match.end():].strip()
+        is_block = (prefix == "" and suffix == "")
+
+        try:
+            val = eval(expr, {}, namespace)
+        except Exception as err:
+            return f'<code style="color: #dc2626; background: #fee2e2; padding: 1px 3px; border-radius: 3px;">Fehler: {expr} → {err}</code>'
+
+        if isinstance(val, (sp.Basic, sp.MatrixBase)):
+            latex = sp.latex(val)
+            return f"$${latex}$$" if is_block else f"${latex}$"
+
+        return str(val)
+
+    return re.sub(r"\{\{\s*(.*?)\s*\}\}", _replace, text)
+
+
+def render_markdown_with_math(md_text: str, browser: MathTextBrowser, fontsize: int = 13, namespace: dict | None = None) -> None:
+    """Robust two-pass parser for Markdown with {{ expr }} templating plus inline ($...$) and block ($$...$$) math."""
     browser._resources.clear()
     doc = browser.document()
     doc.clear()
@@ -93,6 +125,8 @@ def render_markdown_with_math(md_text: str, browser: MathTextBrowser, fontsize: 
     if not text:
         browser.setHtml("")
         return
+
+    text = _evaluate_template_expressions(text, namespace or {})
 
     res_counter = 0
     blocks: dict[str, str] = {}
