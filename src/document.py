@@ -13,6 +13,7 @@ from matplotlib.mathtext import math_to_image
 import matplotlib.pyplot as plt
 import numpy as np
 import sympy as sp
+import polars as pl
 
 from PySide6.QtCore import QByteArray, QMarginsF, QPoint, QRect, QSize, Qt, QUrl, Signal
 from PySide6.QtGui import (
@@ -48,6 +49,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from widgets.data import PolarsTableWidget
 
 
 def _clean_latex_for_mathtext(expr: str) -> str:
@@ -692,6 +695,14 @@ class InPlaceCell(QWidget):
                     self.view_layout.addWidget(canvas)
                     self.view_frame.attach_click_listeners(canvas)
 
+                # NEU: Polars DataFrame abfangen
+                elif pl is not None and isinstance(last_val, pl.DataFrame):
+                    table = PolarsTableWidget(last_val)
+                    table.setMaximumHeight(320)
+                    table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Preferred)
+                    self.view_layout.addWidget(table)
+                    # WICHTIG: KEIN attach_click_listeners(table) hier!
+
                 else:
                     val_lbl = QLabel(str(last_val))
                     val_lbl.setStyleSheet(
@@ -1199,6 +1210,7 @@ class PaperNotebook(QMainWindow):
             "sp": sp,
             "np": np,
             "plt": plt,
+            "pl": pl,
         }
 
         self.scroll = QScrollArea(self)

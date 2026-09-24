@@ -49,6 +49,7 @@ except ImportError:
 import matplotlib.pyplot as plt
 import numpy as np
 import sympy as sp
+import polars as pl
 
 
 class StructureOutlineDock(QDockWidget):
@@ -148,6 +149,7 @@ class RosidaApp(QMainWindow):
             "sp": sp,
             "np": np,
             "plt": plt,
+            "pl": pl,
         }
 
         self.scroll = QScrollArea(self)
