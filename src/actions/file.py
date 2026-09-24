@@ -1,5 +1,6 @@
 import os
 
+from pathlib import Path
 from PySide6.QtCore import Qt, QSettings
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QApplication, QFileDialog, QMenu, QMessageBox
@@ -57,35 +58,62 @@ class NewDocumentAction(RosidaAction):
 
 class OpenDocumentAction(RosidaAction):
 
-  def __init__(self, main_window, parent=None):
-    super().__init__("&Öffnen...", parent)
-    self.win = main_window
+    def __init__(self, main_window, parent=None):
+        super().__init__("&Öffnen...", parent)
+        self.win = main_window
 
-    self.setShortcut(QKeySequence.StandardKey.Open)
-    self.setToolTip("Dokument öffnen (Cmd+O / Ctrl+O)")
-    self.set_icon_name("fa5s.folder-open")
+        self.setShortcut(QKeySequence.StandardKey.Open)
+        self.setToolTip("Dokument öffnen (Cmd+O / Ctrl+O)")
+        self.set_icon_name("fa5s.folder-open")
 
-    self.triggered.connect(self._execute)
+        self.triggered.connect(self._execute)
 
-  def _execute(self):
-    filepath, _ = QFileDialog.getOpenFileName(
-      self.win,
-      "Rosida Dokument öffnen",
-      "",
-      "Markdown-Dateien (*.md *.markdown);;Alle Dateien (*)",
-    )
-    if not filepath:
-      return
+    def _execute(self):
+        filter_str = (
+            "Unterstützte Dokumente (*.md *.markdown *.qmd *.ipynb);;"
+            "Markdown & Quarto (*.md *.markdown *.qmd);;"
+            "Jupyter Notebooks (*.ipynb);;"
+            "Alle Dateien (*)"
+        )
 
-    try:
-      QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
-      self.win.doc.load_from_markdown(filepath)
-      self.win.set_current_filepath(filepath)
-      self.win.statusbar.showMessage(f"Geöffnet: {filepath}", 3000)
-    except Exception as err:
-      QMessageBox.critical(self.win, "Fehler beim Öffnen", f"Datei konnte nicht geöffnet werden:\n{err}")
-    finally:
-      QApplication.restoreOverrideCursor()
+        filepath, _ = QFileDialog.getOpenFileName(
+            self.win,
+            "Rosida Dokument öffnen",
+            "",
+            filter_str,
+        )
+        if not filepath:
+            return
+
+        path = Path(filepath)
+
+        try:
+            QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+
+            if path.suffix.lower() == ".ipynb":
+                # 1. Jupyter Notebook importieren
+                self.win.doc.load_from_ipynb(filepath)
+
+                # 2. Zielpfad auf .md umbiegen, damit das Original nicht mit rohem Markdown überschrieben wird
+                target_md = path.with_suffix(".md")
+                self.win.set_current_filepath(str(target_md))
+                self.win.statusbar.showMessage(
+                    f"Importiert: {path.name} → Speichern als {target_md.name}", 4000
+                )
+            else:
+                # Standard: Markdown / Quarto laden[cite: 1]
+                self.win.doc.load_from_markdown(filepath)
+                self.win.set_current_filepath(filepath)
+                self.win.statusbar.showMessage(f"Geöffnet: {path.name}", 3000)
+
+        except Exception as err:
+            QMessageBox.critical(
+                self.win,
+                "Fehler beim Öffnen",
+                f"Datei konnte nicht geöffnet werden:\n{err}",
+            )
+        finally:
+            QApplication.restoreOverrideCursor()
 
 
 class RecentFilesMenu(QMenu):

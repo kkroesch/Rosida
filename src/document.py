@@ -3,6 +3,7 @@ import contextlib
 from io import StringIO
 from pathlib import Path
 import re
+import json
 
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -661,3 +662,61 @@ class DocumentCanvas(QWidget):
         self.undo_stack.clear()
         self.undo_stack.setClean()
         self.set_modified(False)
+
+    def load_from_ipynb(self, filepath: str, auto_run: bool = False):
+        """Importiert ein Jupyter Notebook (.ipynb), ignoriert alten State/Outputs und erzeugt native Zellen."""
+        self._is_loading = True
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                nb = json.load(f)
+
+            # 1. Bestehende Zellen entfernen
+            while self.cells:
+                c = self.cells.pop()
+                self.layout.removeWidget(c)
+                c.deleteLater()
+
+            # 2. Zellen sequenziell übernehmen
+            for cell_data in nb.get("cells", []):
+                cell_type = cell_data.get("cell_type", "")
+                raw_source = cell_data.get("source", "")
+
+                # Jupyter speichert source entweder als Zeilenliste oder String
+                if isinstance(raw_source, list):
+                    source = "".join(raw_source).strip()
+                else:
+                    source = str(raw_source).strip()
+
+                if not source:
+                    continue
+
+                if cell_type == "markdown":
+                    self.insert_cell(initial_text=source, mode="markdown", auto_run=True)
+
+                elif cell_type == "code":
+                    # IPython-Magics (% und !) auskommentieren, um SyntaxErrors zu verhindern
+                    cleaned_lines = []
+                    for line in source.split("\n"):
+                        trimmed = line.strip()
+                        if trimmed.startswith(("%", "!")):
+                            cleaned_lines.append(f"# {line}  # ipython-magic")
+                        else:
+                            cleaned_lines.append(line)
+                    code_content = "\n".join(cleaned_lines)
+
+                    self.insert_cell(
+                        initial_text=code_content,
+                        mode="python",
+                        auto_run=auto_run,
+                    )
+
+            if not self.cells:
+                self.insert_cell()
+
+        finally:
+            self._is_loading = False
+
+        self.ensure_trailing_cell()
+        self.structure_changed.emit(self.cells)
+        self.undo_stack.clear()
+        self.undo_stack.setClean()
