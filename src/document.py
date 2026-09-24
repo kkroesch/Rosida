@@ -1,6 +1,6 @@
 import ast
 import contextlib
-from io import BytesIO, StringIO
+from io import StringIO
 from pathlib import Path
 import re
 
@@ -9,17 +9,13 @@ from matplotlib.figure import Figure
 import sympy as sp
 import polars as pl
 
+from exporters.pdf import export_pdf as render_pdf
 from exporters.qmd import QmdRenderer
 
-from PySide6.QtCore import QMarginsF, Qt, QUrl, Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import (
-    QImage,
-    QPageLayout,
-    QPageSize,
-    QPdfWriter,
     QPixmap,
     QTextCursor,
-    QTextDocument,
     QUndoStack,
 )
 from PySide6.QtWidgets import (
@@ -56,6 +52,7 @@ class InPlaceCell(QWidget):
         self.last_rendered_height = 80
         self.last_stdout = ""
         self.last_val = None
+        self._is_collapsed_empty = False
 
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
 
@@ -101,8 +98,26 @@ class InPlaceCell(QWidget):
         self.view_frame.clicked.connect(self.switch_to_edit)
         self.stack.addWidget(self.view_frame)
 
-        self.stack.setCurrentIndex(0)
+        self._show_stack_page(0)
         self._update_mode_pill()
+
+    def _show_stack_page(self, index: int):
+        """Switches the edit/view page and makes the inactive page's size ignored.
+
+        QStackedLayout otherwise sizes itself to the largest of all pages (even
+        hidden ones), so a tall editor would keep the cell tall even while a
+        tiny collapsed output is shown, and vice versa.
+        """
+        self.edit_container.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Preferred if index == 0 else QSizePolicy.Policy.Ignored,
+        )
+        self.view_frame.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Preferred if index == 1 else QSizePolicy.Policy.Ignored,
+        )
+        self.stack.setCurrentIndex(index)
+        self.updateGeometry()
 
     def cycle_mode(self):
         """Cycles mode override between auto, python, and markdown."""
@@ -181,11 +196,14 @@ class InPlaceCell(QWidget):
             return "markdown"
 
     def switch_to_edit(self):
-        if self.has_rendered_once and self.last_rendered_height > 60:
+        if self._is_collapsed_empty:
+            doc_height = int(self.editor.document().size().height()) + 22
+            self.editor.setFixedHeight(max(56, doc_height))
+        elif self.has_rendered_once and self.last_rendered_height > 60:
             target_editor_h = max(56, self.last_rendered_height - 28)
             self.editor.setFixedHeight(target_editor_h)
 
-        self.stack.setCurrentIndex(0)
+        self._show_stack_page(0)
         self.editor.setFocus()
         self.cell_focused.emit(self)
         cursor = self.editor.textCursor()
@@ -194,10 +212,11 @@ class InPlaceCell(QWidget):
 
     def cancel_edit(self):
         if self.has_rendered_once:
-            self.stack.setCurrentIndex(1)
+            self._show_stack_page(1)
             self.cell_focused.emit(self)
 
     def _clear_view(self):
+        self.view_layout.setContentsMargins(10, 8, 10, 8)
         while self.view_layout.count():
             item = self.view_layout.takeAt(0)
             if item.widget():
@@ -216,6 +235,8 @@ class InPlaceCell(QWidget):
         self._clear_view()
         effective_mode = self._detect_effective_mode(content)
 
+        self._is_collapsed_empty = False
+
         if effective_mode == "markdown":
             self._render_markdown_mode(content)
         else:
@@ -228,10 +249,14 @@ class InPlaceCell(QWidget):
                     code_to_run = "\n".join(lines[1:])
             self._render_python_mode(code_to_run)
 
+            if self.view_layout.count() == 0:
+                self._render_collapsed_placeholder()
+                self._is_collapsed_empty = True
+
         QApplication.processEvents()
         self.last_rendered_height = max(self.view_frame.sizeHint().height(), self.view_frame.height())
         self.has_rendered_once = True
-        self.stack.setCurrentIndex(1)
+        self._show_stack_page(1)
         self.executed.emit()
         self.content_updated.emit()
 
@@ -250,6 +275,33 @@ class InPlaceCell(QWidget):
 
         self.view_layout.addWidget(browser)
         self.view_frame.attach_click_listeners(browser)
+
+    def _render_collapsed_placeholder(self):
+        """Compact left-aligned "+" marker for Python cells without visible output (imports, assignments, ...)."""
+        self.view_layout.setContentsMargins(2, 0, 2, 0)
+
+        row = QHBoxLayout()
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setAlignment(Qt.AlignmentFlag.AlignLeft)
+
+        plus_lbl = QLabel("+")
+        plus_lbl.setFixedSize(18, 18)
+        plus_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        plus_lbl.setToolTip("Kein Output – klicken zum Bearbeiten")
+        plus_lbl.setStyleSheet("""
+            QLabel {
+                color: #94a3b8;
+                background-color: #f1f5f9;
+                border: 1px solid #e2e8f0;
+                border-radius: 9px;
+                font-size: 12px;
+                font-weight: 600;
+            }
+        """)
+        row.addWidget(plus_lbl)
+
+        self.view_layout.addLayout(row)
+        self.view_frame.attach_click_listeners(plus_lbl)
 
     def _render_python_mode(self, code: str):
         stdout_capture = StringIO()
@@ -335,6 +387,7 @@ class DocumentCanvas(QWidget):
     active_cell_changed = Signal(object, int, int)
     structure_changed = Signal(list)
     cell_executed = Signal(object)
+    modified_changed = Signal(bool)
 
     def __init__(self, kernel_namespace: dict, parent=None):
         super().__init__(parent)
@@ -342,6 +395,7 @@ class DocumentCanvas(QWidget):
         self.cells: list[InPlaceCell] = []
         self._active_cell: InPlaceCell | None = None
         self._is_loading: bool = False
+        self._is_modified: bool = False
         self.undo_stack = QUndoStack(self)
 
         self.setStyleSheet("background-color: #f8fafc;")
@@ -353,6 +407,17 @@ class DocumentCanvas(QWidget):
         self.stretch_spacer = QWidget()
         self.stretch_spacer.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         self.layout.addWidget(self.stretch_spacer)
+
+        # Jede strukturelle oder inhaltliche Änderung (Text, Modus, Zellen) markiert das Dokument als geändert.
+        self.structure_changed.connect(lambda _cells: self.set_modified(True))
+
+    def is_modified(self) -> bool:
+        return self._is_modified
+
+    def set_modified(self, modified: bool = True):
+        if self._is_modified != modified:
+            self._is_modified = modified
+            self.modified_changed.emit(modified)
 
     def get_active_cell(self) -> InPlaceCell | None:
         if self._active_cell and self._active_cell in self.cells:
@@ -483,63 +548,7 @@ class DocumentCanvas(QWidget):
 
     def export_pdf(self, filepath: str):
         """Exports the document directly to a vector-grade A4 PDF using Qt QPdfWriter."""
-        doc = QTextDocument()
-        doc.setDocumentMargin(24)
-
-        res_counter = 0
-        html_fragments = []
-
-        for cell in self.cells:
-            content = cell.editor.toPlainText().strip()
-            if not content:
-                continue
-
-            effective = cell._detect_effective_mode(content)
-
-            if effective == "markdown":
-                browser = MathTextBrowser()
-                render_markdown_with_math(content, browser, fontsize=12, namespace=cell.namespace)
-                for url_str, qimg in browser._resources.items():
-                    doc.addResource(QTextDocument.ResourceType.ImageResource, QUrl(url_str), qimg)
-                sub_doc = browser.document()
-                html_fragments.append(sub_doc.toHtml())
-            else:
-                escaped = content.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                html_fragments.append(
-                    f'<div style="margin: 12px 0; background-color: #f8fafc; border: 1px solid #cbd5e1; '
-                    f'padding: 8px; border-radius: 4px; font-family: monospace; font-size: 11px;">'
-                    f'<pre style="margin: 0; color: #0f172a;">{escaped}</pre></div>'
-                )
-                if cell.last_stdout:
-                    esc_out = cell.last_stdout.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-                    html_fragments.append(f'<div style="font-family: monospace; font-size: 10px; color: #475569; margin: 4px 0;">{esc_out}</div>')
-
-                if cell.last_val is not None:
-                    if isinstance(cell.last_val, sp.Basic):
-                        res_counter += 1
-                        res_url = QUrl(f"pdfres://math_{res_counter}.png")
-                        qimg, w, h = math_to_png_qimage(sp.latex(cell.last_val), fontsize=18, dpi=200)
-                        doc.addResource(QTextDocument.ResourceType.ImageResource, res_url, qimg)
-                        html_fragments.append(f'<div align="center" style="margin: 12px 0;"><img src="{res_url.toString()}" width="{w}" height="{h}"></div>')
-                    elif isinstance(cell.last_val, Figure):
-                        res_counter += 1
-                        res_url = QUrl(f"pdfres://plot_{res_counter}.png")
-                        buf = BytesIO()
-                        cell.last_val.savefig(buf, format="png", dpi=200, bbox_inches="tight")
-                        qimg = QImage.fromData(buf.getvalue())
-                        doc.addResource(QTextDocument.ResourceType.ImageResource, res_url, qimg)
-                        w = int(qimg.width() / 2)
-                        h = int(qimg.height() / 2)
-                        html_fragments.append(f'<div align="center" style="margin: 14px 0;"><img src="{res_url.toString()}" width="{w}" height="{h}"></div>')
-                    else:
-                        html_fragments.append(f'<div style="font-family: monospace; font-size: 11px; color: #0284c7;">{cell.last_val}</div>')
-
-        doc.setHtml("<br>".join(html_fragments))
-
-        writer = QPdfWriter(filepath)
-        writer.setPageSize(QPageSize(QPageSize.PageSizeId.A4))
-        writer.setPageMargins(QMarginsF(15, 15, 15, 15), QPageLayout.Unit.Millimeter)
-        doc.print_(writer)
+        render_pdf(self.cells, filepath)
 
     def export_qmd(self, filepath: str):
         """Exports the document as a Quarto (.qmd) file, evaluating {{ }} templates in markdown cells
@@ -602,6 +611,7 @@ class DocumentCanvas(QWidget):
             f.write(full_md)
 
         self.undo_stack.setClean()
+        self.set_modified(False)
 
     def load_from_markdown(self, filepath: str):
         """Parses a Markdown file and reconstructs interactive notebook cells without ghost cells."""
@@ -650,3 +660,4 @@ class DocumentCanvas(QWidget):
         self.structure_changed.emit(self.cells)
         self.undo_stack.clear()
         self.undo_stack.setClean()
+        self.set_modified(False)

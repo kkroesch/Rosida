@@ -1,5 +1,14 @@
 # Dämpfung und Resonanz
 
+```python
+a=23
+b=42
+```
+
+Es sei a={{a}} und b={{b}}. Addiert gibt das {{a+b}}, niedlich, oder?
+
+---
+
 Untersuchung der Signalübertragungsfunktion $f(x) = \sin(x) \cdot e^x$.
 
 Das unbestimmte Integral lautet:
