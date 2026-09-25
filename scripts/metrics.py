@@ -17,7 +17,9 @@ from __future__ import annotations
 
 import ast
 import json
+import os
 import subprocess
+import sys
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -132,6 +134,47 @@ def _fmt_mi(mi: float | None) -> str:
   return f"{mi:.1f} ({mi_rank(mi)})"
 
 
+# Notenbasierte Fortschrittsbalken, damit man "wie gut sind wir" auf einen Blick sieht.
+# Die Balkenlänge folgt der Note (A-F), nicht dem Rohwert – so bleibt sie konsistent mit
+# radons eigener Notenskala (z.B. MI ~60 ist Note A, aber nur "60% eines 100er-Balkens" wäre irreführend).
+_GRADE_SCORE = {"A": 100, "B": 80, "C": 60, "D": 40, "E": 20, "F": 0}
+_GRADE_ANSI = {
+  "A": "\033[92m",  # hellgrün
+  "B": "\033[32m",  # grün
+  "C": "\033[33m",  # gelb
+  "D": "\033[93m",  # hellgelb
+  "E": "\033[31m",  # rot
+  "F": "\033[91m",  # hellrot
+}
+_ANSI_RESET = "\033[0m"
+_BAR_WIDTH = 20
+
+
+def supports_color() -> bool:
+  return sys.stdout.isatty() and os.environ.get("NO_COLOR") is None
+
+
+def render_bar(grade: str, width: int = _BAR_WIDTH, colored: bool = False) -> str:
+  score = _GRADE_SCORE.get(grade, 0)
+  filled = round(width * score / 100)
+  bar = "█" * filled + "░" * (width - filled)
+  if colored:
+    color = _GRADE_ANSI.get(grade, "")
+    return f"{color}{bar}{_ANSI_RESET} {grade}"
+  return f"{bar} {grade}"
+
+
+def rate_grade(count: int, sloc: int) -> str:
+  """Bewertet eine Fundstellen-Zahl relativ zur Codegröße (Funde je 1000 SLOC).
+
+  Heuristische Schwellwerte, keine offizielle Norm - dient nur der groben Einordnung."""
+  rate = (count / sloc * 1000) if sloc else 0.0
+  for limit, grade in [(5, "A"), (15, "B"), (30, "C"), (50, "D"), (80, "E")]:
+    if rate < limit:
+      return grade
+  return "F"
+
+
 def build_report(modules: list[ModuleMetrics], ruff_findings: list[dict], vulture_findings: list[str]) -> str:
   total_sloc = sum(m.sloc for m in modules)
   total_loc = sum(m.loc for m in modules)
@@ -153,22 +196,30 @@ def build_report(modules: list[ModuleMetrics], ruff_findings: list[dict], vultur
     "",
     "## Überblick",
     "",
-    "| Metrik | Wert |",
-    "|---|---|",
-    f"| Dateien | {len(modules)} |",
-    f"| Zeilen (SLOC, ohne Blank/Kommentar) | {total_sloc} |",
-    f"| Zeilen gesamt (LOC) | {total_loc} |",
-    f"| Kommentarzeilen | {total_comments} |",
-    f"| Klassen | {total_classes} |",
-    f"| Funktionen/Methoden | {total_functions} |",
-    f"| Ø Zyklomatische Komplexität | {avg_complexity:.2f} ({cc_rank(round(avg_complexity)) if all_complexities else '–'}) |",
-    f"| Ø Wartbarkeitsindex (MI) | {avg_mi:.1f} ({mi_rank(avg_mi) if mi_values else '–'}) |",
-    f"| Ruff-Findings (Default-Regelsatz) | {len(ruff_findings)} |",
-    f"| Vulture-Funde (möglicher toter Code, ≥60% Konfidenz) | {len(vulture_findings)} |",
+    "| Metrik | Wert | Bewertung |",
+    "|---|---|---|",
+    f"| Dateien | {len(modules)} | |",
+    f"| Zeilen (SLOC, ohne Blank/Kommentar) | {total_sloc} | |",
+    f"| Zeilen gesamt (LOC) | {total_loc} | |",
+    f"| Kommentarzeilen | {total_comments} | |",
+    f"| Klassen | {total_classes} | |",
+    f"| Funktionen/Methoden | {total_functions} | |",
+  ]
+  complexity_grade = cc_rank(round(avg_complexity)) if all_complexities else "A"
+  mi_grade = mi_rank(avg_mi) if mi_values else "A"
+  ruff_grade = rate_grade(len(ruff_findings), total_sloc)
+  vulture_grade = rate_grade(len(vulture_findings), total_sloc)
+  lines += [
+    f"| Ø Zyklomatische Komplexität | {avg_complexity:.2f} ({complexity_grade}) | `{render_bar(complexity_grade)}` |",
+    f"| Ø Wartbarkeitsindex (MI) | {avg_mi:.1f} ({mi_grade}) | `{render_bar(mi_grade)}` |",
+    f"| Ruff-Findings (Default-Regelsatz) | {len(ruff_findings)} ({ruff_grade}) | `{render_bar(ruff_grade)}` |",
+    f"| Vulture-Funde (möglicher toter Code, ≥60% Konfidenz) | {len(vulture_findings)} ({vulture_grade}) | `{render_bar(vulture_grade)}` |",
     "",
     "> Der Wartbarkeitsindex ist trotz Anzeige als Zahl 0–100 **kein Prozentwert** – radons "
     "eigene Notenskala setzt die Grenze zu Note A schon bei ca. 20. Ein MI um 60 mit Note A ist "
-    "also gut, nicht mittelmäßig. Die Note in Klammern ist die verlässlichere Angabe.",
+    "also gut, nicht mittelmäßig. Die Note in Klammern ist die verlässlichere Angabe. Komplexität "
+    "und MI nutzen radons eigene Notenskala; die Noten für Ruff/Vulture sind eine eigene, "
+    "heuristische Einordnung (Funde je 1000 SLOC) ohne offiziellen Standard dahinter.",
     "",
     "## Pro Modul",
     "",
@@ -240,14 +291,20 @@ def print_summary(modules: list[ModuleMetrics], ruff_findings: list[dict], vultu
   mi_values = [m.mi for m in modules if m.mi is not None]
   avg_mi = sum(mi_values) / len(mi_values) if mi_values else 0.0
 
+  colored = supports_color()
+  complexity_grade = cc_rank(round(avg_complexity)) if all_complexities else "A"
+  mi_grade = mi_rank(avg_mi) if mi_values else "A"
+  ruff_grade = rate_grade(len(ruff_findings), total_sloc)
+  vulture_grade = rate_grade(len(vulture_findings), total_sloc)
+
   print(f"Dateien:              {len(modules)}")
   print(f"SLOC gesamt:          {total_sloc}")
   print(f"Klassen:              {total_classes}")
   print(f"Funktionen/Methoden:  {total_functions}")
-  print(f"Ø Komplexität:        {avg_complexity:.2f}")
-  print(f"Ø Wartbarkeitsindex:  {avg_mi:.1f} ({mi_rank(avg_mi) if mi_values else '–'})")
-  print(f"Ruff-Findings:        {len(ruff_findings)}")
-  print(f"Vulture-Funde:        {len(vulture_findings)}")
+  print(f"Ø Komplexität:        {avg_complexity:5.2f}  {render_bar(complexity_grade, colored=colored)}")
+  print(f"Ø Wartbarkeitsindex:  {avg_mi:5.1f}  {render_bar(mi_grade, colored=colored)}")
+  print(f"Ruff-Findings:        {len(ruff_findings):5d}  {render_bar(ruff_grade, colored=colored)}")
+  print(f"Vulture-Funde:        {len(vulture_findings):5d}  {render_bar(vulture_grade, colored=colored)}")
   print()
   print(f"Vollständiger Report: {REPORT_PATH.relative_to(REPO_ROOT)}")
 
