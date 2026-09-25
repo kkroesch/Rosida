@@ -20,5 +20,9 @@ test-watch:
     ROSIDA_TEST_SLOWMO="{{env('ROSIDA_TEST_SLOWMO', '300')}}" uv run --with pyside6 --with polars --with sympy --with matplotlib --with numpy --with qtawesome --with pytest --with pytest-qt \
         python -m pytest tests/ -v -s
 
+# Code-Metriken (LOC, McCabe-Komplexität, Wartbarkeitsindex, Ruff, toter Code) -> metrics-report.md
+metrics:
+    uv run --with radon --with ruff --with vulture python scripts/metrics.py
+
 mod macos 'build/macos/Justfile'
 mod linux 'build/linux/Justfile'
