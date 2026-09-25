@@ -3,6 +3,9 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Generierter Code-Metriken-Report (just metrics)
+/metrics-report.md
+
 # C extensions
 *.so
 
