@@ -51,9 +51,13 @@ macapp: icons
         rm -f "{{PY_DIR}}"/lib/python3.*/EXTERNALLY-MANAGED
     fi
 
-    echo "Installiere Core-Abhängigkeiten..."
+    echo "Exportiere gepinnte Abhängigkeiten aus uv.lock..."
+    uv export --project "{{REPO_ROOT}}" --frozen --no-hashes --no-emit-project -o "{{MOD_DIR}}/requirements.lock.txt"
+
+    echo "Installiere gepinnte Abhängigkeiten..."
     uv pip install --break-system-packages --python "{{PY_DIR}}/bin/python3" \
-        pyside6-essentials sympy matplotlib numpy polars qtawesome
+        -r "{{MOD_DIR}}/requirements.lock.txt"
+    rm -f "{{MOD_DIR}}/requirements.lock.txt"
 
     echo "Entferne Ballast und Build-Tools..."
     rm -rf "{{PY_DIR}}"/lib/python3.*/test

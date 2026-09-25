@@ -1,19 +1,14 @@
-# In Repo-Wurzel ausführen: .\build\windows\build.ps1
+# In Repo-Wurzel ausführen: .\build\win\build.ps1
 $ErrorActionPreference = "Stop"
 
 Write-Host "==> 1. Standalone Python über uv bereitstellen..."
 uv python install 3.12
 uv venv .build-venv --python 3.12
 
-Write-Host "==> 2. Minimale Abhängigkeiten installieren..."
-& .build-venv\Scripts\uv.exe pip install `
-    pyside6-essentials `
-    polars `
-    sympy `
-    matplotlib `
-    numpy `
-    qtawesome `
-    pyinstaller
+Write-Host "==> 2. Gepinnte Abhängigkeiten aus uv.lock installieren..."
+uv export --frozen --no-hashes --no-emit-project --group win-build -o requirements.lock.txt
+& .build-venv\Scripts\uv.exe pip install -r requirements.lock.txt
+Remove-Item requirements.lock.txt
 
 Write-Host "==> 3. Windows Executable mit PyInstaller packen..."
 & .build-venv\Scripts\pyinstaller.exe `
