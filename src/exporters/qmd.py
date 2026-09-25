@@ -81,22 +81,3 @@ class QmdRenderer:
 
         body = re.sub(r"\{\{\s*(.*?)\s*\}\}", replacer, template)
         return frontmatter + body
-
-
-def export_to_qmd(template_text: str, context: dict, out_qmd_path: Path, metadata: dict | None = None):
-    out_qmd_path = Path(out_qmd_path)
-    renderer = QmdRenderer(output_dir=out_qmd_path.parent)
-
-    # Standard-Metadaten für Typst & HTML, falls keine übergeben werden
-    default_meta = {
-        "title": "Berechnungsbericht",
-        "format": {
-            "typst": "default",
-            "html": "default"
-        }
-    }
-    meta = {**default_meta, **(metadata or {})}
-
-    qmd_content = renderer.render(template_text, context, metadata=meta)
-    out_qmd_path.parent.mkdir(parents=True, exist_ok=True)
-    out_qmd_path.write_text(qmd_content, encoding="utf-8")
