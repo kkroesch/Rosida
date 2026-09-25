@@ -1,8 +1,14 @@
 # Standard: Lokale Ausführung
 default: run
 
+# Nutzt pyproject.toml + uv.lock (projektbasiert statt --with), damit lokaler Lauf und
+# Plattform-Builds exakt dieselben, gepinnten Paketversionen verwenden.
 run:
-    uv run --with pyside6 --with polars --with sympy --with matplotlib --with numpy --with qtawesome src/app.py
+    uv run src/app.py
+
+# uv.lock nach Änderungen an pyproject.toml neu berechnen
+lock:
+    uv lock
 
 icons:
     # Create PNG and ICO icons for Linux and Windows

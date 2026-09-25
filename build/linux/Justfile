@@ -30,9 +30,11 @@ prepare:
     echo "Verwende Standalone-Python aus: $PY_ROOT"
     cp -a "$PY_ROOT/"* "{{APP_DIR}}/usr/"
 
-    echo "==> 2. Minimale Abhängigkeiten installieren..."
+    echo "==> 2. Gepinnte Abhängigkeiten aus uv.lock installieren..."
+    uv export --project "{{REPO_ROOT}}" --frozen --no-hashes --no-emit-project -o "{{MOD_DIR}}/requirements.lock.txt"
     uv pip install --no-cache --break-system-packages --python "{{APP_DIR}}/usr/bin/python3" \
-        pyside6-essentials polars sympy matplotlib numpy qtawesome
+        -r "{{MOD_DIR}}/requirements.lock.txt"
+    rm -f "{{MOD_DIR}}/requirements.lock.txt"
 
     echo "==> 3. Anwendungsdateien kopieren..."
     mkdir -p "{{APP_DIR}}/usr/lib/rosida"

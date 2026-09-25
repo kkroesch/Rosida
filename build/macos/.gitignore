@@ -1,5 +1,6 @@
 .DS_Store
 *.dmg
+requirements.lock.txt
 Rosida.app/Contents/Resources/*.py
 Rosida.app/Contents/Resources/palettes
 Rosida.app/Contents/Resources/actions

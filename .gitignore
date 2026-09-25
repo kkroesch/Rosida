@@ -3,6 +3,11 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# Aus uv.lock exportierte, gepinnte Requirements-Datei für Plattform-Builds (build/win/build.ps1
+# legt sie im Repo-Root an; build/{macos,linux} legen ihre Kopie im jeweiligen Modulverzeichnis an)
+/requirements.lock.txt
+.build-venv/
+
 # C extensions
 *.so
 
