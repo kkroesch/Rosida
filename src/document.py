@@ -659,27 +659,42 @@ class DocumentCanvas(QWidget):
 
     def save_to_markdown(self, filepath: str):
         """Saves notebook as a clean, human-readable Markdown file (.md)."""
-        md_chunks = []
+        chunks = []
+        prev_was_md = False
+
         for cell in self.cells:
             content = cell.editor.toPlainText().strip()
             if not content:
                 continue
 
             effective = cell._detect_effective_mode(content)
-            if effective == "markdown":
-                md_chunks.append(content)
+            is_md = effective == "markdown"
+
+            if is_md:
+                # ZWINGEND: Trenner zwischen zwei aufeinanderfolgenden Markdown-Zellen
+                if prev_was_md:
+                    chunks.append("---")
+                chunks.append(content)
+                prev_was_md = True
             else:
                 if content.startswith("```python") or content.startswith("```py"):
-                    md_chunks.append(content)
+                    chunks.append(content)
                 else:
-                    md_chunks.append(f"```python\n{content}\n```")
+                    chunks.append(f"```python\n{content}\n```")
+                prev_was_md = False
 
-        full_md = "\n\n".join(md_chunks) + "\n"
+        full_md = "\n\n".join(chunks) + "\n"
         with open(filepath, "w", encoding="utf-8") as f:
-            f.write(full_md)
+        f.write(full_md)
 
         self.undo_stack.setClean()
         self.set_modified(False)
+
+    def _split_markdown_blocks(self, text: str) -> list[str]:
+        """Trennt Textblöcke an '---' Linien, ignoriert Leerblöcke."""
+        # Matcht '---' am Textanfang, Textende oder umgeben von Zeilenumbrüchen
+        parts = re.split(r"(?:^|\n)\s*---\s*(?:\n|$)", text.strip())
+        return [p.strip() for p in parts if p.strip()]
 
     def load_from_markdown(self, filepath: str):
         """Parses a Markdown file and reconstructs interactive notebook cells without ghost cells."""
@@ -699,11 +714,10 @@ class DocumentCanvas(QWidget):
             for match in pattern.finditer(raw_text):
                 text_before = raw_text[last_end:match.start()].strip()
                 if text_before:
-                    parts = re.split(r"\n\s*---\s*\n", text_before)
-                    for part in parts:
-                        cleaned = part.strip()
-                        if cleaned:
-                            self.insert_cell(initial_text=cleaned, mode="markdown", auto_run=True)
+                    if text_before:
+                        # Hier die neue Zerlegung nutzen:
+                        for part in self._split_markdown_blocks(text_before):
+                            self.insert_cell(initial_text=part, mode="markdown", auto_run=True)
 
                 code_content = match.group(1).strip()
                 if code_content:
@@ -713,11 +727,9 @@ class DocumentCanvas(QWidget):
 
             trailing_text = raw_text[last_end:].strip()
             if trailing_text:
-                parts = re.split(r"\n\s*---\s*\n", trailing_text)
-                for part in parts:
-                    cleaned = part.strip()
-                    if cleaned:
-                        self.insert_cell(initial_text=cleaned, mode="markdown", auto_run=True)
+                # Und auch beim Rest am Dokumentende:
+                for part in self._split_markdown_blocks(trailing_text):
+                    self.insert_cell(initial_text=part, mode="markdown", auto_run=True)
 
             if not self.cells:
                 self.insert_cell()
