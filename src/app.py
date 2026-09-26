@@ -121,10 +121,13 @@ class RosidaApp(QMainWindow):
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dock_palette)
 
         self.dock_variables = VariableInspectorDock(self)
-        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dock_variables)
+        self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.dock_variables)
 
         self.act_toggle_variables = ToggleVariablesDockAction(self.dock_variables, self)
         self.doc.variables_updated.connect(self.dock_variables.update_variables)
+        self.dock_variables.variable_double_clicked.connect(
+            self.doc.insert_text_into_active
+        )
 
     def _setup_actions(self):
         # Datei

@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QDockWidget,
     QHeaderView,
@@ -10,14 +10,12 @@ from PySide6.QtWidgets import (
 
 
 class VariableInspectorDock(QDockWidget):
+  # Signal meldet den Variablennamen als String
+  variable_double_clicked = Signal(str)
 
   def __init__(self, parent=None):
     super().__init__("Variablen", parent)
     self.setObjectName("DockVariableInspector")
-    self.setAllowedAreas(
-        Qt.DockWidgetArea.LeftDockWidgetArea
-        | Qt.DockWidgetArea.RightDockWidgetArea
-    )
 
     container = QWidget()
     layout = QVBoxLayout(container)
@@ -30,7 +28,9 @@ class VariableInspectorDock(QDockWidget):
     self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
     self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
 
-    # Spaltenanpassung: Name & Typ eng, Wert nimmt den Rest
+    # Doppelklick auf Tabellenzeile abfangen
+    self.table.cellDoubleClicked.connect(self._on_row_double_clicked)
+
     header = self.table.horizontalHeader()
     header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
     header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
@@ -39,6 +39,12 @@ class VariableInspectorDock(QDockWidget):
     layout.addWidget(self.table)
     self.setWidget(container)
 
+  def _on_row_double_clicked(self, row: int, _column: int):
+    # Name steht immer in Spalte 0
+    name_item = self.table.item(row, 0)
+    if name_item:
+      self.variable_double_clicked.emit(name_item.text())
+
   def update_variables(self, variables: list[dict]):
     self.table.setRowCount(len(variables))
     for row, item in enumerate(variables):
@@ -46,7 +52,6 @@ class VariableInspectorDock(QDockWidget):
       type_item = QTableWidgetItem(item["type"])
       val_item = QTableWidgetItem(item["value"])
 
-      # Dezentere Farbe für den Typen
       type_item.setForeground(Qt.GlobalColor.darkGray)
 
       self.table.setItem(row, 0, name_item)
