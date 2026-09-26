@@ -2,12 +2,11 @@ import os
 import sys
 from pathlib import Path
 
-from PySide6.QtGui import QIcon
-from PySide6.QtCore import QCoreApplication
-from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QIcon, QCloseEvent
+from PySide6.QtCore import Qt, QSize, QCoreApplication
 
-from PySide6.QtCore import Qt, QSize
 from PySide6.QtWidgets import (
+    QMessageBox,
     QApplication,
     QLabel,
     QMainWindow,
@@ -301,6 +300,45 @@ class RosidaApp(QMainWindow):
         self._update_window_title()
         self.dock_structure.update_outline(self.doc.cells)
 
+    def closeEvent(self, event: QCloseEvent):
+        # Model direkt abfragen statt über den Button-State
+        if not self.doc.is_modified():
+          event.accept()
+          return
+
+        # Dokument ist schmutzig (dirty) -> Prompt anzeigen
+        filename = Path(self.current_filepath).name if self.current_filepath else "Unbenanntes Dokument"
+        box = QMessageBox(self)
+        box.setWindowTitle("Änderungen speichern?")
+        box.setText(f"Möchtest du die Änderungen in »{filename}« vor dem Beenden speichern?")
+        box.setStandardButtons(
+            QMessageBox.StandardButton.Save
+            | QMessageBox.StandardButton.Discard
+            | QMessageBox.StandardButton.Cancel
+        )
+        box.setDefaultButton(QMessageBox.StandardButton.Save)
+
+        choice = box.exec()
+
+        if choice == QMessageBox.StandardButton.Save:
+          # Speichern triggern (SaveAction-Logik nutzen)
+          if not self.current_filepath:
+            self.act_save_as.trigger()
+          else:
+            self.act_save.trigger()
+
+          # Falls Speichern erfolgreich war (nicht abgebrochen wurde)
+          if not self.doc.is_modified():
+            event.accept()
+          else:
+            event.ignore()
+
+        elif choice == QMessageBox.StandardButton.Discard:
+          event.accept()
+
+        else:  # Cancel
+          event.ignore()
+
 
 def main():
     # Icon & App Name for MacOS
@@ -309,6 +347,13 @@ def main():
     QCoreApplication.setOrganizationName("Rosida")
 
     app = QApplication(["Rosida"] + sys.argv[1:])
+
+    # Debugger
+    if os.environ.get("DEBUG") == "1" or "--debug" in sys.argv:
+        from debug import ClickDebugFilter
+        debug_filter = ClickDebugFilter(app)
+        app.installEventFilter(debug_filter)
+        print("==> Click-Debugging aktiviert.")
 
     # Icon for Linux/Wayland
     icon_path = Path(__file__).parent / "logo.svg"
