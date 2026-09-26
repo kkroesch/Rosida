@@ -36,7 +36,10 @@ from actions.edit import DeleteCellCommand, InsertCellCommand
 from widgets.clickable_frame import ClickableOutputFrame
 from widgets.data import PolarsTableWidget
 from widgets.inline_editor import InlineEditor
+from widgets.callout import CalloutWidget
+from widgets.figure import FigureWidget
 from widgets.math_text import MathTextBrowser, math_to_png_qimage, render_markdown_with_math
+
 
 
 def get_namespace_snapshot(ns: dict) -> list[dict]:
@@ -277,7 +280,29 @@ class InPlaceCell(QWidget):
         self._is_collapsed_empty = False
 
         if effective_mode == "markdown":
-            self._render_markdown_mode(content)
+            # Basisverzeichnis ermitteln
+            win = self.window()
+            base_dir = (
+                Path(win.current_filepath).parent
+                if getattr(win, "current_filepath", None)
+                else Path.cwd()
+            )
+
+            # Fall A: Quarto Callout-Box
+            if content.startswith(":::") and "{.callout-" in content:
+                widget = CalloutWidget(content, namespace=self.namespace, parent=self)
+                self.view_layout.addWidget(widget)
+                self.view_frame.attach_click_listeners(widget)
+
+            # Fall B: Quarto / Markdown Abbildung
+            elif content.startswith("![") and "](" in content:
+                widget = FigureWidget(content, base_dir=base_dir, parent=self)
+                self.view_layout.addWidget(widget)
+                self.view_frame.attach_click_listeners(widget)
+
+            # Fall C: Regulärer Fließtext mit Mathe
+            else:
+                self._render_markdown_mode(content)
         else:
             code_to_run = content
             if code_to_run.startswith("```python") or code_to_run.startswith("```py"):

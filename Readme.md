@@ -8,6 +8,18 @@ Eine ausführlichere Einführung mit Beispielen (Python, NumPy, Matplotlib, SymP
 
 ---
 
+::: {.callout-warning}
+Niemals Notebooks aus nicht vertrauenswürdiger Quelle öffnen!
+:::
+
+---
+
+
+![Rosida mit geladenem Dokument](docs/screenshot.png){#fig-arch}
+---
+
+
+
 ## Kernmerkmale
 
 * **Natives Markdown als Dokumentenformat:** Notizbücher werden als reguläre `.md`-Dateien gespeichert. Code-Zellen sind gewöhnliche Fenced Code Blocks (` ```python ... ``` `), mehrere Text-Zellen werden durch `---` getrennt. Vollständige Git-Diff-Kompatibilität ohne Merge-Konflikte.
@@ -20,8 +32,6 @@ Eine ausführlichere Einführung mit Beispielen (Python, NumPy, Matplotlib, SymP
 * **Dokumentstruktur-Übersicht:** Einklappbare Gliederungs-Seitenleiste aus den Überschriften und Zellen des Dokuments, Klick springt direkt zur Zelle.
 * **Export:** Verlustfreier Vektor-PDF-Druck sowie Export als Quarto-Dokument (`.qmd`, inkl. ausgewerteter `{{ }}`-Ausdrücke, Tabellen und Grafiken) direkt aus dem Dokument.
 * **Hilfe-Menü:** Eingebautes Handbuch (`F1`, öffnet beim allerersten Start automatisch), Über-Dialog und zuletzt geöffnete Dateien.
-
----
 
 ## Dateiformat-Spezifikation
 
@@ -41,9 +51,8 @@ t, gamma, omega = sp.symbols('t gamma omega', positive=True)
 f = sp.exp(-gamma * t) * sp.cos(omega * t)
 sp.diff(f, t)
 ```
-````
 
----
+````
 
 ## Installation & Start
 
@@ -76,8 +85,6 @@ Optional kann eine Datei direkt übergeben werden:
 uv run --with pyside6 --with polars --with sympy --with matplotlib --with numpy --with qtawesome \
   src/app.py beispiel.md
 ```
-
----
 
 ## Plattform-Builds
 
@@ -115,8 +122,6 @@ flatpak run ch.kroesch.rosida
 
 > **Hinweis:** Das Manifest installiert aktuell nur den historischen Flat-Layout-Stand (`rosida_app.py`, `document.py`, ohne Polars/qtawesome) und muss vor dem nächsten Release noch an die aktuelle `src/`-Paketstruktur und die vollständige Abhängigkeitsliste angepasst werden.
 
----
-
 ## Architektur
 
 Die Architektur folgt modularen Prinzipien zur klaren Trennung von Darstellung, Persistenz und Ausführung (alles unter `src/`):
@@ -129,8 +134,6 @@ Die Architektur folgt modularen Prinzipien zur klaren Trennung von Darstellung, 
 * **`exporters/`:** Reine Export-Funktionen, entkoppelt von der UI – `pdf.py` (Vektor-PDF) und `qmd.py` (Quarto-Renderer).
 * **`docs/adr.md`:** Dokumentation aller architektonischen Richtungsentscheidungen (ADRs).
 * **`docs/quickstart.md`:** Kurzanleitung mit Beispielen für Einsteiger.
-
----
 
 ## Lizenz
 
