@@ -35,3 +35,13 @@ class TogglePaletteDockAction(ToggleDockAction):
     self.setShortcut(QKeySequence("F4"))
     self.setToolTip("LaTeX-Palette ein-/ausblenden (F4)")
     self.set_icon_name("fa5s.square-root-alt")
+
+
+class ToggleVariablesDockAction(ToggleDockAction):
+
+  def __init__(self, dock_widget, parent=None):
+    super().__init__(dock_widget, "Variablen (Sidebar)", parent)
+
+    self.setShortcut(QKeySequence("F3"))
+    self.setToolTip("Variablen-Inspektor ein-/ausblenden (F3)")
+    self.set_icon_name("fa5s.table")

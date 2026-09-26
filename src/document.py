@@ -4,6 +4,7 @@ from io import StringIO
 from pathlib import Path
 import re
 import json
+import inspect
 
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
@@ -37,6 +38,43 @@ from widgets.data import PolarsTableWidget
 from widgets.inline_editor import InlineEditor
 from widgets.math_text import MathTextBrowser, math_to_png_qimage, render_markdown_with_math
 
+
+def get_namespace_snapshot(ns: dict) -> list[dict]:
+    """ Helper: Collect all variables from namespace. """
+    snapshot = []
+    for name, val in ns.items():
+        if name.startswith("_"):
+            continue
+        if inspect.ismodule(val) or inspect.isfunction(val) or inspect.isclass(val):
+            continue
+
+        # Typ & lesbare Repräsentation ableiten
+        type_name = type(val).__name__
+
+        # Polars / DataFrames
+        if hasattr(val, "shape") and hasattr(val, "schema"):
+            h, w = val.shape
+            value_str = f"[{h} × {w}]"
+        # NumPy
+        elif hasattr(val, "shape") and hasattr(val, "dtype"):
+            value_str = f"shape {val.shape}, {val.dtype}"
+        # Standard-Typen
+        elif isinstance(val, (int, float, bool)):
+            value_str = str(val)
+        elif isinstance(val, str):
+            value_str = repr(val[:37] + "..." if len(val) > 40 else val)
+        elif isinstance(val, (list, tuple, set)):
+            value_str = f"len {len(val)}"
+        elif isinstance(val, dict):
+            value_str = f"{len(val)} Schlüssel"
+        else:
+            raw = repr(val)
+            value_str = raw[:37] + "..." if len(raw) > 40 else raw
+
+        snapshot.append({"name": name, "type": type_name, "value": value_str})
+
+    # Sortiert nach Name
+    return sorted(snapshot, key=lambda x: x["name"].lower())
 
 class InPlaceCell(QWidget):
     """Interactive notebook cell with smart mode detection, no radio buttons, and in-place switching."""
@@ -389,6 +427,7 @@ class DocumentCanvas(QWidget):
     structure_changed = Signal(list)
     cell_executed = Signal(object)
     modified_changed = Signal(bool)
+    variables_updated = Signal(list)
 
     def __init__(self, kernel_namespace: dict, parent=None):
         super().__init__(parent)
@@ -474,6 +513,9 @@ class DocumentCanvas(QWidget):
 
     def _on_cell_executed(self, cell: InPlaceCell):
         self.cell_executed.emit(cell)
+        # Snapshot aus dem geteilten Canvas-Namensraum ziehen und melden
+        snapshot = get_namespace_snapshot(self.namespace)
+        self.variables_updated.emit(snapshot)
         if not self._is_loading:
             self.ensure_trailing_cell()
             self.structure_changed.emit(self.cells)

@@ -36,9 +36,10 @@ from actions.file import (
     add_recent_file,
 )
 from actions.help import AboutAction, ManualAction, SettingsAction, maybe_show_manual_on_first_run
-from actions.view import ToggleStructureDockAction, TogglePaletteDockAction
+from actions.view import ToggleStructureDockAction, TogglePaletteDockAction, ToggleVariablesDockAction
 from docks.latex import LatexPaletteDock
 from docks.structure_outline import StructureOutlineDock
+from docks.inspector import VariableInspectorDock
 
 try:
     from document import DocumentCanvas, InPlaceCell
@@ -119,6 +120,12 @@ class RosidaApp(QMainWindow):
         self.dock_palette.insert_requested.connect(self.doc.insert_text_into_active)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dock_palette)
 
+        self.dock_variables = VariableInspectorDock(self)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dock_variables)
+
+        self.act_toggle_variables = ToggleVariablesDockAction(self.dock_variables, self)
+        self.doc.variables_updated.connect(self.dock_variables.update_variables)
+
     def _setup_actions(self):
         # Datei
         self.act_new = NewDocumentAction(self, self)
@@ -189,6 +196,8 @@ class RosidaApp(QMainWindow):
         menu_view = menubar.addMenu("&Ansicht")
         menu_view.addAction(self.act_toggle_structure)
         menu_view.addAction(self.act_toggle_palette)
+        menu_view.addAction(self.act_toggle_variables)
+
 
         menu_help = menubar.addMenu("&Hilfe")
         menu_help.addAction(self.act_manual)
