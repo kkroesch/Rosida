@@ -685,7 +685,7 @@ class DocumentCanvas(QWidget):
 
         full_md = "\n\n".join(chunks) + "\n"
         with open(filepath, "w", encoding="utf-8") as f:
-        f.write(full_md)
+            f.write(full_md)
 
         self.undo_stack.setClean()
         self.set_modified(False)
