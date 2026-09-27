@@ -1,0 +1,14 @@
+{
+  "typography": {
+    "font_family_body": "'CMU Serif', 'Latin Modern Roman', serif",
+    "font_family_headings": "'CMU Sans Serif', sans-serif",
+    "font_family_quote": "'CMU Concrete', serif",
+    "font_family_mono": "'CMU Typewriter Text', monospace",
+    "font_size_body": 16,
+    "font_size_h1": 27,
+    "font_size_h2": 21,
+    "font_size_h3": 18,
+    "line_height": 1.6,
+    "math_scale": 1.0
+  }
+}
