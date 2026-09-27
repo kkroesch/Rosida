@@ -267,36 +267,36 @@ def render_markdown_with_math(md_text: str, browser: MathTextBrowser, fontsize: 
         if lines[0].startswith("# "):
             heading_text = _format_text_line(lines[0][2:].strip(), inlines)
             html_parts.append(
-                f'<h1 style="color: #0f172a; margin: 10px 0 6px 0; font-size: 20px; font-weight: 700;">{heading_text}</h1>'
+                f'<h1 style="color: #0f172a; margin: 10px 0 6px 0; ">{heading_text}</h1>'
             )
             if len(lines) > 1:
                 rest = _format_text_line("<br>".join(lines[1:]), inlines)
-                html_parts.append(f'<p style="color: #334155; line-height: 1.6; margin: 4px 0; font-size: 13px;">{rest}</p>')
+                html_parts.append(f'<p style="color: #334155; line-height: 1.6; margin: 4px 0; ">{rest}</p>')
             continue
         elif lines[0].startswith("## "):
             heading_text = _format_text_line(lines[0][3:].strip(), inlines)
             html_parts.append(
-                f'<h2 style="color: #1e293b; margin: 8px 0 4px 0; font-size: 16px; font-weight: 600;">{heading_text}</h2>'
+                f'<h2 style="color: #1e293b; margin: 8px 0 4px 0; ">{heading_text}</h2>'
             )
             if len(lines) > 1:
                 rest = _format_text_line("<br>".join(lines[1:]), inlines)
-                html_parts.append(f'<p style="color: #334155; line-height: 1.6; margin: 4px 0; font-size: 13px;">{rest}</p>')
+                html_parts.append(f'<p style="color: #334155; line-height: 1.6; margin: 4px 0; ">{rest}</p>')
             continue
         elif lines[0].startswith("### "):
             heading_text = _format_text_line(lines[0][4:].strip(), inlines)
             html_parts.append(
-                f'<h3 style="color: #334155; margin: 6px 0 3px 0; font-size: 14px; font-weight: 600;">{heading_text}</h3>'
+                f'<h3 style="color: #334155; margin: 6px 0 3px 0; ">{heading_text}</h3>'
             )
             if len(lines) > 1:
                 rest = _format_text_line("<br>".join(lines[1:]), inlines)
-                html_parts.append(f'<p style="color: #334155; line-height: 1.6; margin: 4px 0; font-size: 13px;">{rest}</p>')
+                html_parts.append(f'<p style="color: #334155; line-height: 1.6; margin: 4px 0;">{rest}</p>')
             continue
         elif lines[0].startswith("> "):
             quote_content = "\n".join([l[2:] if l.startswith("> ") else l for l in lines])
             inner = _format_text_line(quote_content.replace("\n", "<br>"), inlines)
             html_parts.append(
                 f'<blockquote style="color: #64748b; border-left: 3px solid #cbd5e1; '
-                f'margin: 8px 0; padding: 4px 0 4px 10px; font-style: italic;">{inner}</blockquote>'
+                f'margin-top: 1.5em; margin-bottom: 1.5em;">{inner}</blockquote>'
             )
             continue
 
@@ -305,7 +305,7 @@ def render_markdown_with_math(md_text: str, browser: MathTextBrowser, fontsize: 
             if placeholder in p_content:
                 p_content = p_content.replace(placeholder, block_html)
 
-        html_parts.append(f'<p style="color: #334155; line-height: 1.6; margin: 5px 0; font-size: 13px;">{p_content}</p>')
+        html_parts.append(f'<p style="color: #334155; line-height: 1.6; margin: 5px 0;">{p_content}</p>')
 
     full_html = "".join(html_parts)
     for placeholder, inline_html in inlines.items():
