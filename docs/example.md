@@ -17,7 +17,7 @@ $$\int \sin(x) e^x \, dx = \frac{e^x}{2} (\sin(x) - \cos(x)) + C$$
 
 > *Hinweis: Klicke auf eine Formel oder Grafik, um Code oder Text direkt zu bearbeiten. Mit Escape kehrst du in die Ansicht zurück.*
 
-## 1. Symbolische Ableitung mit SymPy
+## Symbolische Ableitung mit SymPy
 
 Hier berechnen wir die erste Ableitung $f'(x)$:
 
@@ -27,7 +27,7 @@ f = sp.sin(x) * sp.exp(x)
 sp.diff(f, x)
 ```
 
-## 2. Grafischer Verlauf
+## Grafischer Verlauf
 
 Visualisierung des Funktionsgraphen über das Intervall $[0, 3]$:
 
@@ -45,3 +45,16 @@ ax.grid(True, linestyle=':', alpha=0.6)
 ax.legend(frameon=False, loc='upper left')
 fig
 ```
+
+Auch weitere Abbildungen können eingefügt werden, müssen aber ein einem separaten Block stehen.
+
+---
+
+![Screenshot der Abbildung](screenshot.png){#fig-screenshot}
+
+---
+
+::: {.callout-note}
+**Pfade anpassen**
+Der Pfad ist relativ zum Verzeicnis des aktuelle Dokuments.
+:::
