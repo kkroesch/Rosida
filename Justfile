@@ -30,6 +30,11 @@ test-watch:
 metrics:
     uv run --with radon --with ruff --with vulture python scripts/metrics.py
 
+# Zeigt das exportierte QMD File an
+preview file="docs/example.qmd":
+    QUARTO_PYTHON=$HOME/.local/quarto-1.6.42/venv/bin/python \
+        ~/.local/quarto-1.6.42/bin/quarto preview {{file}}
+
 # Startet ein interaktives IPython Notebook zum Ausprobieren
 notebook:
     uv run --with matplotlib --with numpy --with polars \
