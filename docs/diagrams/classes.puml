@@ -1,0 +1,273 @@
+@startuml
+skinparam classAttributeIconSize 0
+skinparam monochrome true
+hide empty members
+class ClickDebugFilter {
+  +eventFilter(watched, event)
+}
+QObject <|-- ClickDebugFilter
+class RosidaApp {
+  +__init__(initial_filepath)
+  +_setup_statusbar()
+  +_setup_docks()
+  +_setup_actions()
+  +_setup_menus()
+  +_setup_toolbars()
+  +set_current_filepath(filepath)
+  +_update_window_title()
+  +...
+}
+QMainWindow <|-- RosidaApp
+class InPlaceCell {
+  {field} ⚡ +executed : Signal(void)
+  {field} ⚡ +cell_focused : Signal(object)
+  {field} ⚡ +content_updated : Signal(void)
+  +__init__(kernel_namespace, parent)
+  +_show_stack_page(index)
+  +cycle_mode()
+  +set_mode(mode)
+  +get_mode()
+  +_update_mode_pill()
+  +_detect_effective_mode(content)
+  +switch_to_edit()
+  +...
+}
+QWidget <|-- InPlaceCell
+class DocumentCanvas {
+  {field} ⚡ +active_cell_changed : Signal(object, int, int)
+  {field} ⚡ +structure_changed : Signal(list)
+  {field} ⚡ +cell_executed : Signal(object)
+  {field} ⚡ +modified_changed : Signal(bool)
+  {field} ⚡ +variables_updated : Signal(list)
+  +__init__(kernel_namespace, parent)
+  +is_modified()
+  +set_modified(modified)
+  +get_active_cell()
+  +get_active_index()
+  +set_active_cell(cell)
+  +_create_cell_widget(initial_text, mode)
+  +_attach_cell_widget(cell, index)
+  +...
+}
+QWidget <|-- DocumentCanvas
+class RosidaAction {
+  +__init__(text, parent)
+  +set_icon_name(name, color)
+}
+QAction <|-- RosidaAction
+class RunCellAction {
+  +__init__(document_canvas, parent)
+}
+RosidaAction <|-- RunCellAction
+class RunAllAction {
+  +__init__(document_canvas, parent)
+}
+RosidaAction <|-- RunAllAction
+class InsertCellCommand {
+  +__init__(doc_canvas, index, text, mode, auto_run, description)
+  +redo()
+  +undo()
+}
+QUndoCommand <|-- InsertCellCommand
+class DeleteCellCommand {
+  +__init__(doc_canvas, cell, description)
+  +redo()
+  +undo()
+}
+QUndoCommand <|-- DeleteCellCommand
+class UndoAction {
+  +__init__(document_canvas, parent)
+  +_execute()
+}
+RosidaAction <|-- UndoAction
+class RedoAction {
+  +__init__(document_canvas, parent)
+  +_execute()
+}
+RosidaAction <|-- RedoAction
+class InsertCellAboveAction {
+  +__init__(document_canvas, parent)
+}
+RosidaAction <|-- InsertCellAboveAction
+class InsertCellBelowAction {
+  +__init__(document_canvas, parent)
+}
+RosidaAction <|-- InsertCellBelowAction
+class DeleteCellAction {
+  +__init__(document_canvas, parent)
+}
+RosidaAction <|-- DeleteCellAction
+class ToggleModeAction {
+  +__init__(document_canvas, parent)
+}
+RosidaAction <|-- ToggleModeAction
+class NewDocumentAction {
+  +__init__(main_window, parent)
+  +_execute()
+}
+RosidaAction <|-- NewDocumentAction
+class OpenDocumentAction {
+  +__init__(main_window, parent)
+  +_execute()
+}
+RosidaAction <|-- OpenDocumentAction
+class RecentFilesMenu {
+  +__init__(main_window, parent)
+  +_rebuild()
+  +_open(filepath)
+  +_clear()
+}
+QMenu <|-- RecentFilesMenu
+class SaveAction {
+  +__init__(main_window, parent)
+  +_update_state(is_modified)
+  +_execute()
+}
+RosidaAction <|-- SaveAction
+class SaveAsAction {
+  +__init__(main_window, parent)
+  +_execute()
+}
+RosidaAction <|-- SaveAsAction
+class ExportPdfAction {
+  +__init__(main_window, parent)
+  +_execute()
+}
+RosidaAction <|-- ExportPdfAction
+class ExportQmdAction {
+  +__init__(main_window, parent)
+  +_execute()
+}
+RosidaAction <|-- ExportQmdAction
+class QuitAction {
+  +__init__(main_window, parent)
+}
+RosidaAction <|-- QuitAction
+class ManualAction {
+  +__init__(main_window, parent)
+  +_execute()
+}
+RosidaAction <|-- ManualAction
+class AboutAction {
+  +__init__(main_window, parent)
+  +_execute()
+}
+RosidaAction <|-- AboutAction
+class SettingsAction {
+  +__init__(main_window, parent)
+  +_execute()
+}
+RosidaAction <|-- SettingsAction
+class ToggleDockAction {
+  +__init__(dock_widget, text, parent)
+}
+RosidaAction <|-- ToggleDockAction
+class ToggleStructureDockAction {
+  +__init__(dock_widget, parent)
+}
+ToggleDockAction <|-- ToggleStructureDockAction
+class TogglePaletteDockAction {
+  +__init__(dock_widget, parent)
+}
+ToggleDockAction <|-- TogglePaletteDockAction
+class ToggleVariablesDockAction {
+  +__init__(dock_widget, parent)
+}
+ToggleDockAction <|-- ToggleVariablesDockAction
+class CollapsibleSection {
+  +__init__(title, content_widget, parent, is_expanded)
+  +_toggle(checked)
+  +_update_state()
+}
+QWidget <|-- CollapsibleSection
+class LatexPaletteDock {
+  {field} ⚡ +insert_requested : Signal(str)
+  +__init__(parent)
+  +_create_btn(label, code, tip)
+  +_build_calculus_widget()
+  +_build_greek_widget()
+  +_build_symbols_widget()
+  +_build_matrices_widget()
+  +_build_quarto_widget()
+}
+QDockWidget <|-- LatexPaletteDock
+class StructureOutlineDock {
+  {field} ⚡ +item_selected : Signal(int)
+  +__init__(parent)
+  +_on_item_clicked(item)
+  +update_outline(cells)
+}
+QDockWidget <|-- StructureOutlineDock
+class VariableInspectorDock {
+  {field} ⚡ +variable_double_clicked : Signal(str)
+  +__init__(parent)
+  +_on_row_double_clicked(row, _column)
+  +update_variables(variables)
+}
+QDockWidget <|-- VariableInspectorDock
+class QmdRenderer {
+  +__init__(output_dir, asset_subfolder)
+  +_save_figure(fig, caption)
+  +format_value(val, is_block)
+  +render(template, context, metadata)
+}
+class ClickableOutputFrame {
+  {field} ⚡ +clicked : Signal(void)
+  +__init__(parent)
+  +mousePressEvent(event)
+  +attach_click_listeners(widget)
+  +eventFilter(watched, event)
+}
+QFrame <|-- ClickableOutputFrame
+class PolarsTableModel {
+  +__init__(df)
+  +rowCount(parent)
+  +columnCount(parent)
+  +data(index, role)
+  +headerData(section, orientation, role)
+}
+QAbstractTableModel <|-- PolarsTableModel
+class PolarsTableWidget {
+  +__init__(df, parent)
+  +_open_header_menu(pos)
+}
+QWidget <|-- PolarsTableWidget
+class InlineEditor {
+  {field} ⚡ +run_requested : Signal(void)
+  {field} ⚡ +escape_pressed : Signal(void)
+  {field} ⚡ +mode_toggle_requested : Signal(void)
+  {field} ⚡ +focused_in : Signal(void)
+  +__init__(parent)
+  +focusInEvent(event)
+  +resizeEvent(event)
+  +adjust_initial_height()
+  +_on_content_changed()
+  +keyPressEvent(event)
+  +_adjust_height()
+  +setPlainText(text)
+}
+QPlainTextEdit <|-- InlineEditor
+class MacResizeGrip {
+  +__init__(target_editor, parent)
+  +mousePressEvent(event)
+  +mouseMoveEvent(event)
+  +mouseReleaseEvent(event)
+  +paintEvent(event)
+}
+QWidget <|-- MacResizeGrip
+class FigureWidget {
+  +__init__(raw_text, base_dir, fig_number, parent)
+  +_load_pixmap(src, base_dir)
+}
+QFrame <|-- FigureWidget
+class CalloutWidget {
+  +__init__(raw_text, namespace, parent)
+}
+QFrame <|-- CalloutWidget
+class MathTextBrowser {
+  +__init__(parent)
+  +add_math_resource(name, img)
+  +loadResource(res_type, name)
+}
+QTextBrowser <|-- MathTextBrowser
+@enduml

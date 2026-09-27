@@ -116,4 +116,4 @@ def generate_plantuml(source_dir: Path, out_dir: Path):
 
 
 if __name__ == "__main__":
-  generate_plantuml(Path("."), Path("docs/diagrams"))
+  generate_plantuml(Path("src"), Path("docs/diagrams"))

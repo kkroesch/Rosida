@@ -1,0 +1,56 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam arrowThickness 1.2
+title Rosida Signal-Slot Verkabelung (Runtime Connections)
+[doc] --> [_on_active_cell_changed] : <<active_cell_changed>>
+[doc] --> [dock_structure.update_outline] : <<structure_changed>>
+[doc] --> [_on_cell_executed] : <<cell_executed>>
+[doc] --> [lambda _: _update_window_title()] : <<modified_changed>>
+[dock_structure] --> [doc.scroll_to_cell] : <<item_selected>>
+[dock_palette] --> [doc.insert_text_into_active] : <<insert_requested>>
+[doc] --> [dock_variables.update_variables] : <<variables_updated>>
+[dock_variables] --> [doc.insert_text_into_active] : <<variable_double_clicked>>
+[btn_mode_pill] --> [cycle_mode] : <<clicked>>
+[editor] --> [render] : <<run_requested>>
+[editor] --> [cancel_edit] : <<escape_pressed>>
+[editor] --> [cycle_mode] : <<mode_toggle_requested>>
+[editor] --> [lambda: cell_focused.emit(self)] : <<focused_in>>
+[editor] --> [content_updated.emit] : <<textChanged>>
+[view_frame] --> [switch_to_edit] : <<clicked>>
+[self] --> [lambda _cells: set_modified(True)] : <<structure_changed>>
+[cell] --> [set_active_cell] : <<cell_focused>>
+[cell] --> [lambda: structure_changed.emit(cells)] : <<content_updated>>
+[cell] --> [lambda: _on_cell_executed(cell)] : <<executed>>
+[self] --> [doc.run_active_cell] : <<triggered>>
+[self] --> [doc.run_all_cells] : <<triggered>>
+[self] --> [_execute] : <<triggered>>
+[self] --> [_execute] : <<triggered>>
+[self] --> [doc.insert_cell_above] : <<triggered>>
+[self] --> [doc.insert_cell_below] : <<triggered>>
+[self] --> [doc.delete_active_cell] : <<triggered>>
+[self] --> [doc.toggle_active_mode] : <<triggered>>
+[self] --> [_execute] : <<triggered>>
+[self] --> [_execute] : <<triggered>>
+[self] --> [_rebuild] : <<aboutToShow>>
+[action] --> [lambda checked=False, p=filepath: _open(p)] : <<triggered>>
+[addAction('Liste leeren')] --> [_clear] : <<triggered>>
+[self] --> [_execute] : <<triggered>>
+[win.doc] --> [_update_state] : <<modified_changed>>
+[self] --> [_execute] : <<triggered>>
+[self] --> [_execute] : <<triggered>>
+[self] --> [_execute] : <<triggered>>
+[self] --> [win.close] : <<triggered>>
+[self] --> [_execute] : <<triggered>>
+[self] --> [_execute] : <<triggered>>
+[self] --> [_execute] : <<triggered>>
+[self] --> [dock.setVisible] : <<toggled>>
+[dock] --> [setChecked] : <<visibilityChanged>>
+[toggle_btn] --> [_toggle] : <<clicked>>
+[btn] --> [lambda: insert_requested.emit(code)] : <<clicked>>
+[tree] --> [_on_item_clicked] : <<itemClicked>>
+[table] --> [_on_row_double_clicked] : <<cellDoubleClicked>>
+[header] --> [_open_header_menu] : <<customContextMenuRequested>>
+[search_input] --> [proxy_model.setFilterFixedString] : <<textChanged>>
+[action] --> [lambda checked, idx=col_idx: table_view.setColumnHidden(idx, not checked)] : <<toggled>>
+[self] --> [_on_content_changed] : <<textChanged>>
+@enduml
