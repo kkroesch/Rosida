@@ -1,6 +1,7 @@
 ---
 title: Rosida Dokument
 execute:
+    eval: false
     echo: false
 format:
   html: default
@@ -28,7 +29,7 @@ $$\int \sin(x) e^x \, dx = \frac{e^x}{2} (\sin(x) - \cos(x)) + C$$
 
 Hier berechnen wir die erste Ableitung $f'(x)$:
 
-```python
+```{python}
 x = sp.symbols('x')
 f = sp.sin(x) * sp.exp(x)
 sp.diff(f, x)
@@ -44,7 +45,7 @@ $$
 
 Visualisierung des Funktionsgraphen über das Intervall $[0, 3]$:
 
-```python
+```{python}
 fig, ax = plt.subplots(figsize=(7.0, 2.8), dpi=100)
 x_vals = np.linspace(0, 3, 200)
 y_vals = np.sin(x_vals) * np.exp(x_vals)
