@@ -85,3 +85,24 @@ class InlineEditor(QPlainTextEdit):
             event.accept()
             return
         super().keyPressEvent(event)
+
+    def _adjust_height(self):
+        """Berechnet die exakte Pixelhöhe anhand der Block-/Zeilenanzahl."""
+        # 1. Zeilenanzahl ermitteln (mindestens 1)
+        lines = max(1, self.blockCount())
+
+        # 2. Metriken und Ränder
+        fm = self.fontMetrics()
+        line_height = fm.lineSpacing()
+        doc_margin = int(self.document().documentMargin() * 2)
+        frame_width = self.frameWidth() * 2
+        padding = 8  # Puffer für Cursor und Zeilenabstand
+
+        # 3. Feste Höhe setzen
+        total_height = (lines * line_height) + doc_margin + frame_width + padding
+        self.setFixedHeight(total_height)
+
+    def setPlainText(self, text: str):
+        """Überschreibt setPlainText, um die Höhe beim Laden sofort anzupassen."""
+        super().setPlainText(text)
+        self._adjust_height()
