@@ -30,5 +30,9 @@ test-watch:
 metrics:
     uv run --with radon --with ruff --with vulture python scripts/metrics.py
 
+# Startet ein interaktives IPython Notebook zum Ausprobieren
+notebook:
+    uv run --with matplotlib --with numpy --with pyqt6 --with ipython ipython -i -c "import numpy as np; import matplotlib.pyplot as plt"
+
 mod macos 'build/macos/Justfile'
 mod linux 'build/linux/Justfile'
