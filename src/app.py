@@ -35,8 +35,17 @@ from actions.file import (
     SaveAsAction,
     add_recent_file,
 )
-from actions.help import AboutAction, ManualAction, SettingsAction, maybe_show_manual_on_first_run
-from actions.view import ToggleStructureDockAction, TogglePaletteDockAction, ToggleVariablesDockAction
+from actions.help import (
+    AboutAction,
+    ManualAction,
+    SettingsAction,
+    maybe_show_manual_on_first_run,
+)
+from actions.view import (
+    ToggleStructureDockAction,
+    TogglePaletteDockAction,
+    ToggleVariablesDockAction,
+)
 from docks.latex import LatexPaletteDock
 from docks.structure_outline import StructureOutlineDock
 from docks.inspector import VariableInspectorDock
@@ -93,10 +102,14 @@ class RosidaApp(QMainWindow):
     def _setup_statusbar(self):
         self.statusbar = QStatusBar(self)
         self.setStatusBar(self.statusbar)
-        self.statusbar.setStyleSheet("QStatusBar { background: #f1f5f9; border-top: 1px solid #e2e8f0; font-size: 11px; }")
+        self.statusbar.setStyleSheet(
+            "QStatusBar { background: #f1f5f9; border-top: 1px solid #e2e8f0; font-size: 11px; }"
+        )
 
         self.lbl_cell_info = QLabel("Zelle 1 von 1")
-        self.lbl_cell_info.setStyleSheet("color: #475569; padding: 0 10px; font-weight: 500;")
+        self.lbl_cell_info.setStyleSheet(
+            "color: #475569; padding: 0 10px; font-weight: 500;"
+        )
 
         self.lbl_mode_badge = QLabel("⚡ Auto")
         self.lbl_mode_badge.setStyleSheet(
@@ -104,7 +117,9 @@ class RosidaApp(QMainWindow):
         )
 
         self.lbl_kernel_status = QLabel("● Kernel: Bereit")
-        self.lbl_kernel_status.setStyleSheet("color: #16a34a; font-weight: bold; padding: 0 10px;")
+        self.lbl_kernel_status.setStyleSheet(
+            "color: #16a34a; font-weight: bold; padding: 0 10px;"
+        )
 
         self.statusbar.addPermanentWidget(self.lbl_cell_info)
         self.statusbar.addPermanentWidget(self.lbl_mode_badge)
@@ -201,7 +216,6 @@ class RosidaApp(QMainWindow):
         menu_view.addAction(self.act_toggle_palette)
         menu_view.addAction(self.act_toggle_variables)
 
-
         menu_help = menubar.addMenu("&Hilfe")
         menu_help.addAction(self.act_manual)
         menu_help.addSeparator()
@@ -263,7 +277,7 @@ class RosidaApp(QMainWindow):
         self._update_window_title()
 
     def _update_window_title(self):
-        dirty_flag = " *" if hasattr(self, 'doc') and self.doc.is_modified() else ""
+        dirty_flag = " *" if hasattr(self, "doc") and self.doc.is_modified() else ""
         if self.current_filepath:
             name = os.path.basename(self.current_filepath)
             self.setWindowTitle(f"Rosida – {name}{dirty_flag}")
@@ -292,7 +306,9 @@ class RosidaApp(QMainWindow):
 
     def _on_cell_executed(self, cell):
         self.lbl_kernel_status.setText("● Kernel: Zelle berechnet")
-        self.lbl_kernel_status.setStyleSheet("color: #0284c7; font-weight: bold; padding: 0 10px;")
+        self.lbl_kernel_status.setStyleSheet(
+            "color: #0284c7; font-weight: bold; padding: 0 10px;"
+        )
         self.statusbar.showMessage("Ausführung abgeschlossen", 2500)
 
     def _load_document_on_start(self):
@@ -315,14 +331,20 @@ class RosidaApp(QMainWindow):
     def closeEvent(self, event: QCloseEvent):
         # Model direkt abfragen statt über den Button-State
         if not self.doc.is_modified():
-          event.accept()
-          return
+            event.accept()
+            return
 
         # Dokument ist schmutzig (dirty) -> Prompt anzeigen
-        filename = Path(self.current_filepath).name if self.current_filepath else "Unbenanntes Dokument"
+        filename = (
+            Path(self.current_filepath).name
+            if self.current_filepath
+            else "Unbenanntes Dokument"
+        )
         box = QMessageBox(self)
         box.setWindowTitle("Änderungen speichern?")
-        box.setText(f"Möchtest du die Änderungen in »{filename}« vor dem Beenden speichern?")
+        box.setText(
+            f"Möchtest du die Änderungen in »{filename}« vor dem Beenden speichern?"
+        )
         box.setStandardButtons(
             QMessageBox.StandardButton.Save
             | QMessageBox.StandardButton.Discard
@@ -333,31 +355,33 @@ class RosidaApp(QMainWindow):
         choice = box.exec()
 
         if choice == QMessageBox.StandardButton.Save:
-          # Speichern triggern (SaveAction-Logik nutzen)
-          if not self.current_filepath:
-            self.act_save_as.trigger()
-          else:
-            self.act_save.trigger()
+            # Speichern triggern (SaveAction-Logik nutzen)
+            if not self.current_filepath:
+                self.act_save_as.trigger()
+            else:
+                self.act_save.trigger()
 
-          # Falls Speichern erfolgreich war (nicht abgebrochen wurde)
-          if not self.doc.is_modified():
-            event.accept()
-          else:
-            event.ignore()
+            # Falls Speichern erfolgreich war (nicht abgebrochen wurde)
+            if not self.doc.is_modified():
+                event.accept()
+            else:
+                event.ignore()
 
         elif choice == QMessageBox.StandardButton.Discard:
-          event.accept()
+            event.accept()
 
         else:  # Cancel
-          event.ignore()
+            event.ignore()
+
 
 def load_application_fonts():
-  fonts_dir = Path(__file__).resolve().parent / "assets" / "fonts"
-  if not fonts_dir.is_dir():
-    return
+    fonts_dir = Path(__file__).resolve().parent / "assets" / "fonts"
+    if not fonts_dir.is_dir():
+        return
 
-  for font_file in fonts_dir.glob("*.ttf"):
-    QFontDatabase.addApplicationFont(str(font_file))
+    for font_file in fonts_dir.glob("*.ttf"):
+        QFontDatabase.addApplicationFont(str(font_file))
+
 
 def main():
     # Icon & App Name for MacOS
@@ -371,6 +395,7 @@ def main():
     # Debugger
     if os.environ.get("DEBUG") == "1" or "--debug" in sys.argv:
         from debug import ClickDebugFilter
+
         debug_filter = ClickDebugFilter(app)
         app.installEventFilter(debug_filter)
         print("==> Click-Debugging aktiviert.")
@@ -378,10 +403,12 @@ def main():
     # Icon for Linux/Wayland
     icon_path = Path(__file__).parent / "logo.svg"
     if icon_path.exists():
-            app.setWindowIcon(QIcon(str(icon_path)))
+        app.setWindowIcon(QIcon(str(icon_path)))
 
     # Load file
-    initial_file = sys.argv[1] if len(sys.argv) > 1 and os.path.exists(sys.argv[1]) else None
+    initial_file = (
+        sys.argv[1] if len(sys.argv) > 1 and os.path.exists(sys.argv[1]) else None
+    )
     win = RosidaApp(initial_filepath=initial_file)
     win.show()
 

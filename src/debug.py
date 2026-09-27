@@ -4,7 +4,6 @@ from PySide6.QtWidgets import QAbstractButton, QWidget
 
 
 class ClickDebugFilter(QObject):
-
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.MouseButtonPress:
             # Widget-Infos ermitteln

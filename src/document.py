@@ -38,12 +38,15 @@ from widgets.data import PolarsTableWidget
 from widgets.inline_editor import InlineEditor
 from widgets.callout import CalloutWidget
 from widgets.figure import FigureWidget
-from widgets.math_text import MathTextBrowser, math_to_png_qimage, render_markdown_with_math
-
+from widgets.math_text import (
+    MathTextBrowser,
+    math_to_png_qimage,
+    render_markdown_with_math,
+)
 
 
 def get_namespace_snapshot(ns: dict) -> list[dict]:
-    """ Helper: Collect all variables from namespace. """
+    """Helper: Collect all variables from namespace."""
     snapshot = []
     for name, val in ns.items():
         if name.startswith("_"):
@@ -79,6 +82,7 @@ def get_namespace_snapshot(ns: dict) -> list[dict]:
     # Sortiert nach Name
     return sorted(snapshot, key=lambda x: x["name"].lower())
 
+
 class InPlaceCell(QWidget):
     """Interactive notebook cell with smart mode detection, no radio buttons, and in-place switching."""
 
@@ -111,7 +115,9 @@ class InPlaceCell(QWidget):
         header.setContentsMargins(4, 0, 4, 0)
 
         self.btn_mode_pill = QPushButton("⚡ Auto")
-        self.btn_mode_pill.setToolTip("Klicken oder Ctrl+M zum Umschalten (Auto / Python / Text)")
+        self.btn_mode_pill.setToolTip(
+            "Klicken oder Ctrl+M zum Umschalten (Auto / Python / Text)"
+        )
         self.btn_mode_pill.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btn_mode_pill.clicked.connect(self.cycle_mode)
         header.addWidget(self.btn_mode_pill)
@@ -318,7 +324,9 @@ class InPlaceCell(QWidget):
                 self._is_collapsed_empty = True
 
         QApplication.processEvents()
-        self.last_rendered_height = max(self.view_frame.sizeHint().height(), self.view_frame.height())
+        self.last_rendered_height = max(
+            self.view_frame.sizeHint().height(), self.view_frame.height()
+        )
         self.has_rendered_once = True
         self._show_stack_page(1)
         self.executed.emit()
@@ -416,7 +424,9 @@ class InPlaceCell(QWidget):
                 elif isinstance(last_val, Figure):
                     canvas = FigureCanvasQTAgg(last_val)
                     canvas.setMinimumHeight(280)
-                    canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+                    canvas.setSizePolicy(
+                        QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+                    )
                     self.view_layout.addWidget(canvas)
                     self.view_frame.attach_click_listeners(canvas)
 
@@ -424,7 +434,9 @@ class InPlaceCell(QWidget):
                 elif pl is not None and isinstance(last_val, pl.DataFrame):
                     table = PolarsTableWidget(last_val)
                     table.setMaximumHeight(320)
-                    table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Preferred)
+                    table.setSizePolicy(
+                        QSizePolicy.Policy.Expanding, QSizePolicy.Preferred
+                    )
                     self.view_layout.addWidget(table)
                     # WICHTIG: KEIN attach_click_listeners(table) hier!
 
@@ -440,7 +452,9 @@ class InPlaceCell(QWidget):
             self.last_stdout = f"Error: {err}"
             self.last_val = None
             err_lbl = QLabel(f"⚠️ {type(err).__name__}: {err}")
-            err_lbl.setStyleSheet("color: #dc2626; font-family: monospace; font-size: 12px; font-weight: bold;")
+            err_lbl.setStyleSheet(
+                "color: #dc2626; font-family: monospace; font-size: 12px; font-weight: bold;"
+            )
             self.view_layout.addWidget(err_lbl)
             self.view_frame.attach_click_listeners(err_lbl)
 
@@ -470,7 +484,9 @@ class DocumentCanvas(QWidget):
         self.layout.setSpacing(12)
 
         self.stretch_spacer = QWidget()
-        self.stretch_spacer.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
+        self.stretch_spacer.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding
+        )
         self.layout.addWidget(self.stretch_spacer)
 
         # Jede strukturelle oder inhaltliche Änderung (Text, Modus, Zellen) markiert das Dokument als geändert.
@@ -498,7 +514,9 @@ class DocumentCanvas(QWidget):
         idx = self.get_active_index()
         self.active_cell_changed.emit(cell, idx, len(self.cells))
 
-    def _create_cell_widget(self, initial_text: str = "", mode: str = "auto") -> InPlaceCell:
+    def _create_cell_widget(
+        self, initial_text: str = "", mode: str = "auto"
+    ) -> InPlaceCell:
         cell = InPlaceCell(self.namespace, parent=self)
         cell.set_mode(mode)
         if initial_text:
@@ -527,7 +545,13 @@ class DocumentCanvas(QWidget):
             self.layout.removeWidget(cell)
             cell.hide()
 
-    def insert_cell(self, index: int = -1, initial_text: str = "", mode: str = "auto", auto_run: bool = False) -> InPlaceCell:
+    def insert_cell(
+        self,
+        index: int = -1,
+        initial_text: str = "",
+        mode: str = "auto",
+        auto_run: bool = False,
+    ) -> InPlaceCell:
         cell = self._create_cell_widget(initial_text, mode)
         self._attach_cell_widget(cell, index)
         if auto_run:
@@ -553,7 +577,7 @@ class DocumentCanvas(QWidget):
             return
         last_cell = self.cells[-1]
         has_content = bool(last_cell.editor.toPlainText().strip())
-        is_rendered = (last_cell.stack.currentIndex() == 1)
+        is_rendered = last_cell.stack.currentIndex() == 1
         if has_content or is_rendered:
             new_cell = self.insert_cell()
             new_cell.editor.setFocus()
@@ -566,7 +590,9 @@ class DocumentCanvas(QWidget):
     def insert_cell_below(self):
         idx = self.get_active_index()
         target_idx = idx + 1 if idx >= 0 else len(self.cells)
-        cmd = InsertCellCommand(self, index=target_idx, description="Zelle darunter einfügen")
+        cmd = InsertCellCommand(
+            self, index=target_idx, description="Zelle darunter einfügen"
+        )
         self.undo_stack.push(cmd)
 
     def delete_active_cell(self):
@@ -633,7 +659,9 @@ class DocumentCanvas(QWidget):
             effective = cell._detect_effective_mode(content)
 
             if effective == "markdown":
-                body_chunks.append(renderer.render(template=content, context=cell.namespace))
+                body_chunks.append(
+                    renderer.render(template=content, context=cell.namespace)
+                )
             else:
                 code = content
                 if not (code.startswith("```python") or code.startswith("```py")):
@@ -643,7 +671,9 @@ class DocumentCanvas(QWidget):
                 if cell.last_stdout:
                     body_chunks.append(f"```\n{cell.last_stdout}\n```")
                 if cell.last_val is not None:
-                    body_chunks.append(renderer.format_value(cell.last_val, is_block=True))
+                    body_chunks.append(
+                        renderer.format_value(cell.last_val, is_block=True)
+                    )
 
         frontmatter = (
             "---\n"
@@ -655,7 +685,9 @@ class DocumentCanvas(QWidget):
         )
 
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        out_path.write_text(frontmatter + "\n\n".join(body_chunks) + "\n", encoding="utf-8")
+        out_path.write_text(
+            frontmatter + "\n\n".join(body_chunks) + "\n", encoding="utf-8"
+        )
 
     def save_to_markdown(self, filepath: str):
         """Saves notebook as a clean, human-readable Markdown file (.md)."""
@@ -712,16 +744,20 @@ class DocumentCanvas(QWidget):
             last_end = 0
 
             for match in pattern.finditer(raw_text):
-                text_before = raw_text[last_end:match.start()].strip()
+                text_before = raw_text[last_end : match.start()].strip()
                 if text_before:
                     if text_before:
                         # Hier die neue Zerlegung nutzen:
                         for part in self._split_markdown_blocks(text_before):
-                            self.insert_cell(initial_text=part, mode="markdown", auto_run=True)
+                            self.insert_cell(
+                                initial_text=part, mode="markdown", auto_run=True
+                            )
 
                 code_content = match.group(1).strip()
                 if code_content:
-                    self.insert_cell(initial_text=code_content, mode="python", auto_run=True)
+                    self.insert_cell(
+                        initial_text=code_content, mode="python", auto_run=True
+                    )
 
                 last_end = match.end()
 
@@ -770,7 +806,9 @@ class DocumentCanvas(QWidget):
                     continue
 
                 if cell_type == "markdown":
-                    self.insert_cell(initial_text=source, mode="markdown", auto_run=True)
+                    self.insert_cell(
+                        initial_text=source, mode="markdown", auto_run=True
+                    )
 
                 elif cell_type == "code":
                     # IPython-Magics (% und !) auskommentieren, um SyntaxErrors zu verhindern

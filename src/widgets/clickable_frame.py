@@ -11,7 +11,9 @@ class ClickableOutputFrame(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.setToolTip("Klicken, um Inhalt zu bearbeiten (Escape im Editor zum Schließen)")
+        self.setToolTip(
+            "Klicken, um Inhalt zu bearbeiten (Escape im Editor zum Schließen)"
+        )
         self.setStyleSheet("""
             ClickableOutputFrame {
                 background-color: transparent;
@@ -39,7 +41,10 @@ class ClickableOutputFrame(QFrame):
             child.installEventFilter(self)
 
     def eventFilter(self, watched, event):
-        if event.type() == event.Type.MouseButtonPress and event.button() == Qt.MouseButton.LeftButton:
+        if (
+            event.type() == event.Type.MouseButtonPress
+            and event.button() == Qt.MouseButton.LeftButton
+        ):
             self.clicked.emit()
             return True
         return super().eventFilter(watched, event)

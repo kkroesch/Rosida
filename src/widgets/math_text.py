@@ -108,7 +108,9 @@ def math_to_png_qimage(
     buf = BytesIO()
     prop = FontProperties(size=fontsize)
     try:
-        math_to_image(f"${clean_expr}$", buf, prop=prop, dpi=dpi, format="png", color=color)
+        math_to_image(
+            f"${clean_expr}$", buf, prop=prop, dpi=dpi, format="png", color=color
+        )
     except TypeError:
         math_to_image(f"${clean_expr}$", buf, prop=prop, dpi=dpi, format="png")
     buf.seek(0)
@@ -132,7 +134,9 @@ class MathTextBrowser(QTextBrowser):
 
     def add_math_resource(self, name: str, img: QImage):
         self._resources[name] = img
-        self.document().addResource(QTextDocument.ResourceType.ImageResource, QUrl(name), img)
+        self.document().addResource(
+            QTextDocument.ResourceType.ImageResource, QUrl(name), img
+        )
 
     def loadResource(self, res_type, name):
         url_str = name.toString()
@@ -172,9 +176,13 @@ def _evaluate_template_expressions(text: str, namespace: dict) -> str:
 
         start = match.string.rfind("\n", 0, match.start()) + 1
         end = match.string.find("\n", match.end())
-        prefix = match.string[start:match.start()].strip()
-        suffix = match.string[match.end():end].strip() if end != -1 else match.string[match.end():].strip()
-        is_block = (prefix == "" and suffix == "")
+        prefix = match.string[start : match.start()].strip()
+        suffix = (
+            match.string[match.end() : end].strip()
+            if end != -1
+            else match.string[match.end() :].strip()
+        )
+        is_block = prefix == "" and suffix == ""
 
         try:
             val = eval(expr, {}, namespace)
@@ -190,7 +198,12 @@ def _evaluate_template_expressions(text: str, namespace: dict) -> str:
     return re.sub(r"\{\{\s*(.*?)\s*\}\}", _replace, text)
 
 
-def render_markdown_with_math(md_text: str, browser: MathTextBrowser, fontsize: int = 13, namespace: dict | None = None) -> None:
+def render_markdown_with_math(
+    md_text: str,
+    browser: MathTextBrowser,
+    fontsize: int = 13,
+    namespace: dict | None = None,
+) -> None:
     """Robust two-pass parser for Markdown with {{ expr }} templating plus inline ($...$) and block ($$...$$) math."""
     browser._resources.clear()
     doc = browser.document()
@@ -271,7 +284,9 @@ def render_markdown_with_math(md_text: str, browser: MathTextBrowser, fontsize: 
             )
             if len(lines) > 1:
                 rest = _format_text_line("<br>".join(lines[1:]), inlines)
-                html_parts.append(f'<p style="color: #334155; line-height: 1.6; margin: 4px 0; ">{rest}</p>')
+                html_parts.append(
+                    f'<p style="color: #334155; line-height: 1.6; margin: 4px 0; ">{rest}</p>'
+                )
             continue
         elif lines[0].startswith("## "):
             heading_text = _format_text_line(lines[0][3:].strip(), inlines)
@@ -280,7 +295,9 @@ def render_markdown_with_math(md_text: str, browser: MathTextBrowser, fontsize: 
             )
             if len(lines) > 1:
                 rest = _format_text_line("<br>".join(lines[1:]), inlines)
-                html_parts.append(f'<p style="color: #334155; line-height: 1.6; margin: 4px 0; ">{rest}</p>')
+                html_parts.append(
+                    f'<p style="color: #334155; line-height: 1.6; margin: 4px 0; ">{rest}</p>'
+                )
             continue
         elif lines[0].startswith("### "):
             heading_text = _format_text_line(lines[0][4:].strip(), inlines)
@@ -289,10 +306,14 @@ def render_markdown_with_math(md_text: str, browser: MathTextBrowser, fontsize: 
             )
             if len(lines) > 1:
                 rest = _format_text_line("<br>".join(lines[1:]), inlines)
-                html_parts.append(f'<p style="color: #334155; line-height: 1.6; margin: 4px 0;">{rest}</p>')
+                html_parts.append(
+                    f'<p style="color: #334155; line-height: 1.6; margin: 4px 0;">{rest}</p>'
+                )
             continue
         elif lines[0].startswith("> "):
-            quote_content = "\n".join([l[2:] if l.startswith("> ") else l for l in lines])
+            quote_content = "\n".join(
+                [l[2:] if l.startswith("> ") else l for l in lines]
+            )
             inner = _format_text_line(quote_content.replace("\n", "<br>"), inlines)
             html_parts.append(
                 f'<blockquote style="color: #64748b; border-left: 3px solid #cbd5e1; '
@@ -305,7 +326,9 @@ def render_markdown_with_math(md_text: str, browser: MathTextBrowser, fontsize: 
             if placeholder in p_content:
                 p_content = p_content.replace(placeholder, block_html)
 
-        html_parts.append(f'<p style="color: #334155; line-height: 1.6; margin: 5px 0;">{p_content}</p>')
+        html_parts.append(
+            f'<p style="color: #334155; line-height: 1.6; margin: 5px 0;">{p_content}</p>'
+        )
 
     full_html = "".join(html_parts)
     for placeholder, inline_html in inlines.items():

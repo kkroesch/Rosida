@@ -1,7 +1,12 @@
 import polars as pl
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QLineEdit, QTableView, QHeaderView, QMenu
+    QWidget,
+    QVBoxLayout,
+    QLineEdit,
+    QTableView,
+    QHeaderView,
+    QMenu,
 )
 
 
@@ -74,7 +79,9 @@ class PolarsTableWidget(QWidget):
             action.setCheckable(True)
             action.setChecked(not self.table_view.isColumnHidden(col_idx))
             action.toggled.connect(
-                lambda checked, idx=col_idx: self.table_view.setColumnHidden(idx, not checked)
+                lambda checked, idx=col_idx: self.table_view.setColumnHidden(
+                    idx, not checked
+                )
             )
 
         menu.exec(header.mapToGlobal(pos))

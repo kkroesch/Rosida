@@ -57,7 +57,9 @@ class InlineEditor(QPlainTextEdit):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        self.grip.move(self.width() - self.grip.width() - 2, self.height() - self.grip.height() - 2)
+        self.grip.move(
+            self.width() - self.grip.width() - 2, self.height() - self.grip.height() - 2
+        )
 
     def adjust_initial_height(self):
         doc_height = int(self.document().size().height())
@@ -80,7 +82,9 @@ class InlineEditor(QPlainTextEdit):
             self.escape_pressed.emit()
             event.accept()
             return
-        if event.key() == Qt.Key.Key_M and (event.modifiers() & Qt.KeyboardModifier.ControlModifier):
+        if event.key() == Qt.Key.Key_M and (
+            event.modifiers() & Qt.KeyboardModifier.ControlModifier
+        ):
             self.mode_toggle_requested.emit()
             event.accept()
             return

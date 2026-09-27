@@ -5,7 +5,9 @@ import polars as pl
 import sympy as sp
 
 
-def df_to_qmd_table(df: pl.DataFrame, caption: str = "Tabelle", tbl_id: str = "tbl-data") -> str:
+def df_to_qmd_table(
+    df: pl.DataFrame, caption: str = "Tabelle", tbl_id: str = "tbl-data"
+) -> str:
     """Erzeugt eine Quarto-Tabelle mit Beschriftung und Referenzanker."""
     header = "| " + " | ".join(df.columns) + " |"
     sep = "| " + " | ".join(["---"] * df.width) + " |"
@@ -72,9 +74,13 @@ class QmdRenderer:
                 val = eval(expr, {}, context)
                 start = match.string.rfind("\n", 0, match.start()) + 1
                 end = match.string.find("\n", match.end())
-                prefix = match.string[start:match.start()].strip()
-                suffix = match.string[match.end():end].strip() if end != -1 else match.string[match.end():].strip()
-                is_block = (prefix == "" and suffix == "")
+                prefix = match.string[start : match.start()].strip()
+                suffix = (
+                    match.string[match.end() : end].strip()
+                    if end != -1
+                    else match.string[match.end() :].strip()
+                )
+                is_block = prefix == "" and suffix == ""
                 return self.format_value(val, is_block=is_block)
             except Exception as e:
                 return f"`[Fehler: {expr} -> {e}]`"

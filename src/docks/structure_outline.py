@@ -1,5 +1,11 @@
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QDockWidget, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget
+from PySide6.QtWidgets import (
+    QDockWidget,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 from document import InPlaceCell
 

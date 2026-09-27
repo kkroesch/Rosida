@@ -69,9 +69,7 @@ class LatexPaletteDock(QDockWidget):
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
-        scroll.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-        )
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         content = QWidget()
         content.setObjectName("palette_content")
@@ -154,9 +152,7 @@ class LatexPaletteDock(QDockWidget):
     def _create_btn(self, label: str, code: str, tip: str = "") -> QPushButton:
         btn = QPushButton(label)
         btn.setObjectName("snippet_btn")
-        btn.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
-        )
+        btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         btn.setToolTip(f"{tip or label}\n{code}")
         btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         btn.clicked.connect(lambda: self.insert_requested.emit(code))
@@ -253,18 +249,12 @@ class LatexPaletteDock(QDockWidget):
         grid.setContentsMargins(0, 2, 0, 4)
         grid.setSpacing(4)
         mat_2x2 = r"\begin{pmatrix} a & b \\ c & d \end{pmatrix}"
-        mat_3x3 = (
-            r"\begin{pmatrix} a & b & c \\ d & e & f \\ g & h & i \end{pmatrix}"
-        )
+        mat_3x3 = r"\begin{pmatrix} a & b & c \\ d & e & f \\ g & h & i \end{pmatrix}"
         vec_col = r"\begin{pmatrix} x \\ y \end{pmatrix}"
         vec_row = r"\begin{pmatrix} x & y \end{pmatrix}"
 
-        grid.addWidget(
-            self._create_btn("Matrix 2×2", mat_2x2, "2x2 Matrix"), 0, 0
-        )
-        grid.addWidget(
-            self._create_btn("Matrix 3×3", mat_3x3, "3x3 Matrix"), 0, 1
-        )
+        grid.addWidget(self._create_btn("Matrix 2×2", mat_2x2, "2x2 Matrix"), 0, 0)
+        grid.addWidget(self._create_btn("Matrix 3×3", mat_3x3, "3x3 Matrix"), 0, 1)
         grid.addWidget(
             self._create_btn("Vektor (Spalte)", vec_col, "Spaltenvektor"), 1, 0
         )
@@ -284,12 +274,36 @@ class LatexPaletteDock(QDockWidget):
             ("Warning", "::: {.callout-warning}\n\n:::", "Callout: Warnung"),
             ("Important", "::: {.callout-important}\n\n:::", "Callout: Wichtig"),
             ("Caution", "::: {.callout-caution}\n\n:::", "Callout: Vorsicht"),
-            ("Div", "::: {.className}\n\n:::", "Generischer Fenced Div (Klasse anpassen)"),
-            ("Fußnote", "Text[^1]\n\n[^1]: Fußnotentext", "Fußnote mit Referenz und Definition"),
-            ("Abb.-Anker", "{#fig-label}", "Cross-Ref-Anker unter eine Bildunterschrift setzen"),
-            ("Tab.-Anker", "{#tbl-label}", "Cross-Ref-Anker in eine Tabellenbeschriftung setzen"),
-            ("Abb.-Verweis", "@fig-label", 'Verweis auf eine Abbildung, z. B. "siehe @fig-label"'),
-            ("Tab.-Verweis", "@tbl-label", 'Verweis auf eine Tabelle, z. B. "siehe @tbl-label"'),
+            (
+                "Div",
+                "::: {.className}\n\n:::",
+                "Generischer Fenced Div (Klasse anpassen)",
+            ),
+            (
+                "Fußnote",
+                "Text[^1]\n\n[^1]: Fußnotentext",
+                "Fußnote mit Referenz und Definition",
+            ),
+            (
+                "Abb.-Anker",
+                "{#fig-label}",
+                "Cross-Ref-Anker unter eine Bildunterschrift setzen",
+            ),
+            (
+                "Tab.-Anker",
+                "{#tbl-label}",
+                "Cross-Ref-Anker in eine Tabellenbeschriftung setzen",
+            ),
+            (
+                "Abb.-Verweis",
+                "@fig-label",
+                'Verweis auf eine Abbildung, z. B. "siehe @fig-label"',
+            ),
+            (
+                "Tab.-Verweis",
+                "@tbl-label",
+                'Verweis auf eine Tabelle, z. B. "siehe @tbl-label"',
+            ),
         ]
         for idx, (lbl, code, tip) in enumerate(snippets):
             grid.addWidget(self._create_btn(lbl, code, tip), idx // 2, idx % 2)
