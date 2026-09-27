@@ -2,7 +2,7 @@ import os
 import sys
 from pathlib import Path
 
-from PySide6.QtGui import QIcon, QCloseEvent
+from PySide6.QtGui import QIcon, QCloseEvent, QFontDatabase
 from PySide6.QtCore import Qt, QSize, QCoreApplication
 
 from PySide6.QtWidgets import (
@@ -351,6 +351,13 @@ class RosidaApp(QMainWindow):
         else:  # Cancel
           event.ignore()
 
+def load_application_fonts():
+  fonts_dir = Path(__file__).resolve().parent / "assets" / "fonts"
+  if not fonts_dir.is_dir():
+    return
+
+  for font_file in fonts_dir.glob("*.ttf"):
+    QFontDatabase.addApplicationFont(str(font_file))
 
 def main():
     # Icon & App Name for MacOS
@@ -359,6 +366,7 @@ def main():
     QCoreApplication.setOrganizationName("Rosida")
 
     app = QApplication(["Rosida"] + sys.argv[1:])
+    load_application_fonts()
 
     # Debugger
     if os.environ.get("DEBUG") == "1" or "--debug" in sys.argv:

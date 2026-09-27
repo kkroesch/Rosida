@@ -6,8 +6,83 @@ from matplotlib.mathtext import math_to_image
 import sympy as sp
 
 from PySide6.QtCore import QUrl
-from PySide6.QtGui import QImage, QTextDocument
+from PySide6.QtGui import QImage, QTextDocument, QFont
 from PySide6.QtWidgets import QTextBrowser
+
+
+STYLE = """
+body {
+    font-family: 'CMU Serif', serif;
+    font-size: 16pt;
+    color: #1e293b;
+}
+
+p {
+    font-family: 'CMU Serif', serif;
+    font-size: 16pt;
+    color: #1e293b;
+    margin-top: 4px;
+    margin-bottom: 8px;
+}
+
+li {
+    font-family: 'CMU Serif', serif;
+    font-size: 16pt;
+    color: #1e293b;
+}
+
+div {
+    font-family: 'CMU Serif', serif;
+    font-size: 16pt;
+    color: #1e293b;
+}
+
+h1 {
+    font-family: 'CMU Sans Serif', sans-serif;
+    font-size: 22pt;
+    font-weight: bold;
+    color: #0f172a;
+    margin-top: 18px;
+    margin-bottom: 6px;
+}
+
+h2 {
+    font-family: 'CMU Sans Serif', sans-serif;
+    font-size: 18pt;
+    font-weight: bold;
+    color: #0f172a;
+    margin-top: 14px;
+    margin-bottom: 4px;
+}
+
+h3 {
+    font-family: 'CMU Sans Serif', sans-serif;
+    font-size: 16pt;
+    font-weight: bold;
+    color: #334155;
+}
+
+blockquote {
+    font-family: 'CMU Concrete', serif;
+    font-style: italic;
+    font-size: 16pt;
+    color: #334155;
+    margin: 10px 0 10px 12px;
+    padding-left: 12px;
+}
+
+code {
+    font-family: 'CMU Typewriter Text', monospace;
+    font-size: 13pt;
+    background-color: #f1f5f9;
+}
+
+pre {
+    font-family: 'CMU Typewriter Text', monospace;
+    font-size: 13pt;
+    background-color: #f1f5f9;
+}
+"""
 
 
 def _clean_latex_for_mathtext(expr: str) -> str:
@@ -39,7 +114,7 @@ def math_to_png_qimage(
     buf.seek(0)
 
     img = QImage()
-    img.loadFromData(buf.getvalue(), "PNG")
+    img.loadFromData(buf.getvalue())
 
     scale = dpi / 96.0
     img.setDevicePixelRatio(scale)
@@ -59,7 +134,7 @@ class MathTextBrowser(QTextBrowser):
         self._resources[name] = img
         self.document().addResource(QTextDocument.ResourceType.ImageResource, QUrl(name), img)
 
-    def loadResource(self, res_type: int, name: QUrl):
+    def loadResource(self, res_type, name):
         url_str = name.toString()
         if url_str in self._resources:
             return self._resources[url_str]
@@ -238,4 +313,5 @@ def render_markdown_with_math(md_text: str, browser: MathTextBrowser, fontsize: 
     for placeholder, block_html in blocks.items():
         full_html = full_html.replace(placeholder, block_html)
 
+    browser.document().setDefaultStyleSheet(STYLE)
     browser.setHtml(full_html)
