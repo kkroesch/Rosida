@@ -3,6 +3,7 @@ from PySide6.QtGui import QFont
 from PySide6.QtWidgets import QPlainTextEdit
 
 from widgets.resize_grip import MacResizeGrip
+from widgets.syntax import CellHighlighter
 
 
 class InlineEditor(QPlainTextEdit):
@@ -15,6 +16,7 @@ class InlineEditor(QPlainTextEdit):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.highlighter = CellHighlighter(self.document())
         font = QFont("JetBrains Mono", 11)
         font.setStyleHint(QFont.StyleHint.Monospace)
         self.setFont(font)

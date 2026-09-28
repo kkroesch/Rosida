@@ -13,6 +13,8 @@ import polars as pl
 
 from exporters.pdf import export_pdf as render_pdf
 from exporters.qmd import QmdRenderer
+from widgets.syntax import CellHighlighter
+
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import (
@@ -172,6 +174,7 @@ class InPlaceCell(QWidget):
         modes = ["auto", "python", "markdown"]
         cur_idx = modes.index(self.mode) if self.mode in modes else 0
         self.mode = modes[(cur_idx + 1) % len(modes)]
+        self.editor.highlighter.set_mode(self.mode)
         self._update_mode_pill()
         self.content_updated.emit()
 
