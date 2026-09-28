@@ -19,7 +19,7 @@ class ToggleDockAction(RosidaAction):
 
 class ToggleStructureDockAction(ToggleDockAction):
     def __init__(self, dock_widget, parent=None):
-        super().__init__(dock_widget, "Dokumentstruktur (Sidebar)", parent)
+        super().__init__(dock_widget, "Dokumentstruktur", parent)
 
         self.setShortcut(QKeySequence("F3"))
         self.setToolTip("Dokumentstruktur ein-/ausblenden (F3)")
@@ -28,11 +28,19 @@ class ToggleStructureDockAction(ToggleDockAction):
 
 class TogglePaletteDockAction(ToggleDockAction):
     def __init__(self, dock_widget, parent=None):
-        super().__init__(dock_widget, "LaTeX-Palette (Sidebar)", parent)
+        super().__init__(dock_widget, "LaTeX-Palette", parent)
 
         self.setShortcut(QKeySequence("F4"))
         self.setToolTip("LaTeX-Palette ein-/ausblenden (F4)")
         self.set_icon_name("fa5s.square-root-alt")
+
+class ToggleBibitemsDockAction(ToggleDockAction):
+    def __init__(self, dock_widget, parent=None):
+        super().__init__(dock_widget, "Bibliographie", parent)
+
+        self.setShortcut(QKeySequence("F4"))
+        self.setToolTip("Bibliographieliste ein-/ausblenden (F4)")
+        self.set_icon_name("fa5s.book")
 
 
 class ToggleVariablesDockAction(ToggleDockAction):

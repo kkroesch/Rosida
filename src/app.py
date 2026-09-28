@@ -42,6 +42,7 @@ from actions.help import (
     maybe_show_manual_on_first_run,
 )
 from actions.view import (
+    ToggleBibitemsDockAction,
     ToggleStructureDockAction,
     TogglePaletteDockAction,
     ToggleVariablesDockAction,
@@ -49,6 +50,7 @@ from actions.view import (
 from docks.latex import LatexPaletteDock
 from docks.structure_outline import StructureOutlineDock
 from docks.inspector import VariableInspectorDock
+from docks.bibitems import BibDock
 
 try:
     from document import DocumentCanvas, InPlaceCell
@@ -138,6 +140,10 @@ class RosidaApp(QMainWindow):
         self.dock_variables = VariableInspectorDock(self)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.dock_variables)
 
+        self.dock_bibitems = BibDock(self)
+        self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dock_bibitems)
+        self.dock_bibitems.citation_selected.connect(self.doc.insert_text_into_active)
+
         self.act_toggle_variables = ToggleVariablesDockAction(self.dock_variables, self)
         self.doc.variables_updated.connect(self.dock_variables.update_variables)
         self.dock_variables.variable_double_clicked.connect(
@@ -171,6 +177,7 @@ class RosidaApp(QMainWindow):
         # Ansicht
         self.act_toggle_structure = ToggleStructureDockAction(self.dock_structure, self)
         self.act_toggle_palette = TogglePaletteDockAction(self.dock_palette, self)
+        self.act_toogle_bibitem = ToggleBibitemsDockAction(self.dock_bibitems, self)
 
         # Hilfe
         self.act_manual = ManualAction(self, self)
@@ -215,6 +222,7 @@ class RosidaApp(QMainWindow):
         menu_view.addAction(self.act_toggle_structure)
         menu_view.addAction(self.act_toggle_palette)
         menu_view.addAction(self.act_toggle_variables)
+        menu_view.addAction(self.act_toogle_bibitem)
 
         menu_help = menubar.addMenu("&Hilfe")
         menu_help.addAction(self.act_manual)
