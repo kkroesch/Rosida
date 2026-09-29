@@ -22,6 +22,7 @@ import sympy as sp
 import yaml
 
 from config.settings import FONTS_DIR
+from exporters.bibtex import Citations, bibliography_files, load_bibliography
 from widgets.math_text import evaluate_templates, markdown_to_html
 
 KATEX_VERSION = "0.18.9"
@@ -112,6 +113,14 @@ pre {
 .copy:hover { color: #2563eb; border-color: #93c5fd; }
 .copy.done { color: #16a34a; border-color: #86efac; }
 @media (hover: none) { .copy { opacity: 1; } }
+/* Zitate und Quellen */
+.citation a { color: inherit; text-decoration: none; border-bottom: 1px dotted #94a3b8; }
+.citation a:hover { color: #2563eb; border-bottom-color: #2563eb; }
+.citation .unknown { color: #dc2626; font-weight: bold; }
+.references ul { list-style: none; padding: 0; }
+.references li { padding-left: 1.5em; text-indent: -1.5em; margin-bottom: 0.6rem; font-size: 1.05rem; }
+.references li:target { background: #fef9c3; }
+.references a { overflow-wrap: anywhere; }
 pre.stdout { border-left-color: #94a3b8; color: #475569; background: #fff; }
 pre.result { border: none; background: none; color: #0284c7; padding-left: 0; }
 .error { color: #dc2626; background: #fee2e2; border-left-color: #dc2626; }
@@ -314,6 +323,7 @@ def export_html(
     out_path = Path(filepath)
     base_dir = base_dir or out_path.parent
     properties = _parse_properties(frontmatter)
+    citations = Citations(load_bibliography(bibliography_files(properties, base_dir)))
 
     body = []
     for cell in cells:
@@ -322,10 +332,15 @@ def export_html(
             continue
         if cell._detect_effective_mode(content) == "markdown":
             text = evaluate_templates(content, cell.namespace)
-            body.append(markdown_to_html(text, _math_html, highlight=True))
+            body.append(
+                markdown_to_html(text, _math_html, highlight=True, cite=citations)
+            )
         else:
             code = re.sub(r"^```(?:python|py)?\s*\n|\n?```\s*$", "", content)
             body.append(_python_cell_html(code, cell.last_stdout, cell.last_val))
+
+    # Wie Quartos Literaturverzeichnis: nur tatsächlich zitierte Einträge
+    body.append(citations.references_html("Quellen"))
 
     title = properties.get("title") or out_path.stem
     page = f"""<!DOCTYPE html>

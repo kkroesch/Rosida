@@ -1,12 +1,18 @@
 from pathlib import Path
+import os
 import re
 import json
 import inspect
 
+from exporters.bibtex import bibliography_files
 from exporters.html import export_html as render_html
 from exporters.pdf import export_pdf as render_pdf
 from exporters.qmd import QmdRenderer
-from widgets.frontmatter import FrontmatterCell
+from widgets.frontmatter import (
+    FrontmatterCell,
+    parse_yaml_properties,
+    set_yaml_property,
+)
 from widgets.inplace import InPlaceCell
 from worker.kernel import Kernel
 
@@ -303,19 +309,38 @@ class DocumentCanvas(QWidget):
                         renderer.format_value(cell.last_val, is_block=True)
                     )
 
-        frontmatter = (
-            "---\n"
-            "title: Rosida Dokument\n"
-            "format:\n"
-            "  html: default\n"
-            "  typst: default\n"
-            "---\n\n"
-        )
+        frontmatter = f"---\n{self._qmd_properties(out_path.parent)}\n---\n\n"
 
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(
             frontmatter + "\n\n".join(body_chunks) + "\n", encoding="utf-8"
         )
+
+    def _qmd_properties(self, out_dir: Path) -> str:
+        """Document properties for the .qmd: bibliography paths relative to out_dir,
+        title and format added if missing (Quarto builds the reference list itself)."""
+        props = self.frontmatter_cell.editor.toPlainText().strip()
+        meta = parse_yaml_properties(props)
+
+        win = self.window()
+        current = getattr(win, "current_filepath", None)
+        doc_dir = Path(current).resolve().parent if current else Path.cwd()
+        bib_files = bibliography_files(meta, doc_dir)
+        if bib_files:
+            rel = [
+                Path(os.path.relpath(f.resolve(), out_dir.resolve())).as_posix()
+                for f in bib_files
+            ]
+            props = set_yaml_property(
+                props,
+                "bibliography",
+                rel[0] if isinstance(meta["bibliography"], str) else rel,
+            )
+        if "title" not in meta:
+            props = "title: Rosida Dokument\n" + props
+        if "format" not in meta:
+            props += "\nformat:\n  html: default\n  typst: default"
+        return props.strip()
 
     def save_to_markdown(self, filepath: str):
         """Saves notebook as a clean, human-readable Markdown file (.md)."""

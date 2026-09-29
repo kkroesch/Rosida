@@ -23,14 +23,18 @@ def _yaml_scalar(value: str) -> str:
     return value if re.fullmatch(r"[\w./-]+", value) else json.dumps(value)
 
 
-def set_yaml_property(yaml_text: str, key: str, value: str) -> str:
+def set_yaml_property(yaml_text: str, key: str, value: str | list[str]) -> str:
     """Sets a top-level key line by line, keeping order, quoting and comments.
 
     An existing value (including an indented block such as a list) is
     replaced; otherwise the key is appended.
     """
     lines = yaml_text.splitlines()
-    new_line = f"{key}: {_yaml_scalar(value)}"
+    if isinstance(value, list):
+        rendered = "[" + ", ".join(_yaml_scalar(v) for v in value) + "]"
+    else:
+        rendered = _yaml_scalar(value)
+    new_line = f"{key}: {rendered}"
     for i, line in enumerate(lines):
         if re.match(rf"{re.escape(key)}\s*:", line):
             end = i + 1

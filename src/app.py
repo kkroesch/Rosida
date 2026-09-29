@@ -54,6 +54,7 @@ from docks.structure_outline import StructureOutlineDock
 from docks.inspector import VariableInspectorDock
 from docks.bibitems import BibDock
 from config.settings import FONTS_DIR
+from exporters.bibtex import bibliography_files
 
 try:
     from document import DocumentCanvas
@@ -328,10 +329,8 @@ class RosidaApp(QMainWindow):
 
     def _sync_bibliography(self):
         """Loads the .bib file(s) named in the frontmatter into the references dock."""
-        value = self.doc.frontmatter_cell.metadata().get("bibliography") or []
-        names = [value] if isinstance(value, str) else [str(v) for v in value]
         base = self._document_dir() or Path.cwd()
-        files = [(base / Path(name).expanduser()) for name in names]
+        files = bibliography_files(self.doc.frontmatter_cell.metadata(), base)
         self.dock_bibitems.show_bibliography(files, start_dir=str(base))
 
     def _on_bib_file_chosen(self, filepath: str):

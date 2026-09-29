@@ -10,6 +10,7 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.mathtext import math_to_image
 import markdown
 from markdown.extensions import Extension
+from markdown.inlinepatterns import InlineProcessor
 from markdown.preprocessors import Preprocessor
 from markdown.treeprocessors import Treeprocessor
 import sympy as sp
@@ -19,6 +20,7 @@ from PySide6.QtGui import QImage, QTextDocument
 from PySide6.QtWidgets import QTextBrowser
 
 from config.settings import markdown_css
+from exporters.bibtex import CITE_KEY
 from widgets.math_svg import MathSvg, embed_math_objects, latex_to_svg
 
 
@@ -320,10 +322,29 @@ class _FigureTreeprocessor(Treeprocessor):
                 cap.text = caption
 
 
+class _CitationProcessor(InlineProcessor):
+    """Hands [@key ...] groups and narrative @key citations to a callback.
+
+    The callback returns HTML, or None to leave the text as it is.
+    """
+
+    def __init__(self, pattern, md, cite, narrative: bool):
+        super().__init__(pattern, md)
+        self.cite = cite
+        self.narrative = narrative
+
+    def handleMatch(self, m, data):
+        result = self.cite(m.group(1), self.narrative)
+        if result is None:
+            return None, None, None
+        return self.md.htmlStash.store(result), m.start(0), m.end(0)
+
+
 class _RosidaExtension(Extension):
-    def __init__(self, render_math):
+    def __init__(self, render_math, cite=None):
         super().__init__()
         self.render_math = render_math
+        self.cite = cite
 
     def extendMarkdown(self, md):
         # Vor normalize_whitespace (30) bzw. html_block (20), damit Formeln
@@ -332,16 +353,30 @@ class _RosidaExtension(Extension):
         md.preprocessors.register(_FencedDivPreprocessor(md), "fenced_div", 28)
         md.treeprocessors.register(_FigureTreeprocessor(md), "figure", 5)
         md.treeprocessors.register(_CalloutTitleTreeprocessor(md), "callout_title", 4)
+        if self.cite:
+            # Vor "link" (160), sonst würde [@key] als Linktext betrachtet
+            bracket = rf"\[([^\[\]]*?-?@{CITE_KEY}[^\[\]]*)\](?!\()"
+            narrative = rf"(?<![\w@\[-])@({CITE_KEY})"
+            md.inlinePatterns.register(
+                _CitationProcessor(bracket, md, self.cite, False), "citation", 175
+            )
+            md.inlinePatterns.register(
+                _CitationProcessor(narrative, md, self.cite, True), "narrative", 174
+            )
 
 
-def markdown_to_html(text: str, render_math, highlight: bool = False) -> str:
+def markdown_to_html(
+    text: str, render_math, highlight: bool = False, cite=None
+) -> str:
     """Converts Rosida Markdown (Quarto callouts/figures, $/$$ math) to HTML.
 
     render_math(latex, display) returns the HTML for a formula. highlight=True
     runs fenced code blocks through Pygments (<div class="highlight">); Qt's
     rich text can't style that, so it's only meant for the HTML export.
+    cite(text, narrative) renders Quarto citations: the inside of [...] or,
+    for narrative ones, the bare key; None leaves the text unchanged.
     """
-    extensions = ["extra", "sane_lists", _RosidaExtension(render_math)]
+    extensions = ["extra", "sane_lists", _RosidaExtension(render_math, cite)]
     configs = {}
     if highlight:
         extensions.append("codehilite")

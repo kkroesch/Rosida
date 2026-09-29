@@ -1,5 +1,4 @@
 from pathlib import Path
-import re
 
 from PySide6.QtWidgets import (
     QDockWidget,
@@ -14,6 +13,8 @@ from PySide6.QtWidgets import (
     QFileDialog,
 )
 from PySide6.QtCore import Signal, Qt
+
+from exporters.bibtex import load_bibliography
 
 
 class BibItemWidget(QWidget):
@@ -126,56 +127,15 @@ class BibDock(QDockWidget):
             self.stack.setCurrentIndex(0)
 
     def _parse_bibtex_lightweight(self, file_path):
-        """Minimalistischer Parser, der fehlertolerant über die Datei iteriert."""
-        entries = []
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
-        except Exception:
-            return []
-
-        # Teile bei jedem '@' auf, ignoriere den Datei-Header vor dem ersten Eintrag
-        for block in content.split("@")[1:]:
-            lines = block.strip().split("\n")
-            if not lines:
-                continue
-
-            # Erste Zeile enthält Typ und Key, z.B. "article{Asimov1956,"
-            first_line = lines[0]
-            if "{" not in first_line:
-                continue
-
-            # Key extrahieren
-            key = first_line.split("{")[1].split(",")[0].strip()
-            entry = {"key": key, "author": "", "title": ""}
-
-            # Rohen Text des Blocks für non-greedy Regex zusammenfassen
-            block_text = " ".join(lines)
-
-            # Sucht nach author/title = {...} oder = "...", ignoriert Zeilenumbrüche
-            author_match = re.search(
-                r'\bauthor\s*=\s*[\{"](.*?)(?:[\}"]\s*,|[\}"]\s*$)',
-                block_text,
-                re.IGNORECASE,
-            )
-            if author_match:
-                entry["author"] = author_match.group(1).strip()
-
-            title_match = re.search(
-                r'\btitle\s*=\s*[\{"](.*?)(?:[\}"]\s*,|[\}"]\s*$)',
-                block_text,
-                re.IGNORECASE,
-            )
-            if title_match:
-                entry["title"] = title_match.group(1).strip()
-
-            # Bereinigt typische LaTeX-Schutzklammern (z.B. {B}austeine -> Bausteine)
-            entry["title"] = entry["title"].replace("{", "").replace("}", "")
-            entry["author"] = entry["author"].replace("{", "").replace("}", "")
-
-            entries.append(entry)
-
-        return entries
+        """Einträge als dicts (key, author, title) für die Liste."""
+        return [
+            {
+                "key": entry.key,
+                "author": "; ".join(entry.authors),
+                "title": entry.get("title"),
+            }
+            for entry in load_bibliography([Path(file_path)]).values()
+        ]
 
     def populate_list(self, entries):
         self.list_widget.clear()
