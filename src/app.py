@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtGui import QIcon, QCloseEvent, QFontDatabase
-from PySide6.QtCore import Qt, QSize, QCoreApplication
+from PySide6.QtCore import Qt, QSize, QCoreApplication, QSettings
 
 from PySide6.QtWidgets import (
     QMessageBox,
@@ -57,7 +57,10 @@ try:
 except ImportError:
     from native_document import DocumentCanvas, InPlaceCell
 
+import matplotlib
+matplotlib.use('Agg')  # <- Crasht sonst bei Verwendung von Workern
 import matplotlib.pyplot as plt
+
 import numpy as np
 import sympy as sp
 import polars as pl
@@ -99,7 +102,21 @@ class RosidaApp(QMainWindow):
         self.doc.cell_executed.connect(self._on_cell_executed)
         self.doc.modified_changed.connect(lambda _: self._update_window_title())
 
+        self.read_settings()
         self._load_document_on_start()
+
+    def read_settings(self):
+        settings = QSettings()
+
+        # Geometrie des Hauptfensters wiederherstellen
+        geometry = settings.value("geometry")
+        if geometry:
+            self.restoreGeometry(geometry)
+
+        # Zustand und Position der Docks/Toolbars wiederherstellen
+        window_state = settings.value("windowState")
+        if window_state:
+            self.restoreState(window_state)
 
     def _setup_statusbar(self):
         self.statusbar = QStatusBar(self)
@@ -130,17 +147,21 @@ class RosidaApp(QMainWindow):
 
     def _setup_docks(self):
         self.dock_structure = StructureOutlineDock(self)
+        self.dock_structure.setObjectName("structure_dock")
         self.dock_structure.item_selected.connect(self.doc.scroll_to_cell)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.dock_structure)
 
         self.dock_palette = LatexPaletteDock(self)
+        self.dock_palette.setObjectName("palette_dock")
         self.dock_palette.insert_requested.connect(self.doc.insert_text_into_active)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dock_palette)
 
         self.dock_variables = VariableInspectorDock(self)
+        self.dock_variables.setObjectName("variables_dock")
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.dock_variables)
 
         self.dock_bibitems = BibDock(self)
+        self.dock_bibitems.setObjectName("bibitems_dock")
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dock_bibitems)
         self.dock_bibitems.citation_selected.connect(self.doc.insert_text_into_active)
 
@@ -231,6 +252,7 @@ class RosidaApp(QMainWindow):
 
     def _setup_toolbars(self):
         toolbar = QToolBar("Hauptaktionen", self)
+        toolbar.setObjectName("toolbar")
         toolbar.setMovable(False)
         toolbar.setIconSize(QSize(18, 18))
         toolbar.setStyleSheet("""
@@ -337,6 +359,10 @@ class RosidaApp(QMainWindow):
         self.dock_structure.update_outline(self.doc.cells)
 
     def closeEvent(self, event: QCloseEvent):
+        settings = QSettings()
+        settings.setValue("geometry", self.saveGeometry())
+        settings.setValue("windowState", self.saveState())
+
         # Model direkt abfragen statt über den Button-State
         if not self.doc.is_modified():
             event.accept()
@@ -394,11 +420,11 @@ def load_application_fonts():
 def main():
     # Icon & App Name for MacOS
     sys.argv[0] = "Rosida"
-    QCoreApplication.setApplicationName("Rosida")
-    QCoreApplication.setOrganizationName("Rosida")
 
     app = QApplication(["Rosida"] + sys.argv[1:])
     load_application_fonts()
+    app.setOrganizationDomain("kroesch.ch")
+    app.setApplicationName("Rosida")
 
     # Debugger
     if os.environ.get("DEBUG") == "1" or "--debug" in sys.argv:
