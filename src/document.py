@@ -119,7 +119,6 @@ class DocumentCanvas(QWidget):
         cell.set_mode(mode)
         if initial_text:
             cell.editor.setPlainText(initial_text)
-            cell.editor.adjust_initial_height()
 
         cell.cell_focused.connect(self.set_active_cell)
         cell.content_updated.connect(lambda: self.structure_changed.emit(self.cells))

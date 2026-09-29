@@ -48,12 +48,12 @@ class InPlaceCell(QWidget):
         self.namespace = kernel_namespace
         self.mode = "auto"  # "auto", "python", or "markdown"
         self.has_rendered_once = False
-        self.last_rendered_height = 80
         self.last_stdout = ""
         self.last_val = None
         self._is_collapsed_empty = False
 
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
 
         self.stack = QStackedLayout(self)
         self.stack.setContentsMargins(0, 2, 0, 2)
@@ -109,6 +109,11 @@ class InPlaceCell(QWidget):
         hidden ones), so a tall editor would keep the cell tall even while a
         tiny collapsed output is shown, and vice versa.
         """
+        if index == 1 and self.editor.hasFocus():
+            # Fokus in der Zelle parken, bevor der Editor verschwindet. Sonst
+            # reicht Qt ihn per focusNextPrevChild weiter und die QScrollArea
+            # scrollt zum nächsten fokussierbaren Widget (z.B. ans Dokumentende).
+            self.setFocus(Qt.FocusReason.OtherFocusReason)
         self.edit_container.setSizePolicy(
             QSizePolicy.Policy.Preferred,
             QSizePolicy.Policy.Preferred if index == 0 else QSizePolicy.Policy.Ignored,
@@ -198,14 +203,8 @@ class InPlaceCell(QWidget):
             return "markdown"
 
     def switch_to_edit(self):
-        if self._is_collapsed_empty:
-            doc_height = int(self.editor.document().size().height()) + 22
-            self.editor.setFixedHeight(max(56, doc_height))
-        elif self.has_rendered_once and self.last_rendered_height > 60:
-            target_editor_h = max(56, self.last_rendered_height - 28)
-            self.editor.setFixedHeight(target_editor_h)
-
         self._show_stack_page(0)
+        self.editor.fit_to_content()
         self.editor.setFocus()
         self.cell_focused.emit(self)
         cursor = self.editor.textCursor()
@@ -278,9 +277,6 @@ class InPlaceCell(QWidget):
                 self._is_collapsed_empty = True
 
         QApplication.processEvents()
-        self.last_rendered_height = max(
-            self.view_frame.sizeHint().height(), self.view_frame.height()
-        )
         self.has_rendered_once = True
         self._show_stack_page(1)
         self.executed.emit()

@@ -1,12 +1,12 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QCursor, QMouseEvent, QPainter, QPen
-from PySide6.QtWidgets import QPlainTextEdit, QWidget
+from PySide6.QtWidgets import QWidget
 
 
 class MacResizeGrip(QWidget):
     """Subtle corner resize grip with diagonal ridges."""
 
-    def __init__(self, target_editor: QPlainTextEdit, parent=None):
+    def __init__(self, target_editor, parent=None):
         super().__init__(parent)
         self.target = target_editor
         self.setFixedSize(16, 16)
@@ -14,7 +14,7 @@ class MacResizeGrip(QWidget):
         self.drag_start_y = 0
         self.initial_height = 0
         self.is_dragging = False
-        self.setToolTip("Ziehen, um Eingabefeld zu vergrößern")
+        self.setToolTip("Ziehen, um Eingabefeld zu vergrößern (Doppelklick: zurücksetzen)")
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -26,9 +26,14 @@ class MacResizeGrip(QWidget):
     def mouseMoveEvent(self, event: QMouseEvent):
         if self.is_dragging:
             delta_y = event.globalPosition().y() - self.drag_start_y
-            new_height = max(50, int(self.initial_height + delta_y))
-            self.target.setFixedHeight(new_height)
+            self.target.manual_height = max(50, int(self.initial_height + delta_y))
+            self.target.fit_to_content()
             event.accept()
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent):
+        self.target.manual_height = 0
+        self.target.fit_to_content()
+        event.accept()
 
     def mouseReleaseEvent(self, event: QMouseEvent):
         self.is_dragging = False
