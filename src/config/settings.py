@@ -64,6 +64,9 @@ table { border-collapse: collapse; margin: 8px 0; }
 td, th { border: 1px solid #cbd5e1; padding: 2px 8px; }
 th { font-weight: bold; background-color: #f1f5f9; }
 
+.cite { color: #334155; text-decoration: none; }
+.unknown { color: #dc2626; font-weight: bold; }
+
 .math-block { margin: 14px 0; }
 .math-error { color: #dc2626; background-color: #fee2e2; }
 

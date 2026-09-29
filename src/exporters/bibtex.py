@@ -376,7 +376,10 @@ class Citations:
 
     def _link(self, entry: BibEntry, text: str) -> str:
         self.used.setdefault(entry.key, entry)
-        return f'<a href="#ref-{html.escape(entry.key)}">{html.escape(text)}</a>'
+        return (
+            f'<a class="cite" href="#ref-{html.escape(entry.key)}">'
+            f"{html.escape(text)}</a>"
+        )
 
     def __call__(self, text: str, narrative: bool) -> str | None:
         if narrative:

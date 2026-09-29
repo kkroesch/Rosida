@@ -48,9 +48,9 @@ def test_citation_forms():
     "Unbekannt: [@gibtsnicht]. Mail: [autor@example.com], `[@pleger_2023]`",
     cit,
   )
-  assert '(<a href="#ref-pleger_2023">Pleger 2023</a>)' in html
-  assert '(vgl. <a href="#ref-fp_2018">Freiknecht und Papp 2018</a>, S. 5; <a href="#ref-pleger_2023">2023</a>)' in html
-  assert '<a href="#ref-fp_2018">Freiknecht und Papp (2018)</a>' in html
+  assert '(<a class="cite" href="#ref-pleger_2023">Pleger 2023</a>)' in html
+  assert '(vgl. <a class="cite" href="#ref-fp_2018">Freiknecht und Papp 2018</a>, S. 5; <a class="cite" href="#ref-pleger_2023">2023</a>)' in html
+  assert '<a class="cite" href="#ref-fp_2018">Freiknecht und Papp (2018)</a>' in html
   assert '<span class="unknown">?gibtsnicht</span>' in html
   assert "[autor@example.com]" in html  # keine Zitation
   assert "<code>[@pleger_2023]</code>" in html  # Code bleibt Code
@@ -81,7 +81,7 @@ def test_html_export_appends_sources(rosida_win, tmp_path, wait_idle):
   doc.export_html(str(out))
   page = out.read_text(encoding="utf-8")
 
-  assert '<a href="#ref-wohlenberg_3_2023">Wohlenberg 2023</a>' in page
+  assert '<a class="cite" href="#ref-wohlenberg_3_2023">Wohlenberg 2023</a>' in page
   assert '<li id="ref-wohlenberg_3_2023">' in page
   assert "https://towardsdatascience.com/three-versions-of-k-means-cf939b65f4ea" in page
   assert page.count("<li id=") == 1
@@ -100,3 +100,22 @@ def test_qmd_export_keeps_frontmatter_and_rebases_bibliography(rosida_win, tmp_p
   assert "format:" in head
   bib = head.split("bibliography: ")[1].splitlines()[0].strip('"')
   assert (out.parent / bib).resolve() == (DOCS / "example.bib").resolve()
+
+
+def test_pdf_export_resolves_citations_and_appends_sources(rosida_win, tmp_path, wait_idle):
+  pymupdf = __import__("pytest").importorskip("pymupdf")
+  doc = rosida_win.doc
+  rosida_win.current_filepath = str(DOCS / "example.md")
+  doc.frontmatter_cell.editor.setPlainText("title: T\nbibliography: example.bib")
+  doc.cells[0].editor.setPlainText("Siehe [@wohlenberg_3_2023] und [@gibtsnicht].")
+  wait_idle(doc)
+
+  out = tmp_path / "out.pdf"
+  doc.export_pdf(str(out))
+  text = " ".join(page.get_text() for page in pymupdf.open(out)).replace("\n", " ")
+
+  assert "(Wohlenberg 2023)" in text
+  assert "?gibtsnicht" in text
+  assert "Quellen" in text
+  assert "Wohlenberg, Johannes (2023)" in text
+  assert "[@" not in text

@@ -396,6 +396,7 @@ def render_markdown_with_math(
     namespace: dict | None = None,
     base_dir: Path | None = None,
     embed_formulas: bool = True,
+    cite=None,
 ) -> None:
     """Renders Markdown (incl. Quarto callouts/figures, {{ expr }} templates and $/$$ math) into browser.
 
@@ -432,6 +433,6 @@ def render_markdown_with_math(
             return f'<div class="math-block" align="center">{img}</div>'
         return img
 
-    browser.setHtml(markdown_to_html(text, render_math))
+    browser.setHtml(markdown_to_html(text, render_math, cite=cite))
     if embed_formulas:
         embed_math_objects(browser.document(), browser._formulas)

@@ -1,4 +1,6 @@
+import html
 from io import BytesIO
+from pathlib import Path
 
 from matplotlib.figure import Figure
 import sympy as sp
@@ -6,6 +8,15 @@ import sympy as sp
 from PySide6.QtCore import QMarginsF, QUrl
 from PySide6.QtGui import QImage, QPageLayout, QPageSize, QPdfWriter, QTextDocument
 
+from config.settings import markdown_css
+from exporters.bibtex import (
+    Citations,
+    bibliography_files,
+    load_bibliography,
+    reference_html,
+    sort_key,
+)
+from widgets.frontmatter import parse_yaml_properties
 from widgets.math_svg import MathSvg, embed_math_objects
 from widgets.math_text import (
     MathTextBrowser,
@@ -14,10 +25,39 @@ from widgets.math_text import (
 )
 
 
-def export_pdf(cells, filepath: str) -> None:
-    """Renders notebook cells directly to a vector-grade A4 PDF using Qt QPdfWriter."""
+def _references_fragment(citations: Citations) -> str:
+    """The cited entries under "Quellen", styled like the text cells.
+
+    Qt's rich text has no hanging list indent, so each entry is a paragraph
+    with a negative text-indent.
+    """
+    if not citations.used:
+        return ""
+    entries = "".join(
+        f'<p style="margin-left: 24px; text-indent: -24px;">'
+        f'<a name="ref-{html.escape(e.key)}"></a>{reference_html(e)}</p>'
+        for e in sorted(citations.used.values(), key=sort_key)
+    )
+    browser = MathTextBrowser()
+    browser.document().setDefaultStyleSheet(markdown_css())
+    browser.setHtml(f"<h2>Quellen</h2>{entries}")
+    return browser.document().toHtml()
+
+
+def export_pdf(
+    cells, filepath: str, frontmatter: str = "", base_dir: Path | None = None
+) -> None:
+    """Renders notebook cells directly to a vector-grade A4 PDF using Qt QPdfWriter.
+
+    Quarto citations ([@key], @key) are resolved against the bibliography
+    named in the frontmatter and the cited entries appended under "Quellen".
+    """
     doc = QTextDocument()
     doc.setDocumentMargin(24)
+    properties = parse_yaml_properties(frontmatter)
+    citations = Citations(
+        load_bibliography(bibliography_files(properties, base_dir or Path.cwd()))
+    )
 
     res_counter = 0
     html_fragments = []
@@ -34,7 +74,12 @@ def export_pdf(cells, filepath: str) -> None:
         if effective == "markdown":
             browser = MathTextBrowser()
             render_markdown_with_math(
-                content, browser, namespace=cell.namespace, embed_formulas=False
+                content,
+                browser,
+                namespace=cell.namespace,
+                base_dir=base_dir,
+                embed_formulas=False,
+                cite=citations,
             )
             images.update(browser._resources)
             formulas.update(browser._formulas)
@@ -87,6 +132,8 @@ def export_pdf(cells, filepath: str) -> None:
                     html_fragments.append(
                         f'<div style="font-family: monospace; font-size: 11px; color: #0284c7;">{cell.last_val}</div>'
                     )
+
+    html_fragments.append(_references_fragment(citations))
 
     for name, qimg in images.items():
         doc.addResource(QTextDocument.ResourceType.ImageResource, QUrl(name), qimg)

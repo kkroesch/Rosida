@@ -264,18 +264,25 @@ class DocumentCanvas(QWidget):
 
     def export_pdf(self, filepath: str):
         """Exports the document directly to a vector-grade A4 PDF using Qt QPdfWriter."""
-        render_pdf(self.cells, filepath)
+        render_pdf(
+            self.cells,
+            filepath,
+            frontmatter=self.frontmatter_cell.editor.toPlainText(),
+            base_dir=self._document_dir(),
+        )
+
+    def _document_dir(self) -> Path:
+        """Folder of the open file (for relative images/bibliography), else cwd."""
+        current = getattr(self.window(), "current_filepath", None)
+        return Path(current).resolve().parent if current else Path.cwd()
 
     def export_html(self, filepath: str):
         """Exports the document as a standalone HTML page; KaTeX renders the formulas."""
-        win = self.window()
-        current = getattr(win, "current_filepath", None)
-        base_dir = Path(current).parent if current else Path.cwd()
         render_html(
             self.cells,
             filepath,
             frontmatter=self.frontmatter_cell.editor.toPlainText(),
-            base_dir=base_dir,
+            base_dir=self._document_dir(),
         )
 
     def export_qmd(self, filepath: str):
@@ -322,10 +329,7 @@ class DocumentCanvas(QWidget):
         props = self.frontmatter_cell.editor.toPlainText().strip()
         meta = parse_yaml_properties(props)
 
-        win = self.window()
-        current = getattr(win, "current_filepath", None)
-        doc_dir = Path(current).resolve().parent if current else Path.cwd()
-        bib_files = bibliography_files(meta, doc_dir)
+        bib_files = bibliography_files(meta, self._document_dir())
         if bib_files:
             rel = [
                 Path(os.path.relpath(f.resolve(), out_dir.resolve())).as_posix()
