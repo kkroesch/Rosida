@@ -59,3 +59,21 @@ def test_templates_figures_and_header(rosida_win, tmp_path, wait_idle):
   assert "n ist 7" in page
   assert 'src="data:image/svg+xml;base64,' in page
   assert '<p align="center" class="caption">Abbildung</p>' in page
+
+
+def test_code_is_highlighted_and_copyable(rosida_win, tmp_path, wait_idle):
+  doc = rosida_win.doc
+  cell = doc.cells[0]
+  cell.set_mode("python")
+  cell.editor.setPlainText("def f(x):\n    return x < 2")
+  cell.render()
+  doc.insert_cell(mode="markdown", initial_text="Text\n\n```python\nimport sympy\n```")
+
+  page = _export(rosida_win, tmp_path, wait_idle)
+
+  assert page.count('<div class="highlight">') == 2
+  assert '<span class="k">def</span>' in page  # Python-Zelle
+  assert '<span class="kn">import</span>' in page  # Codeblock in Textzelle
+  assert "&lt;" in page and "x < 2" not in page  # HTML-sicher escaped
+  assert "navigator.clipboard.writeText" in page
+  assert ".highlight .k {" in page  # Pygments-Farben eingebettet

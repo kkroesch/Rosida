@@ -334,14 +334,19 @@ class _RosidaExtension(Extension):
         md.treeprocessors.register(_CalloutTitleTreeprocessor(md), "callout_title", 4)
 
 
-def markdown_to_html(text: str, render_math) -> str:
+def markdown_to_html(text: str, render_math, highlight: bool = False) -> str:
     """Converts Rosida Markdown (Quarto callouts/figures, $/$$ math) to HTML.
 
-    render_math(latex, display) returns the HTML for a formula.
+    render_math(latex, display) returns the HTML for a formula. highlight=True
+    runs fenced code blocks through Pygments (<div class="highlight">); Qt's
+    rich text can't style that, so it's only meant for the HTML export.
     """
-    return markdown.markdown(
-        text, extensions=["extra", "sane_lists", _RosidaExtension(render_math)]
-    )
+    extensions = ["extra", "sane_lists", _RosidaExtension(render_math)]
+    configs = {}
+    if highlight:
+        extensions.append("codehilite")
+        configs["codehilite"] = {"css_class": "highlight", "guess_lang": False}
+    return markdown.markdown(text, extensions=extensions, extension_configs=configs)
 
 
 def evaluate_templates(text: str, namespace: dict) -> str:

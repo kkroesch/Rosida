@@ -15,6 +15,9 @@ import re
 
 from matplotlib.figure import Figure
 import polars as pl
+from pygments import highlight
+from pygments.formatters import HtmlFormatter
+from pygments.lexers import PythonLexer
 import sympy as sp
 import yaml
 
@@ -91,6 +94,24 @@ pre {
     overflow-x: auto;
     line-height: 1.45;
 }
+/* Syntax-Hervorhebung (Pygments) und Kopier-Knopf */
+.highlight { position: relative; margin: 1rem 0; }
+.highlight pre { margin: 0; }
+.copy {
+    position: absolute; top: 0.4rem; right: 0.4rem;
+    display: flex; align-items: center; gap: 0.3rem;
+    padding: 0.2rem 0.5rem;
+    font: 0.75rem 'CMU Sans Serif', sans-serif;
+    color: #475569; background: #fff;
+    border: 1px solid #cbd5e1; border-radius: 4px;
+    cursor: pointer;
+    opacity: 0; transition: opacity 0.15s;
+}
+.copy svg { width: 0.9rem; height: 0.9rem; }
+.highlight:hover .copy, .copy:focus-visible, .copy.done { opacity: 1; }
+.copy:hover { color: #2563eb; border-color: #93c5fd; }
+.copy.done { color: #16a34a; border-color: #86efac; }
+@media (hover: none) { .copy { opacity: 1; } }
 pre.stdout { border-left-color: #94a3b8; color: #475569; background: #fff; }
 pre.result { border: none; background: none; color: #0284c7; padding-left: 0; }
 .error { color: #dc2626; background: #fee2e2; border-left-color: #dc2626; }
@@ -118,6 +139,55 @@ th { background: #f1f5f9; }
 .callout-title-warning, .callout-title-important { color: #d97706; }
 .callout-caution { border-left-color: #dc2626 !important; background: #fef2f2 !important; }
 .callout-title-caution { color: #dc2626; }
+"""
+
+# Pygments-Farben; der Hintergrund kommt vom pre-Stil oben.
+_PYGMENTS_STYLE = "friendly"
+_HIGHLIGHT_CSS = (
+    HtmlFormatter(style=_PYGMENTS_STYLE).get_style_defs(".highlight")
+    + "\n.highlight { background: none; }"
+)
+
+# Kopier-Knopf an jedem Codeblock; Fallback für Browser ohne Clipboard-API.
+_COPY_JS = """
+const COPY_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+  + 'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" '
+  + 'width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    const area = document.createElement("textarea");
+    area.value = text;
+    document.body.appendChild(area);
+    area.select();
+    document.execCommand("copy");
+    area.remove();
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  for (const block of document.querySelectorAll(".highlight")) {
+    const code = block.querySelector("pre");
+    if (!code) continue;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "copy";
+    button.setAttribute("aria-label", "Code kopieren");
+    button.innerHTML = COPY_ICON + "<span>Kopieren</span>";
+    button.addEventListener("click", async () => {
+      await copyText(code.innerText.replace(/\\n$/, ""));
+      button.classList.add("done");
+      button.lastChild.textContent = "Kopiert";
+      setTimeout(() => {
+        button.classList.remove("done");
+        button.lastChild.textContent = "Kopieren";
+      }, 1500);
+    });
+    block.appendChild(button);
+  }
+});
 """
 
 # Rendert alle .math-Elemente; ohne KaTeX (offline) bleibt das LaTeX stehen.
@@ -181,7 +251,8 @@ def _figure_svg(fig: Figure) -> str:
 
 
 def _python_cell_html(code: str, stdout: str, value) -> str:
-    parts = [f"<pre><code>{html.escape(code)}</code></pre>"]
+    code_html = highlight(code, PythonLexer(), HtmlFormatter(nowrap=True))
+    parts = [f'<div class="highlight"><pre><code>{code_html}</code></pre></div>']
     if stdout.startswith("Error: "):
         parts.append(f'<pre class="stdout error">{html.escape(stdout[7:])}</pre>')
         return "\n".join(parts)
@@ -251,7 +322,7 @@ def export_html(
             continue
         if cell._detect_effective_mode(content) == "markdown":
             text = evaluate_templates(content, cell.namespace)
-            body.append(markdown_to_html(text, _math_html))
+            body.append(markdown_to_html(text, _math_html, highlight=True))
         else:
             code = re.sub(r"^```(?:python|py)?\s*\n|\n?```\s*$", "", content)
             body.append(_python_cell_html(code, cell.last_stdout, cell.last_val))
@@ -269,6 +340,7 @@ def export_html(
 <style>
 {_font_faces()}
 {CSS}
+{_HIGHLIGHT_CSS}
 </style>
 </head>
 <body>
@@ -276,7 +348,7 @@ def export_html(
 {_header_html(properties)}
 {_embed_images(chr(10).join(body), base_dir)}
 </main>
-<script>{_KATEX_RENDER_JS}</script>
+<script>{_KATEX_RENDER_JS}{_COPY_JS}</script>
 </body>
 </html>
 """
