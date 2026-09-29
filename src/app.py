@@ -58,7 +58,8 @@ except ImportError:
     from native_document import DocumentCanvas, InPlaceCell
 
 import matplotlib
-matplotlib.use('Agg')  # <- Crasht sonst bei Verwendung von Workern
+
+matplotlib.use("Agg")  # <- Crasht sonst bei Verwendung von Workern
 import matplotlib.pyplot as plt
 
 import numpy as np

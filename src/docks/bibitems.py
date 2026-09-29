@@ -1,12 +1,21 @@
 import re
-from PySide6.QtWidgets import (QDockWidget, QWidget, QVBoxLayout, QPushButton,
-                               QListWidget, QListWidgetItem, QLabel, QStackedWidget,
-                               QFileDialog)
+from PySide6.QtWidgets import (
+    QDockWidget,
+    QWidget,
+    QVBoxLayout,
+    QPushButton,
+    QListWidget,
+    QListWidgetItem,
+    QLabel,
+    QStackedWidget,
+    QFileDialog,
+)
 from PySide6.QtCore import Signal, Qt
 
 
 class BibItemWidget(QWidget):
     """Fehlertolerantes UI-Element für einen einzelnen Zettelkasten-Eintrag."""
+
     def __init__(self, key, author="", title="", parent=None):
         super().__init__(parent)
 
@@ -73,41 +82,49 @@ class BibDock(QDockWidget):
         """Minimalistischer Parser, der fehlertolerant über die Datei iteriert."""
         entries = []
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 content = f.read()
         except Exception:
             return []
 
         # Teile bei jedem '@' auf, ignoriere den Datei-Header vor dem ersten Eintrag
-        for block in content.split('@')[1:]:
-            lines = block.strip().split('\n')
+        for block in content.split("@")[1:]:
+            lines = block.strip().split("\n")
             if not lines:
                 continue
 
             # Erste Zeile enthält Typ und Key, z.B. "article{Asimov1956,"
             first_line = lines[0]
-            if '{' not in first_line:
+            if "{" not in first_line:
                 continue
 
             # Key extrahieren
-            key = first_line.split('{')[1].split(',')[0].strip()
+            key = first_line.split("{")[1].split(",")[0].strip()
             entry = {"key": key, "author": "", "title": ""}
 
             # Rohen Text des Blocks für non-greedy Regex zusammenfassen
             block_text = " ".join(lines)
 
             # Sucht nach author/title = {...} oder = "...", ignoriert Zeilenumbrüche
-            author_match = re.search(r'\bauthor\s*=\s*[\{"](.*?)(?:[\}"]\s*,|[\}"]\s*$)', block_text, re.IGNORECASE)
+            author_match = re.search(
+                r'\bauthor\s*=\s*[\{"](.*?)(?:[\}"]\s*,|[\}"]\s*$)',
+                block_text,
+                re.IGNORECASE,
+            )
             if author_match:
                 entry["author"] = author_match.group(1).strip()
 
-            title_match = re.search(r'\btitle\s*=\s*[\{"](.*?)(?:[\}"]\s*,|[\}"]\s*$)', block_text, re.IGNORECASE)
+            title_match = re.search(
+                r'\btitle\s*=\s*[\{"](.*?)(?:[\}"]\s*,|[\}"]\s*$)',
+                block_text,
+                re.IGNORECASE,
+            )
             if title_match:
                 entry["title"] = title_match.group(1).strip()
 
             # Bereinigt typische LaTeX-Schutzklammern (z.B. {B}austeine -> Bausteine)
-            entry["title"] = entry["title"].replace('{', '').replace('}', '')
-            entry["author"] = entry["author"].replace('{', '').replace('}', '')
+            entry["title"] = entry["title"].replace("{", "").replace("}", "")
+            entry["author"] = entry["author"].replace("{", "").replace("}", "")
 
             entries.append(entry)
 
@@ -123,7 +140,7 @@ class BibDock(QDockWidget):
             custom_widget = BibItemWidget(
                 key=entry.get("key", "Unknown"),
                 author=entry.get("author", ""),
-                title=entry.get("title", "")
+                title=entry.get("title", ""),
             )
 
             # Größe anpassen und den Key unsichtbar im Item hinterlegen

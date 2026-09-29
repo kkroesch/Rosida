@@ -34,6 +34,7 @@ class TogglePaletteDockAction(ToggleDockAction):
         self.setToolTip("LaTeX-Palette ein-/ausblenden (F4)")
         self.set_icon_name("fa5s.square-root-alt")
 
+
 class ToggleBibitemsDockAction(ToggleDockAction):
     def __init__(self, dock_widget, parent=None):
         super().__init__(dock_widget, "Bibliographie", parent)

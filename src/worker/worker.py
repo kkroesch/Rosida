@@ -2,6 +2,7 @@ import ast
 import traceback
 from PySide6.QtCore import QThread, Signal
 
+
 class CellWorker(QThread):
     # Signale für die sichere Kommunikation zurück zum Main-Thread
     result_ready = Signal(object)
