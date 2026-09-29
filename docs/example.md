@@ -12,6 +12,11 @@ categories:
 cover: pendulum.png
 ---
 
+> Vorhersagen sind schwierig, vor allem solche, 
+> die die Zukunft betreffen. (Niels Bohr)
+
+---
+
 # Das Pendel
 
 Eines der einfachsten Experimente, anhand dessen man
@@ -19,6 +24,8 @@ Bewegungsgleichungen erklären kann, ist das Pendel, das sich im
 Schwerefeld bewegt. Wie immer in solchen Fällen nehmen wir zunächst an,
 dass das Schwerefeld homogen, die Masse punktförmig und der
 Luftwiderstand zu vernachlässigen sei.
+
+![Pendel (schematisch](pendulum.png)
 
 ---
 
@@ -56,7 +63,7 @@ Bei der Betrachtung von Bewegung unter holonomen Zwnangsbedingungen verwendet ma
 
 **Hamilton-Funktion $H$):** Die Hamilton-Funktion $H$ ist die Summe aus
 kinetischer und potenzieller Energie, aber ausgedrückt in
-generalisierten Koordinaten und Impulsen. Im Falle des Pendels gibt es nur eine abhängige Koordniate: Den Auslenkungswinkel $\theta$. Es ist viel praktischer, nur diese Koordinate zu betrachten, als kompliziert zu kartesischen Koordinaten umzurechnen. Ein weiterer praktischer Umstand ist, dass die Ebene, in der das Pendel schwingt, immer gleich bleibt. Dass dem so ist, sieht man am [Foucaultschen Pendel](https://de.wikipedia.org/wiki/Foucaultsches_Pendel). Eine formalere Betrachtung findet sich in der Infobox.
+generalisierten Koordinaten und Impulsen. Im Falle des Pendels gibt es nur eine abhängige Koordniate: Den Auslenkungswinkel $\theta$. Es ist viel praktischer, nur diese Koordinate zu betrachten, als kompliziert zu kartesischen Koordinaten umzurechnen. Ein weiterer praktischer Umstand ist, dass die Ebene, in der das Pendel schwingt, immer gleich bleibt. Dass dem so ist, sieht man am [Foucaultschen Pendel](https://de.wikipedia.org/wiki/Foucaultsches_Pendel).
 
 ---
 
@@ -125,9 +132,14 @@ $\sin\theta \approx \theta$ nicht mehr gültig ist. In diesem Fall ist
 eine numerische Lösung oft der praktikabelste Weg.
 
 ```python
+"""In Python-Zellen lassen sich Variablen definieren und Berechnungen durchführen.
+   Diese sind nicht unbedingt sichtbar.
+"""
 a=23
 b=42
 ```
+
+> In Textzellen kann man Variablen referenzieren durch die Verwendung von doppelten geschweiften Klammern. Einfügen der Variable im aktuellen Editor durch Doppelklick:
 
 Die Addition von a={{a}} und b={{b}} ergibt {{a+b}}.
 
