@@ -28,9 +28,12 @@ from widgets.data import PolarsTableWidget
 from widgets.inline_editor import InlineEditor
 from widgets.callout import CalloutWidget
 from widgets.figure import FigureWidget
+from widgets.math_svg import latex_to_svg, svg_to_qimage
 from widgets.math_text import (
+    MATH_COLOR,
     MathTextBrowser,
     math_to_png_qimage,
+    pt_to_px,
     render_markdown_with_math,
 )
 
@@ -291,7 +294,7 @@ class InPlaceCell(QWidget):
         browser.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         render_markdown_with_math(
-            text, browser, fontsize=13, namespace=self.namespace, base_dir=base_dir
+            text, browser, namespace=self.namespace, base_dir=base_dir
         )
         doc = browser.document()
         doc.setTextWidth(720)
@@ -358,9 +361,15 @@ class InPlaceCell(QWidget):
                 self.view_frame.attach_click_listeners(out_lbl)
 
             if last_val is not None:
-                if isinstance(last_val, sp.Basic):
+                if isinstance(last_val, (sp.Basic, sp.MatrixBase)):
                     latex_str = sp.latex(last_val)
-                    qimg, w, h = math_to_png_qimage(latex_str, fontsize=17, dpi=192)
+                    try:
+                        svg = latex_to_svg(latex_str, pt_to_px(18), True, MATH_COLOR)
+                        qimg = svg_to_qimage(svg)
+                        w = round(svg.width)
+                        h = round(svg.ascent + svg.descent)
+                    except Exception:
+                        qimg, w, h = math_to_png_qimage(latex_str, fontsize=17, dpi=192)
                     pixmap = QPixmap.fromImage(qimg)
 
                     lbl = QLabel()

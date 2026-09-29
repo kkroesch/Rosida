@@ -6,9 +6,10 @@ import sympy as sp
 from PySide6.QtCore import QMarginsF, QUrl
 from PySide6.QtGui import QImage, QPageLayout, QPageSize, QPdfWriter, QTextDocument
 
+from widgets.math_svg import MathSvg, embed_math_objects
 from widgets.math_text import (
     MathTextBrowser,
-    math_to_png_qimage,
+    formula_html,
     render_markdown_with_math,
 )
 
@@ -20,6 +21,8 @@ def export_pdf(cells, filepath: str) -> None:
 
     res_counter = 0
     html_fragments = []
+    formulas: dict[str, MathSvg] = {}
+    images: dict[str, QImage] = {}
 
     for cell in cells:
         content = cell.editor.toPlainText().strip()
@@ -31,12 +34,10 @@ def export_pdf(cells, filepath: str) -> None:
         if effective == "markdown":
             browser = MathTextBrowser()
             render_markdown_with_math(
-                content, browser, fontsize=12, namespace=cell.namespace
+                content, browser, namespace=cell.namespace, embed_formulas=False
             )
-            for url_str, qimg in browser._resources.items():
-                doc.addResource(
-                    QTextDocument.ResourceType.ImageResource, QUrl(url_str), qimg
-                )
+            images.update(browser._resources)
+            formulas.update(browser._formulas)
             sub_doc = browser.document()
             html_fragments.append(sub_doc.toHtml())
         else:
@@ -59,17 +60,12 @@ def export_pdf(cells, filepath: str) -> None:
                 )
 
             if cell.last_val is not None:
-                if isinstance(cell.last_val, sp.Basic):
-                    res_counter += 1
-                    res_url = QUrl(f"pdfres://math_{res_counter}.png")
-                    qimg, w, h = math_to_png_qimage(
-                        sp.latex(cell.last_val), fontsize=18, dpi=200
-                    )
-                    doc.addResource(
-                        QTextDocument.ResourceType.ImageResource, res_url, qimg
+                if isinstance(cell.last_val, (sp.Basic, sp.MatrixBase)):
+                    img = formula_html(
+                        sp.latex(cell.last_val), True, 16, formulas, images
                     )
                     html_fragments.append(
-                        f'<div align="center" style="margin: 12px 0;"><img src="{res_url.toString()}" width="{w}" height="{h}"></div>'
+                        f'<div align="center" style="margin: 12px 0;">{img}</div>'
                     )
                 elif isinstance(cell.last_val, Figure):
                     res_counter += 1
@@ -92,7 +88,10 @@ def export_pdf(cells, filepath: str) -> None:
                         f'<div style="font-family: monospace; font-size: 11px; color: #0284c7;">{cell.last_val}</div>'
                     )
 
+    for name, qimg in images.items():
+        doc.addResource(QTextDocument.ResourceType.ImageResource, QUrl(name), qimg)
     doc.setHtml("<br>".join(html_fragments))
+    embed_math_objects(doc, formulas)
 
     writer = QPdfWriter(filepath)
     writer.setPageSize(QPageSize(QPageSize.PageSizeId.A4))

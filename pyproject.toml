@@ -12,6 +12,7 @@ dependencies = [
     "qtawesome",
     "pyyaml>=6.0.3",
     "markdown>=3.11",
+    "ziamath>=0.13",
 ]
 
 [dependency-groups]

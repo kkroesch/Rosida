@@ -59,4 +59,33 @@ def test_render_into_browser(qtbot):
     qtbot.addWidget(browser)
     render_markdown_with_math("# Titel\n\nFormel $x^2$", browser)
     assert "Titel" in browser.toPlainText()
-    assert len(browser._resources) == 1
+    assert len(browser._formulas) == 1
+    assert browser._resources == {}  # kein Mathtext-Fallback nötig
+
+
+def test_formula_names_are_unique_across_cells(qtbot):
+    """Der PDF-Export legt die Formeln aller Zellen in ein Dokument."""
+    first, second = MathTextBrowser(), MathTextBrowser()
+    qtbot.addWidget(first)
+    qtbot.addWidget(second)
+    render_markdown_with_math("$a$", first)
+    render_markdown_with_math("$b$", second)
+    assert set(first._formulas).isdisjoint(second._formulas)
+
+
+def test_formulas_become_vector_objects(qtbot):
+    from widgets.math_svg import MATH_OBJECT_TYPE
+
+    browser = MathTextBrowser()
+    qtbot.addWidget(browser)
+    render_markdown_with_math("Text $x^2$ und $$\\frac{1}{2}$$", browser)
+
+    object_types = []
+    block = browser.document().begin()
+    while block.isValid():
+        it = block.begin()
+        while not it.atEnd():
+            object_types.append(it.fragment().charFormat().objectType())
+            it += 1
+        block = block.next()
+    assert object_types.count(MATH_OBJECT_TYPE) == 2

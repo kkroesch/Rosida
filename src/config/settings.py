@@ -13,7 +13,7 @@ body, p, li, div, td, th {
     font-size: 16pt;
     color: #334155;
 }
-p { line-height: 160%; margin-top: 4px; margin-bottom: 8px; }
+p { line-height: 8px; -qt-line-height-type: line-distance; margin-top: 4px; margin-bottom: 8px; }
 
 h1, h2, h3, h4 {
     font-family: 'CMU Sans Serif', sans-serif;

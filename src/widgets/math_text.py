@@ -1,5 +1,7 @@
 import html
 from io import BytesIO
+import itertools
+import math
 from pathlib import Path
 import re
 from xml.etree import ElementTree as etree
@@ -17,10 +19,45 @@ from PySide6.QtGui import QImage, QTextDocument
 from PySide6.QtWidgets import QTextBrowser
 
 from config.settings import markdown_css
+from widgets.math_svg import MathSvg, embed_math_objects, latex_to_svg
 
 
 # Breite, auf die eingebettete Bilder (![..](..)) höchstens skaliert werden.
 MAX_IMAGE_WIDTH = 680
+
+MATH_COLOR = "#1e293b"
+
+# Dokumentweit eindeutige Ressourcennamen: Der PDF-Export führt die Formeln
+# aller Zellen in einem QTextDocument zusammen.
+_formula_ids = itertools.count(1)
+
+
+def pt_to_px(pt: float) -> float:
+    return pt * 96 / 72
+
+
+def formula_html(
+    latex: str,
+    display: bool,
+    fontsize: float,
+    formulas: dict[str, MathSvg],
+    images: dict[str, QImage],
+) -> str:
+    """Returns an <img> placeholder for latex and registers the rendering.
+
+    ziamath (vector, via formulas) is preferred; Matplotlib mathtext (raster,
+    via images) is the fallback for syntax ziamath rejects. Raises if both fail.
+    """
+    name = f"math://{next(_formula_ids)}"
+    try:
+        svg = latex_to_svg(latex, pt_to_px(fontsize), display, MATH_COLOR)
+        formulas[name] = svg
+        w, h = math.ceil(svg.width), math.ceil(svg.ascent + svg.descent)
+        return f'<img src="{name}" width="{w}" height="{h}">'
+    except Exception:
+        qimg, w, h = math_to_png_qimage(latex, fontsize=fontsize, dpi=192)
+        images[name] = qimg
+        return f'<img src="{name}" width="{w}" height="{h}" style="vertical-align: middle;">'
 
 
 def _clean_latex_for_mathtext(expr: str) -> str:
@@ -69,6 +106,7 @@ class MathTextBrowser(QTextBrowser):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._resources: dict[str, QImage] = {}
+        self._formulas: dict[str, MathSvg] = {}
 
     def add_math_resource(self, name: str, img: QImage):
         self._resources[name] = img
@@ -299,12 +337,19 @@ class _RosidaExtension(Extension):
 def render_markdown_with_math(
     md_text: str,
     browser: MathTextBrowser,
-    fontsize: int = 13,
+    fontsize: float = 16,
     namespace: dict | None = None,
     base_dir: Path | None = None,
+    embed_formulas: bool = True,
 ) -> None:
-    """Renders Markdown (incl. Quarto callouts/figures, {{ expr }} templates and $/$$ math) into browser."""
+    """Renders Markdown (incl. Quarto callouts/figures, {{ expr }} templates and $/$$ math) into browser.
+
+    fontsize (pt) should match the body text of the stylesheet. With
+    embed_formulas=False the formulas stay <img> placeholders (listed in
+    browser._formulas), so the HTML can be merged into another document.
+    """
     browser._resources.clear()
+    browser._formulas.clear()
     browser.document().clear()
     browser.document().setDefaultStyleSheet(markdown_css())
     if base_dir is not None:
@@ -317,32 +362,24 @@ def render_markdown_with_math(
 
     text = _evaluate_template_expressions(text, namespace or {})
 
-    counter = 0
-
     def render_math(latex: str, block: bool) -> str:
-        nonlocal counter
-        counter += 1
-        res_name = f"math://{'block' if block else 'inline'}_{counter}.png"
+        images: dict[str, QImage] = {}
         try:
-            size = fontsize + 2 if block else fontsize
-            qimg, w, h = math_to_png_qimage(latex, fontsize=size, dpi=192)
+            img = formula_html(latex, block, fontsize, browser._formulas, images)
         except Exception:
             delim = "$$" if block else "$"
             err = f'<code class="math-error">{delim}{html.escape(latex)}{delim}</code>'
             return f'<div align="center">{err}</div>' if block else err
 
-        browser.add_math_resource(res_name, qimg)
+        for name, qimg in images.items():
+            browser.add_math_resource(name, qimg)
         if block:
-            return (
-                f'<div class="math-block" align="center">'
-                f'<img src="{res_name}" width="{w}" height="{h}"></div>'
-            )
-        return (
-            f'<img src="{res_name}" width="{w}" height="{h}" '
-            f'style="vertical-align: middle;">'
-        )
+            return f'<div class="math-block" align="center">{img}</div>'
+        return img
 
     body = markdown.markdown(
         text, extensions=["extra", "sane_lists", _RosidaExtension(render_math)]
     )
     browser.setHtml(body)
+    if embed_formulas:
+        embed_math_objects(browser.document(), browser._formulas)
