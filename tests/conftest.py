@@ -16,11 +16,36 @@ from pathlib import Path
 
 import pytest
 
+from PySide6.QtWidgets import QMessageBox
+
+
 SRC_DIR = Path(__file__).resolve().parent.parent / "src"
 if str(SRC_DIR) not in sys.path:
   sys.path.insert(0, str(SRC_DIR))
 
 SLOWMO_MS = int(os.environ.get("ROSIDA_TEST_SLOWMO", "0"))
+
+
+@pytest.fixture(autouse=True)
+def mock_qmessagebox_exec(monkeypatch):
+    """
+    Fängt alle Instanz-Aufrufe von box.exec() ab und simuliert
+    einen Klick auf "Discard" (Verwerfen), damit die App sauber schließt.
+    """
+    # Überschreibt die exec-Methode für alle Instanzen von QMessageBox
+    monkeypatch.setattr(
+        QMessageBox,
+        "exec",
+        lambda self: QMessageBox.StandardButton.Discard
+    )
+
+    # Aus Kompatibilitätsgründen (manche PySide-Versionen nutzen intern exec_)
+    if hasattr(QMessageBox, "exec_"):
+        monkeypatch.setattr(
+            QMessageBox,
+            "exec_",
+            lambda self: QMessageBox.StandardButton.Discard
+        )
 
 
 @pytest.fixture

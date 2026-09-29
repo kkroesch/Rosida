@@ -1,0 +1,52 @@
+# GUI-Tests (pytest-qt), headless via Qt's Offscreen-Plattform
+test:
+    QT_QPA_PLATFORM=offscreen uv run --with pyside6 --with polars --with sympy --with matplotlib --with numpy --with qtawesome --with pytest --with pytest-qt \
+        python -m pytest tests/ -v
+
+# Wie `just test`, aber mit echten, sichtbaren Fenstern zum Zusehen (wie Playwrights headed-Modus)
+# und einer kurzen Pause nach jeder simulierten Interaktion. Pausendauer per ROSIDA_TEST_SLOWMO (ms) einstellbar.
+test-watch:
+    ROSIDA_TEST_SLOWMO="{{env('ROSIDA_TEST_SLOWMO', '600')}}" uv run --with pyside6 --with polars --with sympy --with matplotlib --with numpy --with qtawesome --with pytest --with pytest-qt \
+        python -m pytest tests/ -v -s
+
+# Code-Metriken (LOC, McCabe-Komplexität, Wartbarkeitsindex, Ruff, toter Code) -> metrics-report.md
+metrics:
+    uv run --with radon --with ruff --with vulture python scripts/metrics.py
+
+# Erstellt einen neuen Release-Tag. Ohne Parameter wird das Patch-Level des letzten Tags inkrementiert (z.B. v0.3.0 -> v0.3.1)
+tag version="":
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    VERSION="{{version}}"
+
+    if [ -z "$VERSION" ]; then
+        # Letztes Tag holen, das dem Muster v*.*.* entspricht. Fallback auf v0.0.0
+        LATEST=$(git describe --tags --abbrev=0 --match "v*.*.*" 2>/dev/null || echo "v0.0.0")
+
+        # Regex zum Extrahieren von Major, Minor und Patch
+        if [[ $LATEST =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            MAJOR="${BASH_REMATCH[1]}"
+            MINOR="${BASH_REMATCH[2]}"
+            PATCH="${BASH_REMATCH[3]}"
+
+            NEW_PATCH=$((PATCH + 1))
+            VERSION="v$MAJOR.$MINOR.$NEW_PATCH"
+            echo "Keine Version übergeben. Auto-Inkrement: $LATEST ➔ $VERSION"
+        else
+            echo "Fehler: Das letzte Tag '$LATEST' entspricht nicht dem Format vMAJOR.MINOR.PATCH"
+            exit 1
+        fi
+    else
+        # Komfort-Check: Falls du 'just tag 0.4.0' statt 'just tag v0.4.0' tippst
+        if [[ ! "$VERSION" == v* ]]; then
+            VERSION="v$VERSION"
+        fi
+        echo "Manuelle Version angegeben: ➔ $VERSION"
+    fi
+
+    # Tag erstellen (annotated)
+    git tag -a "$VERSION" -m "Release $VERSION"
+
+    echo "✅ Tag $VERSION erfolgreich lokal erstellt."
+    echo "👉 Zum Veröffentlichen: git push origin $VERSION"
