@@ -3,6 +3,7 @@ import re
 import json
 import inspect
 
+from exporters.html import export_html as render_html
 from exporters.pdf import export_pdf as render_pdf
 from exporters.qmd import QmdRenderer
 from widgets.frontmatter import FrontmatterCell
@@ -258,6 +259,18 @@ class DocumentCanvas(QWidget):
     def export_pdf(self, filepath: str):
         """Exports the document directly to a vector-grade A4 PDF using Qt QPdfWriter."""
         render_pdf(self.cells, filepath)
+
+    def export_html(self, filepath: str):
+        """Exports the document as a standalone HTML page; KaTeX renders the formulas."""
+        win = self.window()
+        current = getattr(win, "current_filepath", None)
+        base_dir = Path(current).parent if current else Path.cwd()
+        render_html(
+            self.cells,
+            filepath,
+            frontmatter=self.frontmatter_cell.editor.toPlainText(),
+            base_dir=base_dir,
+        )
 
     def export_qmd(self, filepath: str):
         """Exports the document as a Quarto (.qmd) file, evaluating {{ }} templates in markdown cells

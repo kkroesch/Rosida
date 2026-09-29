@@ -334,6 +334,21 @@ class _RosidaExtension(Extension):
         md.treeprocessors.register(_CalloutTitleTreeprocessor(md), "callout_title", 4)
 
 
+def markdown_to_html(text: str, render_math) -> str:
+    """Converts Rosida Markdown (Quarto callouts/figures, $/$$ math) to HTML.
+
+    render_math(latex, display) returns the HTML for a formula.
+    """
+    return markdown.markdown(
+        text, extensions=["extra", "sane_lists", _RosidaExtension(render_math)]
+    )
+
+
+def evaluate_templates(text: str, namespace: dict) -> str:
+    """Replaces {{ expr }} with its value; SymPy results become $...$/$$...$$."""
+    return _evaluate_template_expressions(text, namespace)
+
+
 def render_markdown_with_math(
     md_text: str,
     browser: MathTextBrowser,
@@ -377,9 +392,6 @@ def render_markdown_with_math(
             return f'<div class="math-block" align="center">{img}</div>'
         return img
 
-    body = markdown.markdown(
-        text, extensions=["extra", "sane_lists", _RosidaExtension(render_math)]
-    )
-    browser.setHtml(body)
+    browser.setHtml(markdown_to_html(text, render_math))
     if embed_formulas:
         embed_math_objects(browser.document(), browser._formulas)

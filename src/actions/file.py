@@ -258,6 +258,38 @@ class ExportPdfAction(RosidaAction):
             QApplication.restoreOverrideCursor()
 
 
+class ExportHtmlAction(RosidaAction):
+    def __init__(self, main_window, parent=None):
+        super().__init__("&HTML exportieren...", parent)
+        self.win = main_window
+
+        self.setShortcut(QKeySequence("Ctrl+Shift+H"))
+        self.setToolTip("Dokument als HTML-Seite exportieren, Formeln mit KaTeX (Ctrl+Shift+H)")
+        self.set_icon_name("fa5s.file-code")
+
+        self.triggered.connect(self._execute)
+
+    def _execute(self):
+        filepath, _ = QFileDialog.getSaveFileName(
+            self.win,
+            "Dokument als HTML exportieren",
+            "rosida_dokument.html",
+            "HTML-Seite (*.html)",
+        )
+        if not filepath:
+            return
+        try:
+            QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+            self.win.doc.export_html(filepath)
+            self.win.statusbar.showMessage(f"HTML-Export erfolgreich: {filepath}", 4000)
+        except Exception as err:
+            QMessageBox.critical(
+                self.win, "Exportfehler", f"Fehler beim HTML-Export:\n{err}"
+            )
+        finally:
+            QApplication.restoreOverrideCursor()
+
+
 class ExportQmdAction(RosidaAction):
     def __init__(self, main_window, parent=None):
         super().__init__("&Quarto exportieren...", parent)

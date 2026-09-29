@@ -26,6 +26,7 @@ from actions.edit import (
     UndoAction,
 )
 from actions.file import (
+    ExportHtmlAction,
     ExportPdfAction,
     ExportQmdAction,
     NewDocumentAction,
@@ -183,6 +184,7 @@ class RosidaApp(QMainWindow):
         self.act_save = SaveAction(self, self)
         self.act_save_as = SaveAsAction(self, self)
         self.act_export_pdf = ExportPdfAction(self, self)
+        self.act_export_html = ExportHtmlAction(self, self)
         self.act_export_qmd = ExportQmdAction(self, self)
         self.act_settings = SettingsAction(self, self)
         self.act_quit = QuitAction(self, self)
@@ -224,6 +226,7 @@ class RosidaApp(QMainWindow):
         menu_file.addSeparator()
         menu_export = menu_file.addMenu("E&xportieren")
         menu_export.addAction(self.act_export_pdf)
+        menu_export.addAction(self.act_export_html)
         menu_export.addAction(self.act_export_qmd)
 
         menu_file.addSeparator()
@@ -303,6 +306,7 @@ class RosidaApp(QMainWindow):
         toolbar.addAction(self.act_toggle_mode)
         toolbar.addSeparator()
         toolbar.addAction(self.act_export_pdf)
+        toolbar.addAction(self.act_export_html)
         toolbar.addAction(self.act_export_qmd)
         toolbar.addSeparator()
         toolbar.addAction(self.act_toggle_structure)

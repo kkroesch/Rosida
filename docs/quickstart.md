@@ -142,6 +142,9 @@ Weil das Format reines Markdown ist, funktionieren normale Git-Diffs und Merges 
 
 - **PDF** (`Ctrl+Shift+P`) – Vektor-Druck des gesamten Dokuments inkl. gerenderter Formeln, Plots
   und Tabellen.
+- **HTML** (`Ctrl+Shift+H`) – eigenständige Webseite: Formeln setzt KaTeX im Browser (per CDN
+  eingebunden), CMU-Schriften, Bilder und Plots (als SVG) sind eingebettet. Ohne Internet bleibt
+  statt der Formeln der LaTeX-Quelltext lesbar stehen.
 - **Quarto** (`Ctrl+Shift+Q`) – schreibt eine `.qmd`-Datei. `{{ }}`-Ausdrücke in Text-Zellen werden
   dabei ebenfalls ausgewertet (SymPy → LaTeX, Polars → Quarto-Tabelle, Matplotlib-Figur → SVG-Datei
   neben dem `.qmd`), Python-Zellen landen als Codeblock samt letztem Ergebnis. Ideal, um ein
