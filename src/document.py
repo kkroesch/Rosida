@@ -311,7 +311,7 @@ class InPlaceCell(QWidget):
 
             # Fall C: Regulärer Fließtext mit Mathe
             else:
-                self._render_markdown_mode(content)
+                self._render_markdown_mode(content, base_dir)
         else:
             code_to_run = content
             if code_to_run.startswith("```python") or code_to_run.startswith("```py"):
@@ -335,7 +335,7 @@ class InPlaceCell(QWidget):
         self.executed.emit()
         self.content_updated.emit()
 
-    def _render_markdown_mode(self, text: str):
+    def _render_markdown_mode(self, text: str, base_dir: Path):
         browser = MathTextBrowser()
         browser.setFrameShape(QFrame.Shape.NoFrame)
         browser.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -343,7 +343,9 @@ class InPlaceCell(QWidget):
         browser.setStyleSheet("background-color: transparent;")
         browser.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        render_markdown_with_math(text, browser, fontsize=13, namespace=self.namespace)
+        render_markdown_with_math(
+            text, browser, fontsize=13, namespace=self.namespace, base_dir=base_dir
+        )
         doc = browser.document()
         doc.setTextWidth(720)
         browser.setFixedHeight(int(doc.size().height()) + 10)
