@@ -47,6 +47,13 @@ wobei $g$ die Erdbeschleunigung ist.
 
 ---
 
+::: {.callout-note}
+## Generalisierte Koordinaten
+Bei der Betrachtung von Bewegung unter holonomen Zwnangsbedingungen verwendet man gerne generalisierte Koordinaten, die auf die jeweiligen Bedingungen angepasst sind.
+:::
+
+---
+
 **Hamilton-Funktion $H$):** Die Hamilton-Funktion $H$ ist die Summe aus
 kinetischer und potenzieller Energie, aber ausgedrückt in
 generalisierten Koordinaten und Impulsen. Im Falle des Pendels gibt es nur eine abhängige Koordniate: Den Auslenkungswinkel $\theta$. Es ist viel praktischer, nur diese Koordinate zu betrachten, als kompliziert zu kartesischen Koordinaten umzurechnen. Ein weiterer praktischer Umstand ist, dass die Ebene, in der das Pendel schwingt, immer gleich bleibt. Dass dem so ist, sieht man am [Foucaultschen Pendel](https://de.wikipedia.org/wiki/Foucaultsches_Pendel). Eine formalere Betrachtung findet sich in der Infobox.
@@ -116,6 +123,13 @@ Für größere Winkel ist die Lösung der Bewegungsgleichung deutlich
 komplexer und kann elliptische Funktionen involvieren, da die Näherung
 $\sin\theta \approx \theta$ nicht mehr gültig ist. In diesem Fall ist
 eine numerische Lösung oft der praktikabelste Weg.
+
+```python
+a=23
+b=42
+```
+
+Die Addition von a={{a}} und b={{b}} ergibt {{a+b}}.
 
 ---
 
