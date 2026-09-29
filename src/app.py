@@ -53,9 +53,10 @@ from docks.inspector import VariableInspectorDock
 from docks.bibitems import BibDock
 
 try:
-    from document import DocumentCanvas, InPlaceCell
+    from document import DocumentCanvas
 except ImportError:
-    from native_document import DocumentCanvas, InPlaceCell
+    from native_document import DocumentCanvas
+from widgets.inplace import InPlaceCell
 
 import matplotlib
 

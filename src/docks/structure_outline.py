@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from document import InPlaceCell
+from widgets.inplace import InPlaceCell
 
 
 class StructureOutlineDock(QDockWidget):
