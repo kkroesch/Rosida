@@ -68,3 +68,13 @@ def rosida_win(qtbot):
   win.show()
   qtbot.waitExposed(win)
   return win
+
+
+@pytest.fixture
+def wait_idle(qtbot):
+  """Wartet, bis der Kernel alle Zellen berechnet hat (Python läuft im Worker-Thread)."""
+
+  def _wait(doc, timeout: int = 10000):
+    qtbot.waitUntil(lambda: not doc.kernel.is_busy(), timeout=timeout)
+
+  return _wait

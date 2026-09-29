@@ -22,7 +22,7 @@ def loaded_win(rosida_win, qtbot):
     (Qt.Key.Key_Return, Qt.KeyboardModifier.ShiftModifier),
   ],
 )
-def test_finishing_edit_keeps_scroll_position(loaded_win, qtbot, key, modifier):
+def test_finishing_edit_keeps_scroll_position(loaded_win, qtbot, key, modifier, wait_idle):
   bar = loaded_win.scroll.verticalScrollBar()
   for cell in loaded_win.doc.cells[1:-2]:
     loaded_win.scroll.ensureWidgetVisible(cell, 0, 0)
@@ -31,6 +31,7 @@ def test_finishing_edit_keeps_scroll_position(loaded_win, qtbot, key, modifier):
     before = bar.value()
 
     qtbot.keyClick(cell.editor, key, modifier)
+    wait_idle(loaded_win.doc)
     qtbot.wait(20)
 
     assert cell.stack.currentIndex() == 1

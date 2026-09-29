@@ -104,6 +104,7 @@ class RosidaApp(QMainWindow):
         self.doc.active_cell_changed.connect(self._on_active_cell_changed)
         self.doc.structure_changed.connect(self.dock_structure.update_outline)
         self.doc.cell_executed.connect(self._on_cell_executed)
+        self.doc.kernel.busy_changed.connect(self._on_kernel_busy_changed)
         self.doc.modified_changed.connect(lambda _: self._update_window_title())
 
         self.read_settings()
@@ -342,11 +343,20 @@ class RosidaApp(QMainWindow):
         self._update_window_title()
 
     def _on_cell_executed(self, cell):
+        if self.doc.kernel.is_busy():
+            return
         self.lbl_kernel_status.setText("● Kernel: Zelle berechnet")
         self.lbl_kernel_status.setStyleSheet(
             "color: #0284c7; font-weight: bold; padding: 0 10px;"
         )
         self.statusbar.showMessage("Ausführung abgeschlossen", 2500)
+
+    def _on_kernel_busy_changed(self, busy: bool):
+        if busy:
+            self.lbl_kernel_status.setText("● Kernel: rechnet …")
+            self.lbl_kernel_status.setStyleSheet(
+                "color: #d97706; font-weight: bold; padding: 0 10px;"
+            )
 
     def _load_document_on_start(self):
         if self.current_filepath and os.path.exists(self.current_filepath):
@@ -454,7 +464,14 @@ def main():
 
     maybe_show_manual_on_first_run(win)
 
-    sys.exit(app.exec())
+    exit_code = app.exec()
+    if win.doc.kernel.is_computing():
+        # Python-Code in einem Thread lässt sich nicht abbrechen (auch
+        # QThread.terminate() hängt am GIL), und ein noch laufender QThread
+        # bringt Qt beim Aufräumen zum Absturz. Deshalb hart beenden.
+        QSettings().sync()
+        os._exit(exit_code)
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":

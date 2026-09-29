@@ -23,12 +23,13 @@ def test_insert_text_via_latex_palette_button_click(rosida_win, qtbot, slow_step
   assert r"\frac{a}{b}" in active.editor.toPlainText()
 
 
-def test_run_python_cell_computes_value(rosida_win, slow_step):
+def test_run_python_cell_computes_value(rosida_win, slow_step, wait_idle):
   cell = rosida_win.doc.get_active_cell()
   cell.set_mode("python")
   cell.editor.setPlainText("2 + 2")
 
   cell.render()
+  wait_idle(rosida_win.doc)
   slow_step()
 
   assert cell.last_val == 4
@@ -36,25 +37,27 @@ def test_run_python_cell_computes_value(rosida_win, slow_step):
   assert cell._is_collapsed_empty is False
 
 
-def test_run_sympy_cell_renders_symbolic_result(rosida_win, slow_step):
+def test_run_sympy_cell_renders_symbolic_result(rosida_win, slow_step, wait_idle):
   rosida_win.namespace["sp"] = sp
   cell = rosida_win.doc.get_active_cell()
   cell.set_mode("python")
   cell.editor.setPlainText("x = sp.symbols('x')\nsp.diff(x**2, x)")
 
   cell.render()
+  wait_idle(rosida_win.doc)
   slow_step()
 
   assert isinstance(cell.last_val, sp.Basic)
   assert cell.last_val == 2 * sp.symbols("x")
 
 
-def test_cell_without_output_collapses_to_plus_marker(rosida_win, slow_step):
+def test_cell_without_output_collapses_to_plus_marker(rosida_win, slow_step, wait_idle):
   cell = rosida_win.doc.get_active_cell()
   cell.set_mode("python")
   cell.editor.setPlainText("y = 42")
 
   cell.render()
+  wait_idle(rosida_win.doc)
   slow_step()
 
   assert cell.last_val is None
@@ -63,11 +66,12 @@ def test_cell_without_output_collapses_to_plus_marker(rosida_win, slow_step):
   assert cell.view_layout.count() == 1  # nur die Plus-Zeile, keine leere große Box
 
 
-def test_run_all_cells_action_executes_every_cell(rosida_win, slow_step):
+def test_run_all_cells_action_executes_every_cell(rosida_win, slow_step, wait_idle):
   rosida_win.doc.get_active_cell().editor.setPlainText("1 + 1")
   second = rosida_win.doc.insert_cell(mode="python", initial_text="3 + 3")
 
   rosida_win.act_run_all.trigger()
+  wait_idle(rosida_win.doc)
   slow_step()
 
   assert rosida_win.doc.cells[0].last_val == 2

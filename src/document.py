@@ -7,6 +7,7 @@ from exporters.pdf import export_pdf as render_pdf
 from exporters.qmd import QmdRenderer
 from widgets.frontmatter import FrontmatterCell
 from widgets.inplace import InPlaceCell
+from worker.kernel import Kernel
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QUndoStack
@@ -68,6 +69,10 @@ class DocumentCanvas(QWidget):
         self.cells: list[InPlaceCell] = []
         self._active_cell: InPlaceCell | None = None
         self._is_loading: bool = False
+        # Beim Laden gestartete Zellen; ihre (asynchronen) Ergebnisse sollen
+        # das frisch geöffnete Dokument nicht als geändert markieren.
+        self._loading_runs: set[InPlaceCell] = set()
+        self.kernel = Kernel(self.namespace, self)
         self._is_modified: bool = False
         self.undo_stack = QUndoStack(self)
 
@@ -115,13 +120,13 @@ class DocumentCanvas(QWidget):
     def _create_cell_widget(
         self, initial_text: str = "", mode: str = "auto"
     ) -> InPlaceCell:
-        cell = InPlaceCell(self.namespace, parent=self)
+        cell = InPlaceCell(self.namespace, kernel=self.kernel, parent=self)
         cell.set_mode(mode)
         if initial_text:
             cell.editor.setPlainText(initial_text)
 
         cell.cell_focused.connect(self.set_active_cell)
-        cell.content_updated.connect(lambda: self.structure_changed.emit(self.cells))
+        cell.content_updated.connect(lambda: self._on_cell_content_updated(cell))
         cell.executed.connect(lambda: self._on_cell_executed(cell))
         return cell
 
@@ -154,16 +159,25 @@ class DocumentCanvas(QWidget):
         cell = self._create_cell_widget(initial_text, mode)
         self._attach_cell_widget(cell, index)
         if auto_run:
+            if self._is_loading:
+                self._loading_runs.add(cell)
             cell.render()
         self.set_active_cell(cell)
         self.structure_changed.emit(self.cells)
         return cell
+
+    def _on_cell_content_updated(self, cell: InPlaceCell):
+        if cell not in self._loading_runs:
+            self.structure_changed.emit(self.cells)
 
     def _on_cell_executed(self, cell: InPlaceCell):
         self.cell_executed.emit(cell)
         # Snapshot aus dem geteilten Canvas-Namensraum ziehen und melden
         snapshot = get_namespace_snapshot(self.namespace)
         self.variables_updated.emit(snapshot)
+        if cell in self._loading_runs:
+            self._loading_runs.discard(cell)
+            return
         if not self._is_loading:
             self.ensure_trailing_cell()
             self.structure_changed.emit(self.cells)

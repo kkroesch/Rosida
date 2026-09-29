@@ -1,6 +1,4 @@
 import ast
-import contextlib
-from io import StringIO
 from pathlib import Path
 import re
 
@@ -9,13 +7,14 @@ from matplotlib.figure import Figure
 import sympy as sp
 import polars as pl
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QPixmap, QTextCursor
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
     QHBoxLayout,
     QLabel,
+    QProgressBar,
     QPushButton,
     QSizePolicy,
     QStackedLayout,
@@ -23,6 +22,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from worker.kernel import CellOutcome, Kernel
 from widgets.clickable_frame import ClickableOutputFrame
 from widgets.data import PolarsTableWidget
 from widgets.inline_editor import InlineEditor
@@ -38,7 +38,6 @@ from widgets.math_text import (
 )
 
 
-
 class InPlaceCell(QWidget):
     """Interactive notebook cell with smart mode detection, no radio buttons, and in-place switching."""
 
@@ -46,14 +45,28 @@ class InPlaceCell(QWidget):
     cell_focused = Signal(object)
     content_updated = Signal()
 
-    def __init__(self, kernel_namespace: dict, parent=None):
+    # Erst nach dieser Zeit erscheint der Warteindikator; schnelle Zellen
+    # wechseln so ohne Flackern direkt zum Ergebnis.
+    BUSY_INDICATOR_DELAY_MS = 150
+
+    def __init__(
+        self, kernel_namespace: dict, kernel: Kernel | None = None, parent=None
+    ):
         super().__init__(parent)
         self.namespace = kernel_namespace
+        self.kernel = kernel or Kernel(kernel_namespace, self)
         self.mode = "auto"  # "auto", "python", or "markdown"
         self.has_rendered_once = False
         self.last_stdout = ""
         self.last_val = None
         self._is_collapsed_empty = False
+        self.is_running = False  # in der Warteschlange oder in Berechnung
+        self._edited_while_running = False
+
+        self._busy_timer = QTimer(self)
+        self._busy_timer.setSingleShot(True)
+        self._busy_timer.setInterval(self.BUSY_INDICATOR_DELAY_MS)
+        self._busy_timer.timeout.connect(self._show_busy_indicator)
 
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         self.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
@@ -206,6 +219,8 @@ class InPlaceCell(QWidget):
             return "markdown"
 
     def switch_to_edit(self):
+        if self.is_running:
+            self._edited_while_running = True
         self._show_stack_page(0)
         self.editor.fit_to_content()
         self.editor.setFocus()
@@ -232,58 +247,108 @@ class InPlaceCell(QWidget):
                         sub.widget().deleteLater()
 
     def render(self):
+        """Executes/renders the cell via the kernel; Python code runs in a worker thread."""
         content = self.editor.toPlainText().strip()
-        if not content:
+        if not content or self.is_running:
             return
 
-        self._clear_view()
-        effective_mode = self._detect_effective_mode(content)
+        self.is_running = True
+        self._edited_while_running = False
 
+        if self._detect_effective_mode(content) == "markdown":
+            # Textzellen rendern im GUI-Thread, aber erst wenn alle vorher
+            # gestarteten Zellen fertig sind ({{ ... }} braucht deren Werte).
+            self.kernel.run_call(lambda: self._render_markdown_content(content))
+            return
+
+        code = content
+        if code.startswith("```python") or code.startswith("```py"):
+            lines = code.split("\n")
+            if lines[-1].strip() == "```":
+                code = "\n".join(lines[1:-1])
+            else:
+                code = "\n".join(lines[1:])
+
+        self.editor.setReadOnly(True)
+        self._busy_timer.start()
+        self.kernel.run_code(code, self._on_python_done)
+
+    def _render_markdown_content(self, content: str):
+        self._clear_view()
         self._is_collapsed_empty = False
 
-        if effective_mode == "markdown":
-            # Basisverzeichnis ermitteln
-            win = self.window()
-            base_dir = (
-                Path(win.current_filepath).parent
-                if getattr(win, "current_filepath", None)
-                else Path.cwd()
-            )
+        # Basisverzeichnis ermitteln
+        win = self.window()
+        base_dir = (
+            Path(win.current_filepath).parent
+            if getattr(win, "current_filepath", None)
+            else Path.cwd()
+        )
 
-            # Fall A: Quarto Callout-Box
-            if content.startswith(":::") and "{.callout-" in content:
-                widget = CalloutWidget(content, namespace=self.namespace, parent=self)
-                self.view_layout.addWidget(widget)
-                self.view_frame.attach_click_listeners(widget)
+        # Fall A: Quarto Callout-Box
+        if content.startswith(":::") and "{.callout-" in content:
+            widget = CalloutWidget(content, namespace=self.namespace, parent=self)
+            self.view_layout.addWidget(widget)
+            self.view_frame.attach_click_listeners(widget)
 
-            # Fall B: Quarto / Markdown Abbildung
-            elif content.startswith("![") and "](" in content:
-                widget = FigureWidget(content, base_dir=base_dir, parent=self)
-                self.view_layout.addWidget(widget)
-                self.view_frame.attach_click_listeners(widget)
+        # Fall B: Quarto / Markdown Abbildung
+        elif content.startswith("![") and "](" in content:
+            widget = FigureWidget(content, base_dir=base_dir, parent=self)
+            self.view_layout.addWidget(widget)
+            self.view_frame.attach_click_listeners(widget)
 
-            # Fall C: Regulärer Fließtext mit Mathe
-            else:
-                self._render_markdown_mode(content, base_dir)
+        # Fall C: Regulärer Fließtext mit Mathe
         else:
-            code_to_run = content
-            if code_to_run.startswith("```python") or code_to_run.startswith("```py"):
-                lines = code_to_run.split("\n")
-                if lines[-1].strip() == "```":
-                    code_to_run = "\n".join(lines[1:-1])
-                else:
-                    code_to_run = "\n".join(lines[1:])
-            self._render_python_mode(code_to_run)
+            self._render_markdown_mode(content, base_dir)
 
-            if self.view_layout.count() == 0:
-                self._render_collapsed_placeholder()
-                self._is_collapsed_empty = True
+        self._finish_render()
 
+    def _show_busy_indicator(self):
+        """Replaces the view with a wait indicator while the cell is computing."""
+        self._clear_view()
+        row = QHBoxLayout()
+        row.setSpacing(10)
+        bar = QProgressBar()
+        bar.setRange(0, 0)  # unbestimmt: Lauflicht
+        bar.setTextVisible(False)
+        bar.setFixedSize(120, 6)
+        bar.setStyleSheet(
+            "QProgressBar { background: #e2e8f0; border: none; border-radius: 3px; }"
+            "QProgressBar::chunk { background: #2563eb; border-radius: 3px; }"
+        )
+        text = "Wird berechnet …" if self.kernel.is_computing() else "Wartet …"
+        lbl = QLabel(text)
+        lbl.setStyleSheet("color: #64748b; font-size: 12px; font-style: italic;")
+        row.addWidget(bar)
+        row.addWidget(lbl)
+        row.addStretch()
+        self.view_layout.addLayout(row)
+        self.view_frame.attach_click_listeners(lbl)
+        if not self._edited_while_running:
+            self._show_stack_page(1)
+
+    def _on_python_done(self, outcome: CellOutcome):
+        self._busy_timer.stop()
+        self.editor.setReadOnly(False)
+        self._clear_view()
+        self._is_collapsed_empty = False
+        self._show_python_outcome(outcome)
+        if self.view_layout.count() == 0:
+            self._render_collapsed_placeholder()
+            self._is_collapsed_empty = True
+        self._finish_render()
+
+    def _finish_render(self):
         QApplication.processEvents()
         self.has_rendered_once = True
-        self._show_stack_page(1)
-        self.executed.emit()
+        self.is_running = False
+        # Wer während der Berechnung in den Editor gewechselt ist, bleibt dort.
+        if not self._edited_while_running:
+            self._show_stack_page(1)
+        # content_updated vor executed: Das Dokument erkennt daran noch, ob der
+        # Lauf beim Laden gestartet wurde (siehe DocumentCanvas._loading_runs).
         self.content_updated.emit()
+        self.executed.emit()
 
     def _render_markdown_mode(self, text: str, base_dir: Path):
         browser = MathTextBrowser()
@@ -330,91 +395,84 @@ class InPlaceCell(QWidget):
         self.view_layout.addLayout(row)
         self.view_frame.attach_click_listeners(plus_lbl)
 
-    def _render_python_mode(self, code: str):
-        stdout_capture = StringIO()
-        last_val = None
+    def _show_python_outcome(self, outcome: CellOutcome):
+        """Builds the output widgets for a finished Python run."""
+        stdout_text = outcome.stdout.strip()
+        last_val = outcome.value
 
-        try:
-            parsed = ast.parse(code)
-            body = parsed.body
-
-            with contextlib.redirect_stdout(stdout_capture):
-                if body and isinstance(body[-1], ast.Expr):
-                    if len(body) > 1:
-                        exec_mod = ast.Module(body=body[:-1], type_ignores=[])
-                        exec(compile(exec_mod, "<cell>", "exec"), self.namespace)
-                    expr_mod = ast.Expression(body=body[-1].value)
-                    last_val = eval(compile(expr_mod, "<cell>", "eval"), self.namespace)
-                else:
-                    exec(code, self.namespace)
-
-            stdout_text = stdout_capture.getvalue().strip()
-            self.last_stdout = stdout_text
-            self.last_val = last_val
-
-            if stdout_text:
-                out_lbl = QLabel(stdout_text)
-                out_lbl.setStyleSheet(
-                    "font-family: 'JetBrains Mono', monospace; color: #475569; font-size: 12px; margin: 4px 0;"
-                )
-                self.view_layout.addWidget(out_lbl)
-                self.view_frame.attach_click_listeners(out_lbl)
-
-            if last_val is not None:
-                if isinstance(last_val, (sp.Basic, sp.MatrixBase)):
-                    latex_str = sp.latex(last_val)
-                    try:
-                        svg = latex_to_svg(latex_str, pt_to_px(18), True, MATH_COLOR)
-                        qimg = svg_to_qimage(svg)
-                        w = round(svg.width)
-                        h = round(svg.ascent + svg.descent)
-                    except Exception:
-                        qimg, w, h = math_to_png_qimage(latex_str, fontsize=17, dpi=192)
-                    pixmap = QPixmap.fromImage(qimg)
-
-                    lbl = QLabel()
-                    lbl.setPixmap(pixmap)
-                    lbl.setFixedSize(w, h)
-
-                    row = QHBoxLayout()
-                    row.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                    row.addWidget(lbl)
-                    self.view_layout.addLayout(row)
-                    self.view_frame.attach_click_listeners(lbl)
-
-                elif isinstance(last_val, Figure):
-                    canvas = FigureCanvasQTAgg(last_val)
-                    canvas.setMinimumHeight(280)
-                    canvas.setSizePolicy(
-                        QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
-                    )
-                    self.view_layout.addWidget(canvas)
-                    self.view_frame.attach_click_listeners(canvas)
-
-                # NEU: Polars DataFrame abfangen
-                elif pl is not None and isinstance(last_val, pl.DataFrame):
-                    table = PolarsTableWidget(last_val)
-                    table.setMaximumHeight(320)
-                    table.setSizePolicy(
-                        QSizePolicy.Policy.Expanding, QSizePolicy.Preferred
-                    )
-                    self.view_layout.addWidget(table)
-                    # WICHTIG: KEIN attach_click_listeners(table) hier!
-
-                else:
-                    val_lbl = QLabel(str(last_val))
-                    val_lbl.setStyleSheet(
-                        "color: #0284c7; font-family: 'JetBrains Mono', monospace; font-size: 13px;"
-                    )
-                    self.view_layout.addWidget(val_lbl)
-                    self.view_frame.attach_click_listeners(val_lbl)
-
-        except Exception as err:
-            self.last_stdout = f"Error: {err}"
+        if outcome.error:
+            # Letzte Traceback-Zeile ist "Typ: Meldung", der Rest als Tooltip.
+            message = outcome.error.strip().splitlines()[-1]
+            self.last_stdout = f"Error: {message}"
             self.last_val = None
-            err_lbl = QLabel(f"⚠️ {type(err).__name__}: {err}")
+            if stdout_text:
+                self._add_stdout_label(stdout_text)
+            err_lbl = QLabel(f"⚠️ {message}")
+            err_lbl.setToolTip(outcome.error)
             err_lbl.setStyleSheet(
                 "color: #dc2626; font-family: monospace; font-size: 12px; font-weight: bold;"
             )
             self.view_layout.addWidget(err_lbl)
             self.view_frame.attach_click_listeners(err_lbl)
+            return
+
+        self.last_stdout = stdout_text
+        self.last_val = last_val
+
+        if stdout_text:
+            self._add_stdout_label(stdout_text)
+
+        if last_val is not None:
+            if isinstance(last_val, (sp.Basic, sp.MatrixBase)):
+                latex_str = sp.latex(last_val)
+                try:
+                    svg = latex_to_svg(latex_str, pt_to_px(18), True, MATH_COLOR)
+                    qimg = svg_to_qimage(svg)
+                    w = round(svg.width)
+                    h = round(svg.ascent + svg.descent)
+                except Exception:
+                    qimg, w, h = math_to_png_qimage(latex_str, fontsize=17, dpi=192)
+                pixmap = QPixmap.fromImage(qimg)
+
+                lbl = QLabel()
+                lbl.setPixmap(pixmap)
+                lbl.setFixedSize(w, h)
+
+                row = QHBoxLayout()
+                row.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                row.addWidget(lbl)
+                self.view_layout.addLayout(row)
+                self.view_frame.attach_click_listeners(lbl)
+
+            elif isinstance(last_val, Figure):
+                canvas = FigureCanvasQTAgg(last_val)
+                canvas.setMinimumHeight(280)
+                canvas.setSizePolicy(
+                    QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+                )
+                self.view_layout.addWidget(canvas)
+                self.view_frame.attach_click_listeners(canvas)
+
+            # NEU: Polars DataFrame abfangen
+            elif pl is not None and isinstance(last_val, pl.DataFrame):
+                table = PolarsTableWidget(last_val)
+                table.setMaximumHeight(320)
+                table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Preferred)
+                self.view_layout.addWidget(table)
+                # WICHTIG: KEIN attach_click_listeners(table) hier!
+
+            else:
+                val_lbl = QLabel(str(last_val))
+                val_lbl.setStyleSheet(
+                    "color: #0284c7; font-family: 'JetBrains Mono', monospace; font-size: 13px;"
+                )
+                self.view_layout.addWidget(val_lbl)
+                self.view_frame.attach_click_listeners(val_lbl)
+
+    def _add_stdout_label(self, text: str):
+        out_lbl = QLabel(text)
+        out_lbl.setStyleSheet(
+            "font-family: 'JetBrains Mono', monospace; color: #475569; font-size: 12px; margin: 4px 0;"
+        )
+        self.view_layout.addWidget(out_lbl)
+        self.view_frame.attach_click_listeners(out_lbl)
