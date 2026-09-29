@@ -10,7 +10,7 @@ summary: "Am Beispiel eines einfachen Pendels zeige ich die Anwendung der theore
 categories:
   - "Science"
 cover: pendulum.png
-bibliography: example.bib
+bibliography: gassner.bib
 ---
 
 > Vorhersagen sind schwierig, vor allem solche, 
@@ -51,7 +51,7 @@ wird durch die Höhe des Pendelendes über seinem tiefsten Punkt bestimmt.
 Wenn das Pendel um den Winkel $\theta$ ausgelenkt wird, ist die Höhe
 $h = l(1 - \cos\theta)$. Die potenzielle Energie ist dann
 $$V = mgh = mg l(1 - \cos\theta),$$
-wobei $g$ die Erdbeschleunigung ist.
+wobei $g$ die Erdbeschleunigung ist.[@gasner_konnen_2019]
 
 ---
 
