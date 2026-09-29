@@ -1,3 +1,9 @@
+---
+author: Karsten
+date: 2026-09-29
+status: draft
+---
+
 # Dämpfung und Resonanz
 
 ```python
@@ -5,7 +11,7 @@ a=23
 b=42
 ```
 
-Es sei a={{a}} und b={{b}}. Addiert gibt das {{a+b}}, niedlich, oder?
+Es sei a={{a}} und b={{b}}. Addiert gibt das {{a+b}}.
 
 ---
 
@@ -15,11 +21,15 @@ Das unbestimmte Integral lautet:
 
 $$\int \sin(x) e^x \, dx = \frac{e^x}{2} (\sin(x) - \cos(x)) + C$$
 
-> *Hinweis: Klicke auf eine Formel oder Grafik, um Code oder Text direkt zu bearbeiten. Mit Escape kehrst du in die Ansicht zurück.*
-
 ## Symbolische Ableitung mit SymPy
 
 Hier berechnen wir die erste Ableitung $f'(x)$:
+
+---
+
+::: {.callout-tip}
+Klicke auf eine Formel oder Grafik, um Code oder Text direkt zu bearbeiten. Mit Escape kehrst du in die Ansicht zurück.
+:::
 
 ```python
 x = sp.symbols('x')
@@ -52,9 +62,10 @@ Auch weitere Abbildungen können eingefügt werden, müssen aber ein einem separ
 
 ![Screenshot der Abbildung](screenshot.png){#fig-screenshot}
 
----
+```python
+def fn(x):
+    """ Syntax Highlighting Test """
+    print(f"Die Antwort ist {x}.")
 
-::: {.callout-note}
-**Pfade anpassen**
-Der Pfad ist relativ zum Verzeicnis des aktuelle Dokuments.
-:::
+fn(42)
+```

@@ -13,7 +13,7 @@ import polars as pl
 
 from exporters.pdf import export_pdf as render_pdf
 from exporters.qmd import QmdRenderer
-from widgets.syntax import CellHighlighter
+from widgets.frontmatter import FrontmatterCell
 
 
 from PySide6.QtCore import Qt, Signal
@@ -492,6 +492,10 @@ class DocumentCanvas(QWidget):
         )
         self.layout.addWidget(self.stretch_spacer)
 
+        self.frontmatter_cell = FrontmatterCell()
+        self.layout.addWidget(self.frontmatter_cell)
+        self.frontmatter_cell.commit_and_collapse()
+
         # Jede strukturelle oder inhaltliche Änderung (Text, Modus, Zellen) markiert das Dokument als geändert.
         self.structure_changed.connect(lambda _cells: self.set_modified(True))
 
@@ -697,6 +701,8 @@ class DocumentCanvas(QWidget):
         chunks = []
         prev_was_md = False
 
+        doc_properties = self.frontmatter_cell.editor.toPlainText().strip()
+
         for cell in self.cells:
             content = cell.editor.toPlainText().strip()
             if not content:
@@ -718,7 +724,7 @@ class DocumentCanvas(QWidget):
                     chunks.append(f"```python\n{content}\n```")
                 prev_was_md = False
 
-        full_md = "\n\n".join(chunks) + "\n"
+        full_md = f"---\n{doc_properties}\n---\n\n" + "\n\n".join(chunks) + "\n"
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(full_md)
 
@@ -736,7 +742,22 @@ class DocumentCanvas(QWidget):
         self._is_loading = True
         try:
             with open(filepath, "r", encoding="utf-8") as f:
-                raw_text = f.read()
+                content = f.read()
+
+            # 1. Frontmatter exakt an den '---' Markern abtrennen
+            if content.startswith("---\n"):
+                parts = content.split("---\n", 2)
+                if len(parts) >= 3:
+                    # parts[1] ist das YAML, parts[2] ist der Rest des Dokuments
+                    yaml_text = parts[1].strip()
+                    content = parts[2].lstrip()
+
+                    self.frontmatter_cell.editor.setPlainText(yaml_text)
+                    self.frontmatter_cell.commit_and_collapse()
+            else:
+                # Kein Frontmatter da
+                self.frontmatter_cell.editor.setPlainText("")
+                self.frontmatter_cell.commit_and_collapse()
 
             while self.cells:
                 c = self.cells.pop()
@@ -746,8 +767,8 @@ class DocumentCanvas(QWidget):
             pattern = re.compile(r"```(?:python|py)\s*\n(.*?)```", re.DOTALL)
             last_end = 0
 
-            for match in pattern.finditer(raw_text):
-                text_before = raw_text[last_end : match.start()].strip()
+            for match in pattern.finditer(content):
+                text_before = content[last_end : match.start()].strip()
                 if text_before:
                     if text_before:
                         # Hier die neue Zerlegung nutzen:
@@ -764,7 +785,7 @@ class DocumentCanvas(QWidget):
 
                 last_end = match.end()
 
-            trailing_text = raw_text[last_end:].strip()
+            trailing_text = content[last_end:].strip()
             if trailing_text:
                 # Und auch beim Rest am Dokumentende:
                 for part in self._split_markdown_blocks(trailing_text):
