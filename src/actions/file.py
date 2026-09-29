@@ -47,6 +47,9 @@ class NewDocumentAction(RosidaAction):
             doc.layout.removeWidget(cell)
             cell.deleteLater()
 
+        # Eigenschaften (Titel, bibliography, ...) nicht ins neue Dokument erben
+        doc.frontmatter_cell.editor.setPlainText("")
+        doc.frontmatter_cell.commit_and_collapse()
         self.win.set_current_filepath(None)
         doc.undo_stack.clear()
         doc.undo_stack.setClean()

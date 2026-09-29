@@ -170,6 +170,10 @@ class RosidaApp(QMainWindow):
         self.dock_bibitems.setObjectName("bibitems_dock")
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dock_bibitems)
         self.dock_bibitems.citation_selected.connect(self.doc.insert_text_into_active)
+        self.dock_bibitems.bib_file_chosen.connect(self._on_bib_file_chosen)
+        self.doc.frontmatter_cell.frontmatter_updated.connect(
+            lambda _meta: self._sync_bibliography()
+        )
 
         self.act_toggle_variables = ToggleVariablesDockAction(self.dock_variables, self)
         self.doc.variables_updated.connect(self.dock_variables.update_variables)
@@ -317,6 +321,30 @@ class RosidaApp(QMainWindow):
         if filepath:
             add_recent_file(filepath)
         self._update_window_title()
+        self._sync_bibliography()
+
+    def _document_dir(self) -> Path | None:
+        return Path(self.current_filepath).resolve().parent if self.current_filepath else None
+
+    def _sync_bibliography(self):
+        """Loads the .bib file(s) named in the frontmatter into the references dock."""
+        value = self.doc.frontmatter_cell.metadata().get("bibliography") or []
+        names = [value] if isinstance(value, str) else [str(v) for v in value]
+        base = self._document_dir() or Path.cwd()
+        files = [(base / Path(name).expanduser()) for name in names]
+        self.dock_bibitems.show_bibliography(files, start_dir=str(base))
+
+    def _on_bib_file_chosen(self, filepath: str):
+        """Stores the chosen .bib file as bibliography, relative to the document."""
+        path = Path(filepath).resolve()
+        base = self._document_dir()
+        if base:
+            value = Path(os.path.relpath(path, base)).as_posix()
+        else:
+            # Noch nicht gespeichert: kein Bezugsordner, daher absolut
+            value = path.as_posix()
+        self.doc.frontmatter_cell.set_property("bibliography", value)
+        self.doc.set_modified(True)
 
     def _update_window_title(self):
         dirty_flag = " *" if hasattr(self, "doc") and self.doc.is_modified() else ""
