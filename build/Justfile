@@ -13,6 +13,10 @@ test-watch:
 metrics:
     uv run --with radon --with ruff --with vulture python scripts/metrics.py
 
+# Formattiere Quelltext
+format:
+    uvx ruff format src
+
 # Erstellt einen neuen Release-Tag. Ohne Parameter wird das Patch-Level des letzten Tags inkrementiert (z.B. v0.3.0 -> v0.3.1)
 tag version="":
     #!/usr/bin/env bash
