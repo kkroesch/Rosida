@@ -31,7 +31,8 @@ Ein Dokument besteht aus einer Folge von **Zellen**. Jede Zelle ist entweder:
 | Zelle ausführen / rendern | `Shift+Enter` |
 | Zurück in den Editor (aus der Ansicht) | Klick auf die Zelle, dann `Escape` zum Schließen |
 | Modus umschalten (Auto → Python → Text) | `Ctrl+M` oder Klick auf die Modus-Pille |
-| Zelle darüber / darunter einfügen | `Ctrl+Shift+A` / `Ctrl+Shift+B` |
+| Zelle vor der aktiven einfügen | `Ctrl+Shift+A` |
+| Zelle nach oben / unten verschieben | `Ctrl+Shift+Up` / `Ctrl+Shift+Down` |
 | Aktive Zelle löschen | `Ctrl+Shift+D` |
 | Alle Zellen ausführen | `Ctrl+Shift+Return` |
 | Rückgängig / Wiederholen | `Cmd+Z` / `Cmd+Shift+Z` |

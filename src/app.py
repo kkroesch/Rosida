@@ -18,8 +18,9 @@ from PySide6.QtWidgets import (
 from actions.cell import RunAllAction, RunCellAction
 from actions.edit import (
     DeleteCellAction,
-    InsertCellAboveAction,
-    InsertCellBelowAction,
+    InsertCellAction,
+    MoveCellAboveAction,
+    MoveCellBelowAction,
     RedoAction,
     ToggleModeAction,
     UndoAction,
@@ -188,8 +189,9 @@ class RosidaApp(QMainWindow):
         # Bearbeiten
         self.act_undo = UndoAction(self.doc, self)
         self.act_redo = RedoAction(self.doc, self)
-        self.act_insert_above = InsertCellAboveAction(self.doc, self)
-        self.act_insert_below = InsertCellBelowAction(self.doc, self)
+        self.act_insert_cell = InsertCellAction(self.doc, self)
+        self.act_move_up = MoveCellAboveAction(self.doc, self)
+        self.act_move_down = MoveCellBelowAction(self.doc, self)
         self.act_delete_cell = DeleteCellAction(self.doc, self)
         self.act_toggle_mode = ToggleModeAction(self.doc, self)
 
@@ -231,8 +233,9 @@ class RosidaApp(QMainWindow):
         menu_edit.addAction(self.act_undo)
         menu_edit.addAction(self.act_redo)
         menu_edit.addSeparator()
-        menu_edit.addAction(self.act_insert_above)
-        menu_edit.addAction(self.act_insert_below)
+        menu_edit.addAction(self.act_insert_cell)
+        menu_edit.addAction(self.act_move_up)
+        menu_edit.addAction(self.act_move_down)
         menu_edit.addAction(self.act_delete_cell)
         menu_edit.addSeparator()
         menu_edit.addAction(self.act_toggle_mode)
@@ -288,8 +291,9 @@ class RosidaApp(QMainWindow):
         toolbar.addAction(self.act_undo)
         toolbar.addAction(self.act_redo)
         toolbar.addSeparator()
-        toolbar.addAction(self.act_insert_above)
-        toolbar.addAction(self.act_insert_below)
+        toolbar.addAction(self.act_insert_cell)
+        toolbar.addAction(self.act_move_up)
+        toolbar.addAction(self.act_move_down)
         toolbar.addAction(self.act_delete_cell)
         toolbar.addSeparator()
         toolbar.addAction(self.act_run_cell)

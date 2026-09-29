@@ -12,7 +12,7 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QUndoStack
 from PySide6.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
 
-from actions.edit import DeleteCellCommand, InsertCellCommand
+from actions.edit import DeleteCellCommand, InsertCellCommand, MoveCellCommand
 
 
 def get_namespace_snapshot(ns: dict) -> list[dict]:
@@ -132,7 +132,9 @@ class DocumentCanvas(QWidget):
             self.layout.addWidget(cell)
             self.cells.append(cell)
         else:
-            self.layout.insertWidget(index, cell)
+            # Im Layout steht vor den Zellen noch die Frontmatter, deshalb
+            # die Layout-Position der verdrängten Zelle statt des Listenindex.
+            self.layout.insertWidget(self.layout.indexOf(self.cells[index]), cell)
             self.cells.insert(index, cell)
         cell.show()
         self.layout.addWidget(self.stretch_spacer)
@@ -180,18 +182,20 @@ class DocumentCanvas(QWidget):
             new_cell = self.insert_cell()
             new_cell.editor.setFocus()
 
-    def insert_cell_above(self):
+    def insert_cell_before_active(self):
         idx = max(0, self.get_active_index())
-        cmd = InsertCellCommand(self, index=idx, description="Zelle darüber einfügen")
+        cmd = InsertCellCommand(self, index=idx, description="Zelle einfügen")
         self.undo_stack.push(cmd)
 
-    def insert_cell_below(self):
-        idx = self.get_active_index()
-        target_idx = idx + 1 if idx >= 0 else len(self.cells)
-        cmd = InsertCellCommand(
-            self, index=target_idx, description="Zelle darunter einfügen"
-        )
-        self.undo_stack.push(cmd)
+    def move_active_cell(self, offset: int):
+        """Moves the active cell by offset positions (-1 = up, +1 = down)."""
+        active = self.get_active_cell()
+        if not active:
+            return
+        target = self.cells.index(active) + offset
+        if not 0 <= target < len(self.cells):
+            return
+        self.undo_stack.push(MoveCellCommand(self, active, offset))
 
     def delete_active_cell(self):
         active = self.get_active_cell()
