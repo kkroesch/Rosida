@@ -1,9 +1,29 @@
 """Zentrale, über QSettings überschreibbare Einstellungen."""
 
+from pathlib import Path
+
 from PySide6.QtCore import QSettings
 
 
+_SRC_DIR = Path(__file__).resolve().parent.parent
+
+
+def _find_assets_dir() -> Path:
+    """assets/ liegt im Repo neben src/, in den App-Bundles neben app.py."""
+    for candidate in (_SRC_DIR / "assets", _SRC_DIR.parent / "assets"):
+        if candidate.is_dir():
+            return candidate
+    return _SRC_DIR / "assets"
+
+
+ASSETS_DIR = _find_assets_dir()
+FONTS_DIR = ASSETS_DIR / "fonts"
+
 MARKDOWN_CSS_KEY = "render/markdown_css"
+MATH_FONT_KEY = "render/math_font"
+
+# OpenType-Mathe-Schrift (mit MATH-Tabelle) für ziamath; passt zu CMU.
+DEFAULT_MATH_FONT = FONTS_DIR / "latinmodern-math.otf"
 
 # Qt-Rich-Text versteht nur eine Teilmenge von CSS 2.1, siehe
 # https://doc.qt.io/qt-6/richtext-html-subset.html
@@ -66,3 +86,13 @@ th { font-weight: bold; background-color: #f1f5f9; }
 def markdown_css() -> str:
     """Stylesheet für gerenderte Markdown-Zellen; Default, solange nichts gespeichert ist."""
     return str(QSettings().value(MARKDOWN_CSS_KEY, DEFAULT_MARKDOWN_CSS))
+
+
+def math_font() -> str | None:
+    """Pfad der Formel-Schrift; None heißt ziamaths eingebaute STIX Two Math.
+
+    Ein leerer Wert in QSettings wählt ausdrücklich STIX Two Math.
+    """
+    value = QSettings().value(MATH_FONT_KEY)
+    path = Path(value) if value else (DEFAULT_MATH_FONT if value is None else None)
+    return str(path) if path and path.is_file() else None

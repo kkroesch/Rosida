@@ -39,7 +39,8 @@ prepare:
     echo "==> 3. Anwendungsdateien kopieren..."
     mkdir -p "{{APP_DIR}}/usr/lib/rosida"
     cp -a "{{REPO_ROOT}}"/src/* "{{APP_DIR}}/usr/lib/rosida/"
-    test -d "{{REPO_ROOT}}/fonts" && cp -a "{{REPO_ROOT}}/fonts" "{{APP_DIR}}/usr/lib/rosida/" || true
+    mkdir -p "{{APP_DIR}}/usr/lib/rosida/assets"
+    cp -a "{{REPO_ROOT}}/assets/fonts" "{{APP_DIR}}/usr/lib/rosida/assets/"
 
     echo "==> 4. Desktop-Integration und Starter..."
     cp "{{MOD_DIR}}/AppRun" "{{APP_DIR}}/AppRun"

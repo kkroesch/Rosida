@@ -47,3 +47,45 @@ def test_pdf_export_has_vector_formulas(rosida_win, tmp_path):
   fills = [d for d in page.get_drawings() if d["type"] == "f"]
   # Eine Füllung pro Glyphe (E, =, m, c, 2) – keine zusätzlichen Konturen.
   assert len(fills) == 5
+
+
+class _FakeSettings:
+  """Ersetzt QSettings, damit Tests keine echten Benutzereinstellungen ändern."""
+
+  values: dict = {}
+
+  def value(self, key, default=None):
+    return self.values.get(key, default)
+
+
+def test_math_font_defaults_to_latin_modern(monkeypatch):
+  import config.settings as settings
+
+  monkeypatch.setattr(settings, "QSettings", _FakeSettings)
+  monkeypatch.setattr(_FakeSettings, "values", {})
+  assert settings.math_font() == str(settings.DEFAULT_MATH_FONT)
+
+  # Leerer Wert: ausdrücklich ziamaths eingebaute STIX Two Math
+  monkeypatch.setattr(_FakeSettings, "values", {settings.MATH_FONT_KEY: ""})
+  assert settings.math_font() is None
+
+  # Fehlende Datei: ebenfalls Fallback auf STIX Two Math
+  monkeypatch.setattr(_FakeSettings, "values", {settings.MATH_FONT_KEY: "/gibt/es/nicht.otf"})
+  assert settings.math_font() is None
+
+
+def test_cff_font_outlines_are_parsed():
+  """Latin Modern Math (CFF) liefert kubische Kurven (C) statt Q."""
+  from config.settings import DEFAULT_MATH_FONT
+  from widgets.math_svg import _latex_to_svg
+
+  math = _latex_to_svg(r"\sqrt{x^2}", 21.0, False, "#000000", str(DEFAULT_MATH_FONT))
+  assert b" C " in math.svg
+  shapes = _svg_shapes(math.svg)[1]
+  assert shapes and all(not path.isEmpty() for path, _ in shapes)
+
+
+def test_application_fonts_are_found():
+  from config.settings import FONTS_DIR
+
+  assert (FONTS_DIR / "cmu.serif-roman.ttf").is_file()

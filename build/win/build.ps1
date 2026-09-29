@@ -18,6 +18,7 @@ Write-Host "==> 3. Windows Executable mit PyInstaller packen..."
     --name "Rosida" `
     --icon "logo.ico" `
     --add-data "src;src" `
+    --add-data "assets/fonts;assets/fonts" `
     --collect-data ziamath `
     --collect-data latex2mathml `
     src/app.py

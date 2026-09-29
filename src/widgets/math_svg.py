@@ -7,7 +7,7 @@ Grundlinie des umgebenden Textes.
 
 Das SVG wird bewusst nicht mit QSvgRenderer gezeichnet: Der startet mit einem
 Stift ohne Pinsel, den Qts PDF-Engine dennoch als Kontur ausgibt, wodurch jede
-Glyphe im PDF fett wird. ziamath erzeugt nur <path> (M/L/Q/Z, absolut) und
+Glyphe im PDF fett wird. ziamath erzeugt nur <path> (M/L/Q/C/Z, absolut) und
 <rect>, das lässt sich direkt in QPainterPaths übersetzen.
 """
 
@@ -16,6 +16,8 @@ from functools import lru_cache
 import re
 
 import ziamath as zm
+
+from config.settings import math_font
 
 from PySide6.QtCore import QByteArray, QPointF, QRectF, QSizeF, Qt
 from PySide6.QtGui import (
@@ -43,7 +45,7 @@ _DESCENT = QTextFormat.Property.UserProperty + 4
 _VIEWBOX_RE = re.compile(r'viewBox="([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)"')
 _SHAPE_RE = re.compile(r"<(path|rect)\b([^>]*)>")
 _ATTR_RE = re.compile(r'([\w-]+)="([^"]*)"')
-_PATH_TOKEN_RE = re.compile(r"[MLQZ]|-?(?:\d+\.?\d*|\.\d+)(?:e-?\d+)?")
+_PATH_TOKEN_RE = re.compile(r"[MLQCZ]|-?(?:\d+\.?\d*|\.\d+)(?:e-?\d+)?")
 
 
 @dataclass(frozen=True)
@@ -63,11 +65,17 @@ def _strip_dollars(expr: str) -> str:
     return expr
 
 
-@lru_cache(maxsize=512)
 def latex_to_svg(latex: str, size_px: float, display: bool, color: str) -> MathSvg:
-    """Renders LaTeX with ziamath; raises on syntax ziamath does not understand."""
+    """Renders LaTeX with ziamath in the configured math font (see config.settings)."""
+    return _latex_to_svg(latex, size_px, display, color, math_font())
+
+
+@lru_cache(maxsize=512)
+def _latex_to_svg(
+    latex: str, size_px: float, display: bool, color: str, font: str | None
+) -> MathSvg:
     math = zm.Latex(
-        _strip_dollars(latex), size=size_px, inline=not display, color=color
+        _strip_dollars(latex), size=size_px, inline=not display, color=color, font=font
     )
     # Bruch-/Wurzelstriche kommen von ziamath immer schwarz.
     svg = math.svg().replace('fill="black"', f'fill="{color}"')
@@ -97,9 +105,12 @@ def _parse_path(d: str) -> QPainterPath:
             path.moveTo(point())
         elif cmd == "L":
             path.lineTo(point())
-        elif cmd == "Q":
+        elif cmd == "Q":  # TrueType-Konturen
             ctrl = point()
             path.quadTo(ctrl, point())
+        elif cmd == "C":  # CFF-Konturen (z.B. Latin Modern Math)
+            ctrl1, ctrl2 = point(), point()
+            path.cubicTo(ctrl1, ctrl2, point())
         elif cmd == "Z":
             path.closeSubpath()
         else:

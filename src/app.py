@@ -52,6 +52,7 @@ from docks.latex import LatexPaletteDock
 from docks.structure_outline import StructureOutlineDock
 from docks.inspector import VariableInspectorDock
 from docks.bibitems import BibDock
+from config.settings import FONTS_DIR
 
 try:
     from document import DocumentCanvas
@@ -415,11 +416,10 @@ class RosidaApp(QMainWindow):
 
 
 def load_application_fonts():
-    fonts_dir = Path(__file__).resolve().parent / "assets" / "fonts"
-    if not fonts_dir.is_dir():
+    if not FONTS_DIR.is_dir():
         return
 
-    for font_file in fonts_dir.glob("*.ttf"):
+    for font_file in FONTS_DIR.glob("*.ttf"):
         QFontDatabase.addApplicationFont(str(font_file))
 
 

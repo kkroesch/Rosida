@@ -25,7 +25,7 @@ from widgets.math_svg import MathSvg, embed_math_objects, latex_to_svg
 # Breite, auf die eingebettete Bilder (![..](..)) höchstens skaliert werden.
 MAX_IMAGE_WIDTH = 680
 
-MATH_COLOR = "#1e293b"
+MATH_COLOR = "#334155"  # = Textfarbe (body) im Standard-Stylesheet
 
 # Dokumentweit eindeutige Ressourcennamen: Der PDF-Export führt die Formeln
 # aller Zellen in einem QTextDocument zusammen.
