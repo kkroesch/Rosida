@@ -31,7 +31,8 @@ Ein Dokument besteht aus einer Folge von **Zellen**. Jede Zelle ist entweder:
 | Zelle ausführen / rendern | `Shift+Enter` |
 | Zurück in den Editor (aus der Ansicht) | Klick auf die Zelle, dann `Escape` zum Schließen |
 | Modus umschalten (Auto → Python → Text) | `Ctrl+M` oder Klick auf die Modus-Pille |
-| Zelle darüber / darunter einfügen | `Ctrl+Shift+A` / `Ctrl+Shift+B` |
+| Zelle vor der aktiven einfügen | `Ctrl+Shift+A` |
+| Zelle nach oben / unten verschieben | `Ctrl+Shift+Up` / `Ctrl+Shift+Down` |
 | Aktive Zelle löschen | `Ctrl+Shift+D` |
 | Alle Zellen ausführen | `Ctrl+Shift+Return` |
 | Rückgängig / Wiederholen | `Cmd+Z` / `Cmd+Shift+Z` |
@@ -141,6 +142,9 @@ Weil das Format reines Markdown ist, funktionieren normale Git-Diffs und Merges 
 
 - **PDF** (`Ctrl+Shift+P`) – Vektor-Druck des gesamten Dokuments inkl. gerenderter Formeln, Plots
   und Tabellen.
+- **HTML** (`Ctrl+Shift+H`) – eigenständige Webseite: Formeln setzt KaTeX im Browser (per CDN
+  eingebunden), CMU-Schriften, Bilder und Plots (als SVG) sind eingebettet. Ohne Internet bleibt
+  statt der Formeln der LaTeX-Quelltext lesbar stehen.
 - **Quarto** (`Ctrl+Shift+Q`) – schreibt eine `.qmd`-Datei. `{{ }}`-Ausdrücke in Text-Zellen werden
   dabei ebenfalls ausgewertet (SymPy → LaTeX, Polars → Quarto-Tabelle, Matplotlib-Figur → SVG-Datei
   neben dem `.qmd`), Python-Zellen landen als Codeblock samt letztem Ergebnis. Ideal, um ein

@@ -1,77 +1,84 @@
+import ast
+from io import StringIO
+import sys
+import threading
 import traceback
-from PySide6.QtCore import QObject, QRunnable, QThreadPool, Signal, Slot
 
-# 1. Signale für die Kommunikation Worker -> UI
-# QRunnable selbst kann keine Signale senden, daher dieser QObject-Wrapper.
-class WorkerSignals(QObject):
-    started = Signal(str)                  # cell_id
-    finished = Signal(str, str)            # cell_id, result_text
-    error = Signal(str, str)               # cell_id, error_traceback
+from PySide6.QtCore import QThread, Signal
 
-# 2. Der generische Worker für ALLE Zelltypen (Python, Prompt, etc.)
-class CellWorker(QRunnable):
-    def __init__(self, cell_id, execution_function, *args, **kwargs):
-        super().__init__()
-        self.cell_id = cell_id
-        self.execution_function = execution_function
-        self.args = args
-        self.kwargs = kwargs
-        self.signals = WorkerSignals()
 
-    @Slot()
+class _ThreadLocalStdout:
+    """sys.stdout-Ersatz, der pro Thread in einen eigenen Puffer umleiten kann.
+
+    contextlib.redirect_stdout tauscht sys.stdout prozessweit; während eine
+    Zelle im Worker läuft, landeten sonst auch print()-Ausgaben des
+    GUI-Threads in der Zellausgabe.
+    """
+
+    def __init__(self, fallback):
+        self._fallback = fallback
+        self._local = threading.local()
+
+    def capture(self, buffer: StringIO | None):
+        self._local.buffer = buffer
+
+    def _target(self):
+        return getattr(self._local, "buffer", None) or self._fallback
+
+    def write(self, text):
+        return self._target().write(text)
+
+    def flush(self):
+        self._target().flush()
+
+    def __getattr__(self, name):
+        return getattr(self._target(), name)
+
+
+def _stdout_proxy() -> _ThreadLocalStdout:
+    if not isinstance(sys.stdout, _ThreadLocalStdout):
+        sys.stdout = _ThreadLocalStdout(sys.stdout)
+    return sys.stdout
+
+
+class CellWorker(QThread):
+    # Signale für die sichere Kommunikation zurück zum Main-Thread
+    result_ready = Signal(object, str)  # Wert der letzten Zeile, stdout
+    error_occurred = Signal(str, str)  # Traceback, stdout
+
+    def __init__(self, code_text, local_namespace, parent=None):
+        super().__init__(parent)
+        self.code_text = code_text
+        self.local_namespace = local_namespace
+
     def run(self):
-        self.signals.started.emit(self.cell_id)
+        """Wird asynchron ausgeführt, sobald .start() aufgerufen wird."""
+        stdout = _stdout_proxy()
+        buffer = StringIO()
+        stdout.capture(buffer)
         try:
-            # Hier läuft die blockierende Arbeit im Hintergrund-Thread
-            result = self.execution_function(*self.args, **self.kwargs)
-            self.signals.finished.emit(self.cell_id, str(result))
+            result = self._execute()
+            self.result_ready.emit(result, buffer.getvalue())
         except Exception:
-            # Fängt Abstürze im Python-Code oder Netzwerk-Timeouts ab
-            self.signals.error.emit(self.cell_id, traceback.format_exc())
+            # Bei einem Fehler den genauen Traceback in die GUI schicken
+            self.error_occurred.emit(traceback.format_exc(), buffer.getvalue())
+        finally:
+            stdout.capture(None)
 
-# 3. Die spezifischen Executors (die eigentliche Logik)
-class PromptExecutor:
-    def execute_blocking(self, prompt_text, model="jev"):
-        # Simuliert Netzwerk-Latenz oder lokales LLM
-        import time
-        time.sleep(2)
-        return f"**Relevanz:** Hoch (simuliert für '{prompt_text}')"
+    def _execute(self):
+        tree = ast.parse(self.code_text, filename="<cell>")
+        if not tree.body:
+            return None
 
-class PythonExecutor:
-    def execute_blocking(self, code_text):
-        # Simuliert Datenverarbeitung
-        import time
-        time.sleep(3)
-        return "Polars DataFrame Output..."
+        last_node = tree.body[-1]
+        if not isinstance(last_node, ast.Expr):
+            exec(compile(tree, "<cell>", "exec"), self.local_namespace)
+            return None
 
-# 4. Integration in den Rosida Main-Thread (UI)
-class RosidaEngine:
-    def __init__(self):
-        self.thread_pool = QThreadPool.globalInstance()
-        self.prompt_exec = PromptExecutor()
+        # Alles außer der letzten Zeile ausführen
+        exec_tree = ast.Module(body=tree.body[:-1], type_ignores=[])
+        exec(compile(exec_tree, "<cell>", "exec"), self.local_namespace)
 
-    def run_cell(self, cell_id, content, cell_type="prompt"):
-        if cell_type == "prompt":
-            worker = CellWorker(cell_id, self.prompt_exec.execute_blocking, content)
-        else:
-            return
-
-        # Signale mit der UI verknüpfen
-        worker.signals.started.connect(self.on_cell_started)
-        worker.signals.finished.connect(self.on_cell_finished)
-        worker.signals.error.connect(self.on_cell_error)
-
-        # Ab in den Hintergrund damit!
-        self.thread_pool.start(worker)
-
-    @Slot(str)
-    def on_cell_started(self, cell_id):
-        print(f"UI Update: Zelle {cell_id} lädt (Spinner anzeigen...)")
-
-    @Slot(str, str)
-    def on_cell_finished(self, cell_id, result):
-        print(f"UI Update: Zelle {cell_id} fertig. Füge Text ein:\n{result}")
-
-    @Slot(str, str)
-    def on_cell_error(self, cell_id, error_msg):
-        print(f"UI Update: Fehler in Zelle {cell_id}:\n{error_msg}")
+        # Letzte Zeile evaluieren
+        eval_tree = ast.Expression(body=last_node.value)
+        return eval(compile(eval_tree, "<cell>", "eval"), self.local_namespace)

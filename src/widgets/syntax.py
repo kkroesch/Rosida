@@ -2,6 +2,7 @@ from PySide6.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QFont
 from PySide6.QtCore import QRegularExpression
 from PySide6.QtWidgets import QPlainTextEdit
 
+
 class CellHighlighter(QSyntaxHighlighter):
     def __init__(self, document, cell_type="python"):
         super().__init__(document)
@@ -22,22 +23,37 @@ class CellHighlighter(QSyntaxHighlighter):
         # 2. Regeln vorab kompilieren (nur wenn es eine Python-Zelle ist)
         self.python_rules = []
         if self.cell_type == "python":
-            keywords = ["def", "class", "import", "from", "return", "if", "else",
-                        "elif", "for", "while", "pass", "break", "continue", "print"]
+            keywords = [
+                "def",
+                "class",
+                "import",
+                "from",
+                "return",
+                "if",
+                "else",
+                "elif",
+                "for",
+                "while",
+                "pass",
+                "break",
+                "continue",
+                "print",
+            ]
 
             for kw in keywords:
-                self.python_rules.append((QRegularExpression(rf"\b{kw}\b"), self.fmt_keyword))
+                self.python_rules.append(
+                    (QRegularExpression(rf"\b{kw}\b"), self.fmt_keyword)
+                )
 
             self.python_rules.append((QRegularExpression(r'".*?"'), self.fmt_string))
             self.python_rules.append((QRegularExpression(r"'.*?'"), self.fmt_string))
             self.python_rules.append((QRegularExpression(r"#.*"), self.fmt_comment))
 
-
     def set_mode(self, mode):
-            """Schaltet den Modus um und triggert das sofortige Neuzeichnen."""
-            if self.cell_type != mode:
-                self.cell_type = mode
-                self.rehighlight()  # Das ist der magische Qt-Befehl!
+        """Schaltet den Modus um und triggert das sofortige Neuzeichnen."""
+        if self.cell_type != mode:
+            self.cell_type = mode
+            self.rehighlight()  # Das ist der magische Qt-Befehl!
 
     def highlightBlock(self, text):
         # Wenn wir nicht im Python-Modus sind, mach gar nichts (spart CPU)

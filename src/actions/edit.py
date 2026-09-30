@@ -69,6 +69,36 @@ class DeleteCellCommand(QUndoCommand):
             self.doc.structure_changed.emit(self.doc.cells)
 
 
+class MoveCellCommand(QUndoCommand):
+    """Undoable command for moving a notebook cell up (offset < 0) or down (offset > 0)."""
+
+    def __init__(self, doc_canvas, cell, offset: int):
+        super().__init__("Zelle nach oben" if offset < 0 else "Zelle nach unten")
+        self.doc = doc_canvas
+        self.cell = cell
+        self.offset = offset
+
+    def _move(self, offset: int):
+        if self.cell not in self.doc.cells:
+            return
+        target = self.doc.cells.index(self.cell) + offset
+        if not 0 <= target < len(self.doc.cells):
+            return
+        in_edit = self.cell.stack.currentIndex() == 0
+        self.doc._detach_cell_widget(self.cell)
+        self.doc._attach_cell_widget(self.cell, target)
+        if in_edit:
+            self.cell.editor.setFocus()
+        self.doc.set_active_cell(self.cell)
+        self.doc.structure_changed.emit(self.doc.cells)
+
+    def redo(self):
+        self._move(self.offset)
+
+    def undo(self):
+        self._move(-self.offset)
+
+
 class UndoAction(RosidaAction):
     def __init__(self, document_canvas, parent=None):
         super().__init__("&Rückgängig", parent)
@@ -110,30 +140,42 @@ class RedoAction(RosidaAction):
             self.doc.undo_stack.redo()
 
 
-class InsertCellAboveAction(RosidaAction):
+class InsertCellAction(RosidaAction):
     def __init__(self, document_canvas, parent=None):
-        super().__init__("Zelle darüber einfügen", parent)
+        super().__init__("Zelle einfügen", parent)
         self.doc = document_canvas
 
         self.setShortcut(QKeySequence("Ctrl+Shift+A"))
-        self.setToolTip("Neue Zelle oberhalb der aktiven Zelle einfügen (Ctrl+Shift+A)")
-        self.set_icon_name("fa5s.arrow-circle-up")
+        self.setToolTip("Neue Zelle vor der aktiven Zelle einfügen (Ctrl+Shift+A)")
+        self.set_icon_name("fa5s.plus-circle")
 
-        self.triggered.connect(self.doc.insert_cell_above)
+        self.triggered.connect(self.doc.insert_cell_before_active)
 
 
-class InsertCellBelowAction(RosidaAction):
+class MoveCellAboveAction(RosidaAction):
     def __init__(self, document_canvas, parent=None):
-        super().__init__("Zelle darunter einfügen", parent)
+        super().__init__("Zelle nach oben verschieben", parent)
         self.doc = document_canvas
 
-        self.setShortcut(QKeySequence("Ctrl+Shift+B"))
+        self.setShortcut(QKeySequence("Ctrl+Shift+Up"))
+        self.setToolTip("Aktive Zelle eine Position nach oben verschieben (Ctrl+Shift+Up)")
+        self.set_icon_name("fa5s.arrow-circle-up")
+
+        self.triggered.connect(lambda: self.doc.move_active_cell(-1))
+
+
+class MoveCellBelowAction(RosidaAction):
+    def __init__(self, document_canvas, parent=None):
+        super().__init__("Zelle nach unten verschieben", parent)
+        self.doc = document_canvas
+
+        self.setShortcut(QKeySequence("Ctrl+Shift+Down"))
         self.setToolTip(
-            "Neue Zelle unterhalb der aktiven Zelle einfügen (Ctrl+Shift+B)"
+            "Aktive Zelle eine Position nach unten verschieben (Ctrl+Shift+Down)"
         )
         self.set_icon_name("fa5s.arrow-circle-down")
 
-        self.triggered.connect(self.doc.insert_cell_below)
+        self.triggered.connect(lambda: self.doc.move_active_cell(1))
 
 
 class DeleteCellAction(RosidaAction):

@@ -23,13 +23,11 @@ preview file="docs/example.qmd":
 
 # Startet ein interaktives IPython Notebook zum Ausprobieren
 notebook:
-    uv run --with matplotlib --with numpy --with polars \
-           --with sympy --with pyqt6 --with ipython \
-           ipython -i \
-           -c "import numpy as np; \
-               import matplotlib.pyplot as plt; \
-               import polars as pl; \
-               import sympy as sp"
+    uv run --with ipython ipython -i \
+    -c "import numpy as np; \
+        import matplotlib.pyplot as plt; \
+        import polars as pl; \
+        import sympy as sp"
 
 import 'build/Justfile'
 

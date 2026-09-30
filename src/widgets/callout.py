@@ -76,9 +76,7 @@ class CalloutWidget(QFrame):
             browser.setFrameShape(QFrame.Shape.NoFrame)
             browser.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
             browser.setStyleSheet("background: transparent;")
-            render_markdown_with_math(
-                content, browser, fontsize=12, namespace=namespace
-            )
+            render_markdown_with_math(content, browser, namespace=namespace)
 
             doc = browser.document()
             doc.setTextWidth(700)

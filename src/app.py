@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtGui import QIcon, QCloseEvent, QFontDatabase
-from PySide6.QtCore import Qt, QSize, QCoreApplication
+from PySide6.QtCore import Qt, QSize, QCoreApplication, QSettings
 
 from PySide6.QtWidgets import (
     QMessageBox,
@@ -18,13 +18,15 @@ from PySide6.QtWidgets import (
 from actions.cell import RunAllAction, RunCellAction
 from actions.edit import (
     DeleteCellAction,
-    InsertCellAboveAction,
-    InsertCellBelowAction,
+    InsertCellAction,
+    MoveCellAboveAction,
+    MoveCellBelowAction,
     RedoAction,
     ToggleModeAction,
     UndoAction,
 )
 from actions.file import (
+    ExportHtmlAction,
     ExportPdfAction,
     ExportQmdAction,
     NewDocumentAction,
@@ -51,13 +53,20 @@ from docks.latex import LatexPaletteDock
 from docks.structure_outline import StructureOutlineDock
 from docks.inspector import VariableInspectorDock
 from docks.bibitems import BibDock
+from config.settings import FONTS_DIR
+from exporters.bibtex import bibliography_files
 
 try:
-    from document import DocumentCanvas, InPlaceCell
+    from document import DocumentCanvas
 except ImportError:
-    from native_document import DocumentCanvas, InPlaceCell
+    from native_document import DocumentCanvas
+from widgets.inplace import InPlaceCell
 
+import matplotlib
+
+matplotlib.use("Agg")  # <- Crasht sonst bei Verwendung von Workern
 import matplotlib.pyplot as plt
+
 import numpy as np
 import sympy as sp
 import polars as pl
@@ -97,9 +106,24 @@ class RosidaApp(QMainWindow):
         self.doc.active_cell_changed.connect(self._on_active_cell_changed)
         self.doc.structure_changed.connect(self.dock_structure.update_outline)
         self.doc.cell_executed.connect(self._on_cell_executed)
+        self.doc.kernel.busy_changed.connect(self._on_kernel_busy_changed)
         self.doc.modified_changed.connect(lambda _: self._update_window_title())
 
+        self.read_settings()
         self._load_document_on_start()
+
+    def read_settings(self):
+        settings = QSettings()
+
+        # Geometrie des Hauptfensters wiederherstellen
+        geometry = settings.value("geometry")
+        if geometry:
+            self.restoreGeometry(geometry)
+
+        # Zustand und Position der Docks/Toolbars wiederherstellen
+        window_state = settings.value("windowState")
+        if window_state:
+            self.restoreState(window_state)
 
     def _setup_statusbar(self):
         self.statusbar = QStatusBar(self)
@@ -130,19 +154,27 @@ class RosidaApp(QMainWindow):
 
     def _setup_docks(self):
         self.dock_structure = StructureOutlineDock(self)
+        self.dock_structure.setObjectName("structure_dock")
         self.dock_structure.item_selected.connect(self.doc.scroll_to_cell)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.dock_structure)
 
         self.dock_palette = LatexPaletteDock(self)
+        self.dock_palette.setObjectName("palette_dock")
         self.dock_palette.insert_requested.connect(self.doc.insert_text_into_active)
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dock_palette)
 
         self.dock_variables = VariableInspectorDock(self)
+        self.dock_variables.setObjectName("variables_dock")
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.dock_variables)
 
         self.dock_bibitems = BibDock(self)
+        self.dock_bibitems.setObjectName("bibitems_dock")
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dock_bibitems)
         self.dock_bibitems.citation_selected.connect(self.doc.insert_text_into_active)
+        self.dock_bibitems.bib_file_chosen.connect(self._on_bib_file_chosen)
+        self.doc.frontmatter_cell.frontmatter_updated.connect(
+            lambda _meta: self._sync_bibliography()
+        )
 
         self.act_toggle_variables = ToggleVariablesDockAction(self.dock_variables, self)
         self.doc.variables_updated.connect(self.dock_variables.update_variables)
@@ -157,6 +189,7 @@ class RosidaApp(QMainWindow):
         self.act_save = SaveAction(self, self)
         self.act_save_as = SaveAsAction(self, self)
         self.act_export_pdf = ExportPdfAction(self, self)
+        self.act_export_html = ExportHtmlAction(self, self)
         self.act_export_qmd = ExportQmdAction(self, self)
         self.act_settings = SettingsAction(self, self)
         self.act_quit = QuitAction(self, self)
@@ -165,8 +198,9 @@ class RosidaApp(QMainWindow):
         # Bearbeiten
         self.act_undo = UndoAction(self.doc, self)
         self.act_redo = RedoAction(self.doc, self)
-        self.act_insert_above = InsertCellAboveAction(self.doc, self)
-        self.act_insert_below = InsertCellBelowAction(self.doc, self)
+        self.act_insert_cell = InsertCellAction(self.doc, self)
+        self.act_move_up = MoveCellAboveAction(self.doc, self)
+        self.act_move_down = MoveCellBelowAction(self.doc, self)
         self.act_delete_cell = DeleteCellAction(self.doc, self)
         self.act_toggle_mode = ToggleModeAction(self.doc, self)
 
@@ -197,6 +231,7 @@ class RosidaApp(QMainWindow):
         menu_file.addSeparator()
         menu_export = menu_file.addMenu("E&xportieren")
         menu_export.addAction(self.act_export_pdf)
+        menu_export.addAction(self.act_export_html)
         menu_export.addAction(self.act_export_qmd)
 
         menu_file.addSeparator()
@@ -208,8 +243,9 @@ class RosidaApp(QMainWindow):
         menu_edit.addAction(self.act_undo)
         menu_edit.addAction(self.act_redo)
         menu_edit.addSeparator()
-        menu_edit.addAction(self.act_insert_above)
-        menu_edit.addAction(self.act_insert_below)
+        menu_edit.addAction(self.act_insert_cell)
+        menu_edit.addAction(self.act_move_up)
+        menu_edit.addAction(self.act_move_down)
         menu_edit.addAction(self.act_delete_cell)
         menu_edit.addSeparator()
         menu_edit.addAction(self.act_toggle_mode)
@@ -231,6 +267,7 @@ class RosidaApp(QMainWindow):
 
     def _setup_toolbars(self):
         toolbar = QToolBar("Hauptaktionen", self)
+        toolbar.setObjectName("toolbar")
         toolbar.setMovable(False)
         toolbar.setIconSize(QSize(18, 18))
         toolbar.setStyleSheet("""
@@ -264,8 +301,9 @@ class RosidaApp(QMainWindow):
         toolbar.addAction(self.act_undo)
         toolbar.addAction(self.act_redo)
         toolbar.addSeparator()
-        toolbar.addAction(self.act_insert_above)
-        toolbar.addAction(self.act_insert_below)
+        toolbar.addAction(self.act_insert_cell)
+        toolbar.addAction(self.act_move_up)
+        toolbar.addAction(self.act_move_down)
         toolbar.addAction(self.act_delete_cell)
         toolbar.addSeparator()
         toolbar.addAction(self.act_run_cell)
@@ -273,6 +311,7 @@ class RosidaApp(QMainWindow):
         toolbar.addAction(self.act_toggle_mode)
         toolbar.addSeparator()
         toolbar.addAction(self.act_export_pdf)
+        toolbar.addAction(self.act_export_html)
         toolbar.addAction(self.act_export_qmd)
         toolbar.addSeparator()
         toolbar.addAction(self.act_toggle_structure)
@@ -283,6 +322,28 @@ class RosidaApp(QMainWindow):
         if filepath:
             add_recent_file(filepath)
         self._update_window_title()
+        self._sync_bibliography()
+
+    def _document_dir(self) -> Path | None:
+        return Path(self.current_filepath).resolve().parent if self.current_filepath else None
+
+    def _sync_bibliography(self):
+        """Loads the .bib file(s) named in the frontmatter into the references dock."""
+        base = self._document_dir() or Path.cwd()
+        files = bibliography_files(self.doc.frontmatter_cell.metadata(), base)
+        self.dock_bibitems.show_bibliography(files, start_dir=str(base))
+
+    def _on_bib_file_chosen(self, filepath: str):
+        """Stores the chosen .bib file as bibliography, relative to the document."""
+        path = Path(filepath).resolve()
+        base = self._document_dir()
+        if base:
+            value = Path(os.path.relpath(path, base)).as_posix()
+        else:
+            # Noch nicht gespeichert: kein Bezugsordner, daher absolut
+            value = path.as_posix()
+        self.doc.frontmatter_cell.set_property("bibliography", value)
+        self.doc.set_modified(True)
 
     def _update_window_title(self):
         dirty_flag = " *" if hasattr(self, "doc") and self.doc.is_modified() else ""
@@ -313,11 +374,20 @@ class RosidaApp(QMainWindow):
         self._update_window_title()
 
     def _on_cell_executed(self, cell):
+        if self.doc.kernel.is_busy():
+            return
         self.lbl_kernel_status.setText("● Kernel: Zelle berechnet")
         self.lbl_kernel_status.setStyleSheet(
             "color: #0284c7; font-weight: bold; padding: 0 10px;"
         )
         self.statusbar.showMessage("Ausführung abgeschlossen", 2500)
+
+    def _on_kernel_busy_changed(self, busy: bool):
+        if busy:
+            self.lbl_kernel_status.setText("● Kernel: rechnet …")
+            self.lbl_kernel_status.setStyleSheet(
+                "color: #d97706; font-weight: bold; padding: 0 10px;"
+            )
 
     def _load_document_on_start(self):
         if self.current_filepath and os.path.exists(self.current_filepath):
@@ -337,6 +407,10 @@ class RosidaApp(QMainWindow):
         self.dock_structure.update_outline(self.doc.cells)
 
     def closeEvent(self, event: QCloseEvent):
+        settings = QSettings()
+        settings.setValue("geometry", self.saveGeometry())
+        settings.setValue("windowState", self.saveState())
+
         # Model direkt abfragen statt über den Button-State
         if not self.doc.is_modified():
             event.accept()
@@ -383,22 +457,21 @@ class RosidaApp(QMainWindow):
 
 
 def load_application_fonts():
-    fonts_dir = Path(__file__).resolve().parent / "assets" / "fonts"
-    if not fonts_dir.is_dir():
+    if not FONTS_DIR.is_dir():
         return
 
-    for font_file in fonts_dir.glob("*.ttf"):
+    for font_file in FONTS_DIR.glob("*.ttf"):
         QFontDatabase.addApplicationFont(str(font_file))
 
 
 def main():
     # Icon & App Name for MacOS
     sys.argv[0] = "Rosida"
-    QCoreApplication.setApplicationName("Rosida")
-    QCoreApplication.setOrganizationName("Rosida")
 
     app = QApplication(["Rosida"] + sys.argv[1:])
     load_application_fonts()
+    app.setOrganizationDomain("kroesch.ch")
+    app.setApplicationName("Rosida")
 
     # Debugger
     if os.environ.get("DEBUG") == "1" or "--debug" in sys.argv:
@@ -422,7 +495,14 @@ def main():
 
     maybe_show_manual_on_first_run(win)
 
-    sys.exit(app.exec())
+    exit_code = app.exec()
+    if win.doc.kernel.is_computing():
+        # Python-Code in einem Thread lässt sich nicht abbrechen (auch
+        # QThread.terminate() hängt am GIL), und ein noch laufender QThread
+        # bringt Qt beim Aufräumen zum Absturz. Deshalb hart beenden.
+        QSettings().sync()
+        os._exit(exit_code)
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":

@@ -1,3 +1,7 @@
+---
+
+---
+
 ```python
 url = "https://s3.kroesch.net/example_datasets/titanic.parquet"
 df = pl.read_parquet(url).select(pl.all().name.to_lowercase())
@@ -24,16 +28,6 @@ survived_count = df_clean.select(pl.col('survived').sum()).item()
 ```
 
 überlebende: {{survived_count}}
-
----
-
-| Default | Left | Right | Center |
-|---------|:-----|------:|:------:|
-| 12      | 12   |    12 |   12   |
-| 123     | 123  |   123 |  123   |
-| 1       | 1    |     1 |   1    |
-
-: Demonstration of pipe table syntax
 
 ```python
 pl.Config.set_tbl_formatting("MARKDOWN")

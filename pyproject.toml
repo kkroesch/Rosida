@@ -11,6 +11,9 @@ dependencies = [
     "numpy",
     "qtawesome",
     "pyyaml>=6.0.3",
+    "markdown>=3.11",
+    "ziamath>=0.13",
+    "pygments>=2.21.0",
 ]
 
 [dependency-groups]

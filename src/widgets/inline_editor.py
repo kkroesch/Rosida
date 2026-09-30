@@ -6,6 +6,9 @@ from widgets.resize_grip import MacResizeGrip
 from widgets.syntax import CellHighlighter
 
 
+MIN_HEIGHT = 56
+
+
 class InlineEditor(QPlainTextEdit):
     """Plain text editor supporting Shift+Enter, Escape, Focus-Reporting, and resizing."""
 
@@ -33,25 +36,13 @@ class InlineEditor(QPlainTextEdit):
                 border-color: #93c5fd;
                 border-left: 3px solid #1d4ed8;
             }
-            QScrollBar:vertical {
-                border: none;
-                background: #f1f5f9;
-                width: 6px;
-                margin: 4px 2px 4px 0;
-                border-radius: 3px;
-            }
-            QScrollBar::handle:vertical {
-                background: #cbd5e1;
-                border-radius: 3px;
-                min-height: 20px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background: #94a3b8;
-            }
         """)
+        # Der Editor wächst mit dem Inhalt; gescrollt wird nur der Canvas.
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.manual_height = 0  # per Grip gezogene Mindesthöhe
         self.grip = MacResizeGrip(self, self)
-        self.adjust_initial_height()
-        self.textChanged.connect(self._on_content_changed)
+        self.textChanged.connect(self.fit_to_content)
+        self.fit_to_content()
 
     def focusInEvent(self, event):
         super().focusInEvent(event)
@@ -59,19 +50,26 @@ class InlineEditor(QPlainTextEdit):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
+        # Andere Breite -> anderer Zeilenumbruch -> andere Höhe
+        if event.oldSize().width() != event.size().width():
+            self.fit_to_content()
         self.grip.move(
             self.width() - self.grip.width() - 2, self.height() - self.grip.height() - 2
         )
 
-    def adjust_initial_height(self):
-        doc_height = int(self.document().size().height())
-        target_height = max(56, min(doc_height + 22, 280))
-        self.setFixedHeight(target_height)
-
-    def _on_content_changed(self):
-        doc_height = int(self.document().size().height()) + 22
-        if doc_height > self.height() and self.height() < 350:
-            self.setFixedHeight(doc_height)
+    def fit_to_content(self):
+        """Sets the height so that all (wrapped) lines are visible without scrolling."""
+        # Beim QPlainTextEdit liefert document().size().height() die Anzahl
+        # sichtbarer Zeilen (inkl. Umbrüche), nicht Pixel.
+        lines = max(1, int(self.document().size().height()))
+        text_h = lines * self.fontMetrics().lineSpacing()
+        text_h += int(self.document().documentMargin() * 2)
+        chrome = self.height() - self.viewport().height()  # Rahmen + Padding
+        target = max(MIN_HEIGHT, self.manual_height, text_h + chrome + 4)
+        if target != self.height():
+            self.setFixedHeight(target)
+        # Falls der Viewport noch nicht aktuell ist, steht der Text evtl. verschoben.
+        self.verticalScrollBar().setValue(0)
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter) and (
@@ -92,23 +90,6 @@ class InlineEditor(QPlainTextEdit):
             return
         super().keyPressEvent(event)
 
-    def _adjust_height(self):
-        """Berechnet die exakte Pixelhöhe anhand der Block-/Zeilenanzahl."""
-        # 1. Zeilenanzahl ermitteln (mindestens 1)
-        lines = max(1, self.blockCount())
-
-        # 2. Metriken und Ränder
-        fm = self.fontMetrics()
-        line_height = fm.lineSpacing()
-        doc_margin = int(self.document().documentMargin() * 2)
-        frame_width = self.frameWidth() * 2
-        padding = 8  # Puffer für Cursor und Zeilenabstand
-
-        # 3. Feste Höhe setzen
-        total_height = (lines * line_height) + doc_margin + frame_width + padding
-        self.setFixedHeight(total_height)
-
     def setPlainText(self, text: str):
-        """Überschreibt setPlainText, um die Höhe beim Laden sofort anzupassen."""
         super().setPlainText(text)
-        self._adjust_height()
+        self.fit_to_content()

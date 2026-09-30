@@ -2,19 +2,9 @@
 
 Rosida ist eine leichtgewichtige, native mathematische Notizbuch-Umgebung für macOS und Linux, entwickelt mit Python und PySide6 (Qt6).
 
-Statt schwerfällige Web-Engines (Chromium/Electron) oder unlesbare proprietäre JSON-Formate (`.ipynb`) zu nutzen, setzt Rosida auf **reines Markdown (`.md`) als natives Speicherformat**, eine direkte In-Memory-Berechnung via SymPy/NumPy/Polars und eine ruhige, reaktionsschnelle Benutzeroberfläche im Papier-Stil.
-
-Eine ausführlichere Einführung mit Beispielen (Python, NumPy, Matplotlib, SymPy, Polars) findest du in [docs/quickstart.md](docs/quickstart.md).
+Rosida sezt komplett auf **reines Markdown (`.md`) als natives Speicherformat**, eine direkte In-Memory-Berechnung via SymPy/NumPy/Polars und eine ruhige, reaktionsschnelle Benutzeroberfläche im Papier-Stil. Eine ausführlichere Einführung mit Beispielen (Python, NumPy, Matplotlib, SymPy, Polars) findest du in [docs/quickstart.md](docs/quickstart.md).
 
 ---
-
-::: {.callout-warning}
-Niemals Notebooks aus nicht vertrauenswürdiger Quelle öffnen!
-:::
-
----
-
-
 ![Rosida mit geladenem Dokument](docs/screenshot.png){#fig-arch}
 ---
 
@@ -32,27 +22,6 @@ Niemals Notebooks aus nicht vertrauenswürdiger Quelle öffnen!
 * **Dokumentstruktur-Übersicht:** Einklappbare Gliederungs-Seitenleiste aus den Überschriften und Zellen des Dokuments, Klick springt direkt zur Zelle.
 * **Export:** Verlustfreier Vektor-PDF-Druck sowie Export als Quarto-Dokument (`.qmd`, inkl. ausgewerteter `{{ }}`-Ausdrücke, Tabellen und Grafiken) direkt aus dem Dokument.
 * **Hilfe-Menü:** Eingebautes Handbuch (`F1`, öffnet beim allerersten Start automatisch), Über-Dialog und zuletzt geöffnete Dateien.
-
-## Dateiformat-Spezifikation
-
-Rosida-Notizbücher sind standardkonformes CommonMark:
-
-````markdown
-# Harmonischer Oszillator
-
-Untersuchung der gedämpften Schwingung für $f(t) = e^{-\gamma t} \cos(\omega t)$.
-
----
-
-```python
-import sympy as sp
-
-t, gamma, omega = sp.symbols('t gamma omega', positive=True)
-f = sp.exp(-gamma * t) * sp.cos(omega * t)
-sp.diff(f, t)
-```
-
-````
 
 ## Installation & Start
 
@@ -72,7 +41,7 @@ cd rosida
 just run
 ```
 
-`just run` startet `src/app.py` via `uv run` mit allen benötigten Paketen (PySide6, SymPy, NumPy, Matplotlib, Polars, qtawesome) – ohne manuelle venv-Verwaltung. Äquivalent von Hand:
+`just run` startet `src/app.py` via `uv run` mit allen benötigten Paketen (PySide6, SymPy, NumPy, Matplotlib, Polars, qtawesome). Äquivalent von Hand:
 
 ```bash
 uv run --with pyside6 --with polars --with sympy --with matplotlib --with numpy --with qtawesome \
@@ -122,18 +91,6 @@ flatpak run ch.kroesch.rosida
 
 > **Hinweis:** Das Manifest installiert aktuell nur den historischen Flat-Layout-Stand (`rosida_app.py`, `document.py`, ohne Polars/qtawesome) und muss vor dem nächsten Release noch an die aktuelle `src/`-Paketstruktur und die vollständige Abhängigkeitsliste angepasst werden.
 
-## Architektur
-
-Die Architektur folgt modularen Prinzipien zur klaren Trennung von Darstellung, Persistenz und Ausführung (alles unter `src/`):
-
-* **`app.py`:** Orchestrierung des Desktop-Fensters (Menüs, Symbolleiste, Docks, Statusleiste) – `RosidaApp`.
-* **`document.py`:** Dokument-Aggregat (`DocumentCanvas`) und In-Place-Zell-Controller (`InPlaceCell`) inkl. Markdown-Serialisierung.
-* **`actions/`:** Selbstverwaltende `QAction`-Kommandos für Menüs und Toolbar, gruppiert nach Domäne (`file.py`, `edit.py`, `cell.py`, `view.py`) sowie die `QUndoCommand`-Klassen für Zellen-Einfügen/-Löschen.
-* **`docks/`:** Einklappbare Seitenleisten-Widgets – `latex.py` (LaTeX-/Quarto-Kürzelpalette) und `structure_outline.py` (Dokumentstruktur).
-* **`widgets/`:** Eigenständige UI-Bausteine der Zelle (`inline_editor.py`, `resize_grip.py`, `clickable_frame.py`, `math_text.py` für Formel-Rendering & `{{ }}`-Templating) sowie `data.py` (Polars-Tabellen-Widget).
-* **`exporters/`:** Reine Export-Funktionen, entkoppelt von der UI – `pdf.py` (Vektor-PDF) und `qmd.py` (Quarto-Renderer).
-* **`docs/adr.md`:** Dokumentation aller architektonischen Richtungsentscheidungen (ADRs).
-* **`docs/quickstart.md`:** Kurzanleitung mit Beispielen für Einsteiger.
 
 ## Lizenz
 
