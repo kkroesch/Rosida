@@ -202,5 +202,5 @@ That's essentially all you need to get started – the rest comes with trying th
 - **Manual...** (`F1`) shows exactly this guide in a dialog – handy when no terminal/browser is at
   hand. Right after the very first installation, this dialog opens automatically once.
 - **About Rosida** shows the version number and license.
-- **Settings...** (`Cmd+,`): language of the user interface (system language, English or German),
+- **Settings...** (`Cmd+,`, in the **File** menu, on macOS in the app menu): language of the user interface (system language, English or German),
   takes effect after a restart.

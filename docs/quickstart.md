@@ -198,6 +198,6 @@ Ausprobieren.
   Terminal/Browser griffbereit ist. Direkt nach der allerersten Installation öffnet sich dieser
   Dialog automatisch einmalig.
 - **Über Rosida** zeigt Versionsnummer und Lizenz.
-- **Einstellungen...** (`Cmd+,`): Sprache der Oberfläche (Systemsprache, Deutsch oder Englisch),
+- **Einstellungen...** (`Cmd+,`, im Menü **Datei**, unter macOS im App-Menü): Sprache der Oberfläche (Systemsprache, Deutsch oder Englisch),
   wirksam nach einem Neustart. Exporte richten sich dagegen nach der Dokumentsprache (`lang: de` in
   den Dokumenteigenschaften, sonst die Sprache der Oberfläche).

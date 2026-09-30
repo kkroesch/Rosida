@@ -69,10 +69,19 @@ def main():
     out = args.out
     out.mkdir(parents=True, exist_ok=True)
 
+    failures = []
+
     def shot(widget, name: str, rect=None):
         wait()
         path = out / f"{name}.png"
-        (widget.grab(rect) if rect is not None else widget.grab()).save(str(path))
+        # Ausschnitt nur, wenn er gültig ist und im Widget liegt
+        if rect is not None:
+            rect = rect.intersected(widget.rect())
+        image = widget.grab(rect) if rect is not None and not rect.isEmpty() else widget.grab()
+        if image.isNull() or not image.save(str(path)):
+            failures.append(name)
+            print(f"  FEHLER: {name} konnte nicht aufgenommen werden")
+            return
         print(f"  {path.relative_to(REPO) if path.is_relative_to(REPO) else path}")
 
     document = args.document.resolve()
@@ -131,13 +140,19 @@ def main():
         # Auf die Knöpfe zuschneiden statt der ganzen Fensterbreite
         crop = toolbar.childrenRect().adjusted(-6, -4, 6, 4)
         shot(toolbar, f"toolbar_{toolbar.objectName() or index}", crop)
-    shot(win.menuBar(), "menubar")
+    menubar = win.menuBar()
+    # Menüeinträge sind keine Kind-Widgets: Ausschnitt aus ihren Positionen
+    entries = [menubar.actionGeometry(a) for a in menubar.actions()]
+    crop = entries[0].united(entries[-1]).adjusted(-4, 0, 8, 0) if entries else None
+    shot(menubar, "menubar", crop)
     shot(win.statusBar(), "statusbar")
 
     doc.set_modified(False)  # kein "Änderungen speichern?"-Dialog
     win.close()
     settings_dir.cleanup()
     print(f"Fertig: {out}")
+    if failures:
+        sys.exit(f"{len(failures)} Aufnahme(n) fehlgeschlagen: {', '.join(failures)}")
 
 
 if __name__ == "__main__":
