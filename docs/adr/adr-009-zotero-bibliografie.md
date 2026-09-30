@@ -1,6 +1,18 @@
-# ADR 0009: Zotero-Integration über dateibasierte Bibliografie (.bib)
+---
+adr: 9
+title: "Zotero-Integration über dateibasierte Bibliografie (.bib)"
+status: Implementiert
+date: 2026-09-27
+author: Karsten Kroesch
+implemented: v0.2.0
+aliases:
+  - ADR 009
+tags:
+  - adr
+---
 
-**Status:** Akzeptiert
+# ADR 009: Zotero-Integration über dateibasierte Bibliografie (.bib)
+
 **Kontext:**
 Für wissenschaftliche Arbeiten und Manuskripte benötigt Rosida eine reibungslose Literaturverwaltung. Da der finale Export über Quarto abgewickelt wird, ist die native Pandoc-Unterstützung für Bibliografien ohnehin gesetzt. Eine direkte, harte Kopplung an Zoteros interne SQLite-Datenbank oder Web-API würde die Architektur unnötig verkomplizieren, Abhängigkeiten schaffen und die auf einfachen Textdateien basierende Autarkie (SDI-Prinzip) des Werkzeugs untergraben.
 

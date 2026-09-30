@@ -1,7 +1,18 @@
-## ADR 0002: MathText-Rendering via Matplotlib (In-Memory)
+---
+adr: 2
+title: "MathText-Rendering via Matplotlib (In-Memory)"
+status: Implementiert
+date: 2026-09-25
+author: Karsten Kroesch
+implemented: v0.2.0
+aliases:
+  - ADR 002
+tags:
+  - adr
+---
 
-* **Status:** Implementiert
-* **Datum:** 2026-09
+# ADR 002: MathText-Rendering via Matplotlib (In-Memory)
+
 * **Kontext:**
 Web-basierte Math-Renderer (MathJax/KaTeX in `QWebEngineView`) erfordern schwere Chromium-Abhängigkeiten und verursachen spürbaren Overhead beim Layout-Reflow. Reine TeX-Installationen (`pdflatex`) sind als Systemabhängigkeit zu schwergewichtig.
 * **Entscheidung:**

@@ -1,6 +1,18 @@
-# ADR 0012: Visuelle Organisation von Literatur-Notizen (Denkbrett / Post-it UI)
+---
+adr: 12
+title: "Visuelle Organisation von Literatur-Notizen (Denkbrett / Post-it UI)"
+status: Akzeptiert
+date: 2026-09-27
+author: Karsten Kroesch
+implemented:
+aliases:
+  - ADR 012
+tags:
+  - adr
+---
 
-**Status:** Akzeptiert
+# ADR 012: Visuelle Organisation von Literatur-Notizen (Denkbrett / Post-it UI)
+
 **Kontext:**
 Für die Strukturierung wissenschaftlicher Manuskripte und großer Buchprojekte reicht eine flache Listenansicht der Literatur-Notizen (Zettelkasten) oft nicht aus. Ein räumliches, visuelles Ordnen (analog zum "Denkbrett" in Papyrus Autor) unterstützt den kreativen Schreibprozess erheblich. Eine klassische Implementierung würde die Koordinaten der Post-its in einer zentralen, proprietären UI-Datenbank speichern. Das widerspricht jedoch Rosidas architektonischem Kernprinzip: Der Nutzer muss absolute Souveränität über seine Daten behalten (Plain-Text-Paradigma, kein Vendor-Lock-in).
 

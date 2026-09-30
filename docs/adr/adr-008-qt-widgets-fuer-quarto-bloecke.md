@@ -1,8 +1,17 @@
-# ADR 0008: Native Qt-Widgets für Quarto-Blocksemantik (Figures & Callouts)
+---
+adr: 8
+title: "Native Qt-Widgets für Quarto-Blocksemantik (Figures & Callouts)"
+status: Implementiert
+date: 2026-09-26
+author: Karsten Kroesch
+implemented: v0.2.0
+aliases:
+  - ADR 008
+tags:
+  - adr
+---
 
-## Status
-
-Akzeptiert
+# ADR 008: Native Qt-Widgets für Quarto-Blocksemantik (Figures & Callouts)
 
 ## Kontext
 

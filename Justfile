@@ -15,6 +15,10 @@ lock:
 screenshots *args:
     uv run scripts/screenshots.py {{args}}
 
+# Übersicht der Architekturentscheidungen nach docs/adr/README.md
+adr-report *args:
+    uv run scripts/adr_report.py {{args}}
+
 # Übersetzungen: neue/geänderte tr()-Texte in die .ts übernehmen und .qm bauen.
 # Übersetzt wird in assets/i18n/rosida_de.ts (Texteditor oder `uv run pyside6-linguist`).
 i18n:

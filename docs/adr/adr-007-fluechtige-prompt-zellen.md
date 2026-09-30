@@ -1,7 +1,18 @@
-# ADR 0007: Flüchtige Prompt-Zellen zur KI-gestützten Inhalts- und Code-Generierung
+---
+adr: 7
+title: "Flüchtige Prompt-Zellen zur KI-gestützten Inhalts- und Code-Generierung"
+status: Nicht verfolgen
+date: 2026-09-25
+author: Karsten Kroesch
+implemented:
+aliases:
+  - ADR 007
+tags:
+  - adr
+---
 
-* **Status:** Nicht verfolgen
-* **Datum:** 2026-09-25
+# ADR 007: Flüchtige Prompt-Zellen zur KI-gestützten Inhalts- und Code-Generierung
+
 * **Kontext:** Rosida (Interaktive Datenanalyse, Markdown/Qmd-Dateiformat, KI-Assistenz)
 
 ---

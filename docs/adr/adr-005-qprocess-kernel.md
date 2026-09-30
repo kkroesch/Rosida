@@ -1,7 +1,18 @@
-# ADR 0005: Isolierte Code-Ausführung via persistenten QProcess und dynamische Toolbar-Steuerung
+---
+adr: 5
+title: "Isolierte Code-Ausführung via persistenten QProcess und dynamische Toolbar-Steuerung"
+status: Akzeptiert
+date: 2026-09-25
+author: Karsten Kroesch
+implemented:
+aliases:
+  - ADR 005
+tags:
+  - adr
+---
 
-* **Status:** Akzeptiert
-* **Datum:** 2026-09-25
+# ADR 005: Isolierte Code-Ausführung via persistenten QProcess und dynamische Toolbar-Steuerung
+
 * **Kontext:** Rosida (Ausführungsumgebung, Kernel-Architektur, UI/UX)
 
 ---
