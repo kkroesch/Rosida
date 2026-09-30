@@ -24,7 +24,7 @@ from config.i18n import (
 
 from .base import RosidaAction
 
-APP_VERSION = "0.2.0"
+APP_VERSION = "0.3.0"
 
 _FIRST_RUN_SETTINGS_KEY = "help/manual_shown_on_first_run"
 
