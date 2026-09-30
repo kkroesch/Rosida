@@ -7,11 +7,16 @@ author: Karsten Kroesch
 implemented:
 aliases:
   - ADR 007
+related:
+  - "[[ADR 013]]"
 tags:
   - adr
 ---
 
 # ADR 007: Flüchtige Prompt-Zellen zur KI-gestützten Inhalts- und Code-Generierung
+
+> **Siehe auch:** [ADR 013: KI-Integration via deterministischer Prompt-Zellen](adr-013-prompt-zellen.md)
+> beschreibt die weiterverfolgte Alternative, Prompts dauerhaft im Dokument zu speichern.
 
 * **Kontext:** Rosida (Interaktive Datenanalyse, Markdown/Qmd-Dateiformat, KI-Assistenz)
 

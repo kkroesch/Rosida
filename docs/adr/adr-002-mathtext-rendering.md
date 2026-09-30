@@ -4,7 +4,7 @@ title: "MathText-Rendering via Matplotlib (In-Memory)"
 status: Implementiert
 date: 2026-09-25
 author: Karsten Kroesch
-implemented: v0.2.0
+implemented: v0.3.0
 aliases:
   - ADR 002
 tags:

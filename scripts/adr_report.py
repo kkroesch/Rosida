@@ -6,8 +6,9 @@ Aufruf (über `just adr-report`):
     uv run scripts/adr_report.py --stdout   # nur ausgeben
 
 Liest die Frontmatter jeder Datei `adr-NNN-*.md` (adr, title, status, date,
-author, implemented) und meldet Unstimmigkeiten: fehlende Frontmatter,
-Nummer im Dateinamen passt nicht zu `adr:`, Lücken in der Nummerierung.
+author, implemented, related) und meldet Unstimmigkeiten: fehlende
+Frontmatter, Nummer im Dateinamen passt nicht zu `adr:`, Verweise auf nicht
+vorhandene ADRs, Lücken in der Nummerierung.
 """
 
 import argparse
@@ -21,6 +22,8 @@ import yaml
 REPO = Path(__file__).resolve().parent.parent
 ADR_DIR = REPO / "docs" / "adr"
 FILE_RE = re.compile(r"^adr-(\d{3})-[\w-]+\.md$")
+# Verweise in `related`, z.B. "[[ADR 013]]" (Obsidian-Alias) oder "ADR 13"
+RELATED_RE = re.compile(r"ADR\s*0*(\d+)", re.IGNORECASE)
 
 
 def read_frontmatter(path: Path) -> dict | None:
@@ -55,6 +58,14 @@ def collect() -> tuple[list[dict], list[str]]:
         records.append({"number": number, "file": path.name, **meta})
 
     numbers = [r["number"] for r in records]
+    for r in records:
+        r["related_numbers"] = []
+        for ref in r.get("related") or []:
+            match = RELATED_RE.search(str(ref))
+            if not match or int(match.group(1)) not in numbers:
+                problems.append(f"`{r['file']}`: Verweis `{ref}` zeigt auf kein vorhandenes ADR")
+            else:
+                r["related_numbers"].append(int(match.group(1)))
     if numbers:
         missing = sorted(set(range(1, max(numbers) + 1)) - set(numbers))
         if missing:
@@ -84,15 +95,18 @@ def render(records: list[dict], problems: list[str]) -> str:
     summary = ", ".join(f"{status}: {n}" for status, n in sorted(counts.items()))
     lines += [f"{len(records)} Entscheidungen – {summary}.", ""]
 
+    files = {r["number"]: r["file"] for r in records}
     lines += [
-        "| ADR | Titel | Status | Implementiert | Datum | Autor |",
-        "|---|---|---|---|---|---|",
+        "| ADR | Titel | Status | Implementiert | Datum | Autor | Siehe auch |",
+        "|---|---|---|---|---|---|---|",
     ]
     for r in sorted(records, key=lambda r: r["number"]):
         link = f"[{r['number']:03d}]({r['file']})"
+        related = ", ".join(f"[{n:03d}]({files[n]})" for n in r["related_numbers"])
         lines.append(
             f"| {link} | {cell(r.get('title'))} | {cell(r.get('status'))} "
-            f"| {cell(r.get('implemented'))} | {cell(r.get('date'))} | {cell(r.get('author'))} |"
+            f"| {cell(r.get('implemented'))} | {cell(r.get('date'))} | {cell(r.get('author'))} "
+            f"| {cell(related)} |"
         )
 
     if problems:
