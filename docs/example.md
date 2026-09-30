@@ -10,7 +10,7 @@ summary: "Am Beispiel eines einfachen Pendels zeige ich die Anwendung der theore
 categories:
   - "Science"
 cover: pendulum.png
-bibliography: gassner.bib
+bibliography: example.bib
 ---
 
 > Vorhersagen sind schwierig, vor allem solche, 
