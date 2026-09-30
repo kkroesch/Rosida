@@ -85,14 +85,14 @@ class InPlaceCell(QWidget):
 
         self.btn_mode_pill = QPushButton("⚡ Auto")
         self.btn_mode_pill.setToolTip(
-            "Klicken oder Ctrl+M zum Umschalten (Auto / Python / Text)"
+            self.tr("Click or press Ctrl+M to switch (Auto / Python / Text)")
         )
         self.btn_mode_pill.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.btn_mode_pill.clicked.connect(self.cycle_mode)
         header.addWidget(self.btn_mode_pill)
         header.addStretch()
 
-        lbl_hint = QLabel("Shift+Enter zum Ausführen")
+        lbl_hint = QLabel(self.tr("Shift+Enter to run"))
         lbl_hint.setStyleSheet("color: #94a3b8; font-size: 11px;")
         header.addWidget(lbl_hint)
         self.edit_layout.addLayout(header)
@@ -316,7 +316,7 @@ class InPlaceCell(QWidget):
             "QProgressBar { background: #e2e8f0; border: none; border-radius: 3px; }"
             "QProgressBar::chunk { background: #2563eb; border-radius: 3px; }"
         )
-        text = "Wird berechnet …" if self.kernel.is_computing() else "Wartet …"
+        text = self.tr("Computing …") if self.kernel.is_computing() else self.tr("Waiting …")
         lbl = QLabel(text)
         lbl.setStyleSheet("color: #64748b; font-size: 12px; font-style: italic;")
         row.addWidget(bar)
@@ -379,7 +379,7 @@ class InPlaceCell(QWidget):
         plus_lbl = QLabel("+")
         plus_lbl.setFixedSize(18, 18)
         plus_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        plus_lbl.setToolTip("Kein Output – klicken zum Bearbeiten")
+        plus_lbl.setToolTip(self.tr("No output – click to edit"))
         plus_lbl.setStyleSheet("""
             QLabel {
                 color: #94a3b8;

@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QCoreApplication, Qt, Signal
 from PySide6.QtWidgets import (
     QDockWidget,
     QHeaderView,
@@ -14,7 +14,7 @@ class VariableInspectorDock(QDockWidget):
     variable_double_clicked = Signal(str)
 
     def __init__(self, parent=None):
-        super().__init__("Variablen", parent)
+        super().__init__(QCoreApplication.translate("VariableInspectorDock", "Variables"), parent)
         self.setObjectName("DockVariableInspector")
 
         container = QWidget()
@@ -22,7 +22,9 @@ class VariableInspectorDock(QDockWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         self.table = QTableWidget(0, 3)
-        self.table.setHorizontalHeaderLabels(["Name", "Typ", "Wert"])
+        self.table.setHorizontalHeaderLabels(
+            [self.tr("Name"), self.tr("Type"), self.tr("Value")]
+        )
         self.table.verticalHeader().setVisible(False)
         self.table.setAlternatingRowColors(True)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)

@@ -15,7 +15,7 @@ from markdown.preprocessors import Preprocessor
 from markdown.treeprocessors import Treeprocessor
 import sympy as sp
 
-from PySide6.QtCore import Qt, QUrl
+from PySide6.QtCore import QCoreApplication, Qt, QUrl
 from PySide6.QtGui import QImage, QTextDocument
 from PySide6.QtWidgets import QTextBrowser
 
@@ -163,7 +163,10 @@ def _evaluate_template_expressions(text: str, namespace: dict) -> str:
         try:
             val = eval(expr, {}, namespace)
         except Exception as err:
-            return f'<code class="math-error">Fehler: {html.escape(expr)} → {html.escape(str(err))}</code>'
+            message = QCoreApplication.translate("Templates", "Error: {0} → {1}").format(
+                html.escape(expr), html.escape(str(err))
+            )
+            return f'<code class="math-error">{message}</code>'
 
         if isinstance(val, (sp.Basic, sp.MatrixBase)):
             latex = sp.latex(val)

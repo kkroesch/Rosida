@@ -61,7 +61,7 @@ def test_reference_list_contains_only_cited_entries_sorted():
   _render("[@pleger_2023] und [@fp_2018]", cit)
 
   refs = cit.references_html()
-  assert '<h2 id="quellen">Quellen</h2>' in refs
+  assert '<h2 id="references">Quellen</h2>' in refs
   assert refs.index("ref-fp_2018") < refs.index("ref-pleger_2023")  # Freiknecht vor Pleger
   assert '<a href="https://books.google.ch/books?id=0SC_DwAAQBAJ">' in refs
   assert "(abgerufen am 9.10.2023)" in refs
@@ -106,7 +106,7 @@ def test_pdf_export_resolves_citations_and_appends_sources(rosida_win, tmp_path,
   pymupdf = __import__("pytest").importorskip("pymupdf")
   doc = rosida_win.doc
   rosida_win.current_filepath = str(DOCS / "example.md")
-  doc.frontmatter_cell.editor.setPlainText("title: T\nbibliography: example.bib")
+  doc.frontmatter_cell.editor.setPlainText("title: T\nlang: de\nbibliography: example.bib")
   doc.cells[0].editor.setPlainText("Siehe [@wohlenberg_3_2023] und [@gibtsnicht].")
   wait_idle(doc)
 

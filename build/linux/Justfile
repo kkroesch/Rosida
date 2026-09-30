@@ -40,7 +40,9 @@ prepare:
     mkdir -p "{{APP_DIR}}/usr/lib/rosida"
     cp -a "{{REPO_ROOT}}"/src/* "{{APP_DIR}}/usr/lib/rosida/"
     mkdir -p "{{APP_DIR}}/usr/lib/rosida/assets"
-    cp -a "{{REPO_ROOT}}/assets/fonts" "{{APP_DIR}}/usr/lib/rosida/assets/"
+    cp -a "{{REPO_ROOT}}/assets/fonts" "{{REPO_ROOT}}/assets/i18n" "{{APP_DIR}}/usr/lib/rosida/assets/"
+    mkdir -p "{{APP_DIR}}/usr/lib/rosida/docs"
+    cp "{{REPO_ROOT}}"/docs/quickstart*.md "{{APP_DIR}}/usr/lib/rosida/docs/"
 
     echo "==> 4. Desktop-Integration und Starter..."
     cp "{{MOD_DIR}}/AppRun" "{{APP_DIR}}/AppRun"

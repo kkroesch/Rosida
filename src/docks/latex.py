@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QCoreApplication, Qt, Signal
 from PySide6.QtWidgets import (
     QDockWidget,
     QFrame,
@@ -59,7 +59,10 @@ class LatexPaletteDock(QDockWidget):
     insert_requested = Signal(str)
 
     def __init__(self, parent=None):
-        super().__init__("LaTeX-Kürzel & Formeln", parent)
+        super().__init__(
+            QCoreApplication.translate("LatexPaletteDock", "LaTeX snippets and formulas"),
+            parent,
+        )
         self.setObjectName("LatexPaletteDock")
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable
@@ -118,22 +121,22 @@ class LatexPaletteDock(QDockWidget):
         # Einklappbare Sektionen anlegen
         main_layout.addWidget(
             CollapsibleSection(
-                "Kalkül", self._build_calculus_widget(), is_expanded=True
+                self.tr("Calculus"), self._build_calculus_widget(), is_expanded=True
             )
         )
         main_layout.addWidget(
             CollapsibleSection(
-                "Griechisch", self._build_greek_widget(), is_expanded=True
+                self.tr("Greek"), self._build_greek_widget(), is_expanded=True
             )
         )
         main_layout.addWidget(
             CollapsibleSection(
-                "Symbole", self._build_symbols_widget(), is_expanded=True
+                self.tr("Symbols"), self._build_symbols_widget(), is_expanded=True
             )
         )
         main_layout.addWidget(
             CollapsibleSection(
-                "Matrizen", self._build_matrices_widget(), is_expanded=True
+                self.tr("Matrices"), self._build_matrices_widget(), is_expanded=True
             )
         )
         main_layout.addWidget(
@@ -269,40 +272,40 @@ class LatexPaletteDock(QDockWidget):
         grid.setContentsMargins(0, 2, 0, 4)
         grid.setSpacing(4)
         snippets = [
-            ("Note", "::: {.callout-note}\n\n:::", "Callout: Hinweis"),
-            ("Tip", "::: {.callout-tip}\n\n:::", "Callout: Tipp"),
-            ("Warning", "::: {.callout-warning}\n\n:::", "Callout: Warnung"),
-            ("Important", "::: {.callout-important}\n\n:::", "Callout: Wichtig"),
-            ("Caution", "::: {.callout-caution}\n\n:::", "Callout: Vorsicht"),
+            ("Note", "::: {.callout-note}\n\n:::", self.tr("Callout: note")),
+            ("Tip", "::: {.callout-tip}\n\n:::", self.tr("Callout: tip")),
+            ("Warning", "::: {.callout-warning}\n\n:::", self.tr("Callout: warning")),
+            ("Important", "::: {.callout-important}\n\n:::", self.tr("Callout: important")),
+            ("Caution", "::: {.callout-caution}\n\n:::", self.tr("Callout: caution")),
             (
                 "Div",
                 "::: {.className}\n\n:::",
-                "Generischer Fenced Div (Klasse anpassen)",
+                self.tr("Generic fenced div (adjust the class)"),
             ),
             (
-                "Fußnote",
-                "Text[^1]\n\n[^1]: Fußnotentext",
-                "Fußnote mit Referenz und Definition",
+                self.tr("Footnote"),
+                self.tr("Text[^1]\n\n[^1]: Footnote text"),
+                self.tr("Footnote with reference and definition"),
             ),
             (
-                "Abb.-Anker",
+                self.tr("Fig. anchor"),
                 "{#fig-label}",
-                "Cross-Ref-Anker unter eine Bildunterschrift setzen",
+                self.tr("Put a cross-ref anchor below a figure caption"),
             ),
             (
-                "Tab.-Anker",
+                self.tr("Tab. anchor"),
                 "{#tbl-label}",
-                "Cross-Ref-Anker in eine Tabellenbeschriftung setzen",
+                self.tr("Put a cross-ref anchor into a table caption"),
             ),
             (
-                "Abb.-Verweis",
+                self.tr("Fig. ref"),
                 "@fig-label",
-                'Verweis auf eine Abbildung, z. B. "siehe @fig-label"',
+                self.tr("Reference to a figure, e.g. “see @fig-label”"),
             ),
             (
-                "Tab.-Verweis",
+                self.tr("Tab. ref"),
                 "@tbl-label",
-                'Verweis auf eine Tabelle, z. B. "siehe @tbl-label"',
+                self.tr("Reference to a table, e.g. “see @tbl-label”"),
             ),
         ]
         for idx, (lbl, code, tip) in enumerate(snippets):

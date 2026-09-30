@@ -1,7 +1,7 @@
 import os
 
 from pathlib import Path
-from PySide6.QtCore import Qt, QSettings
+from PySide6.QtCore import QCoreApplication, Qt, QSettings
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QApplication, QFileDialog, QMenu, QMessageBox
 
@@ -31,11 +31,11 @@ def get_recent_files() -> list[str]:
 
 class NewDocumentAction(RosidaAction):
     def __init__(self, main_window, parent=None):
-        super().__init__("&Neues Dokument", parent)
+        super().__init__(QCoreApplication.translate("NewDocumentAction", "&New document"), parent)
         self.win = main_window
 
         self.setShortcut(QKeySequence.StandardKey.New)
-        self.setToolTip("Neues, leeres Dokument erstellen (Cmd+N / Ctrl+N)")
+        self.setToolTip(self.tr("Create a new, empty document (Cmd+N / Ctrl+N)"))
         self.set_icon_name("fa5s.file")
 
         self.triggered.connect(self._execute)
@@ -55,31 +55,33 @@ class NewDocumentAction(RosidaAction):
         doc.undo_stack.setClean()
         doc.insert_cell()
         doc.set_modified(False)
-        self.win.statusbar.showMessage("Neues Dokument erstellt", 2000)
+        self.win.statusbar.showMessage(self.tr("New document created"), 2000)
 
 
 class OpenDocumentAction(RosidaAction):
     def __init__(self, main_window, parent=None):
-        super().__init__("&Öffnen...", parent)
+        super().__init__(QCoreApplication.translate("OpenDocumentAction", "&Open..."), parent)
         self.win = main_window
 
         self.setShortcut(QKeySequence.StandardKey.Open)
-        self.setToolTip("Dokument öffnen (Cmd+O / Ctrl+O)")
+        self.setToolTip(self.tr("Open a document (Cmd+O / Ctrl+O)"))
         self.set_icon_name("fa5s.folder-open")
 
         self.triggered.connect(self._execute)
 
     def _execute(self):
-        filter_str = (
-            "Unterstützte Dokumente (*.md *.markdown *.qmd *.ipynb);;"
-            "Markdown & Quarto (*.md *.markdown *.qmd);;"
-            "Jupyter Notebooks (*.ipynb);;"
-            "Alle Dateien (*)"
+        filter_str = ";;".join(
+            [
+                self.tr("Supported documents (*.md *.markdown *.qmd *.ipynb)"),
+                self.tr("Markdown & Quarto (*.md *.markdown *.qmd)"),
+                self.tr("Jupyter notebooks (*.ipynb)"),
+                self.tr("All files (*)"),
+            ]
         )
 
         filepath, _ = QFileDialog.getOpenFileName(
             self.win,
-            "Rosida Dokument öffnen",
+            self.tr("Open Rosida document"),
             "",
             filter_str,
         )
@@ -99,19 +101,22 @@ class OpenDocumentAction(RosidaAction):
                 target_md = path.with_suffix(".md")
                 self.win.set_current_filepath(str(target_md))
                 self.win.statusbar.showMessage(
-                    f"Importiert: {path.name} → Speichern als {target_md.name}", 4000
+                    self.tr("Imported: {0} → will be saved as {1}").format(
+                        path.name, target_md.name
+                    ),
+                    4000,
                 )
             else:
                 # Standard: Markdown / Quarto laden[cite: 1]
                 self.win.doc.load_from_markdown(filepath)
                 self.win.set_current_filepath(filepath)
-                self.win.statusbar.showMessage(f"Geöffnet: {path.name}", 3000)
+                self.win.statusbar.showMessage(self.tr("Opened: {0}").format(path.name), 3000)
 
         except Exception as err:
             QMessageBox.critical(
                 self.win,
-                "Fehler beim Öffnen",
-                f"Datei konnte nicht geöffnet werden:\n{err}",
+                self.tr("Error opening file"),
+                self.tr("The file could not be opened:\n{0}").format(err),
             )
         finally:
             QApplication.restoreOverrideCursor()
@@ -121,7 +126,7 @@ class RecentFilesMenu(QMenu):
     """Datei-Untermenü "Zuletzt geöffnet", wird bei jedem Öffnen neu aus QSettings gebaut."""
 
     def __init__(self, main_window, parent=None):
-        super().__init__("Zuletzt &geöffnet", parent)
+        super().__init__(QCoreApplication.translate("RecentFilesMenu", "Open &recent"), parent)
         self.win = main_window
         self.aboutToShow.connect(self._rebuild)
 
@@ -129,7 +134,7 @@ class RecentFilesMenu(QMenu):
         self.clear()
         files = get_recent_files()
         if not files:
-            empty_action = self.addAction("(keine)")
+            empty_action = self.addAction(self.tr("(none)"))
             empty_action.setEnabled(False)
             return
 
@@ -139,19 +144,19 @@ class RecentFilesMenu(QMenu):
             action.triggered.connect(lambda checked=False, p=filepath: self._open(p))
 
         self.addSeparator()
-        self.addAction("Liste leeren").triggered.connect(self._clear)
+        self.addAction(self.tr("Clear list")).triggered.connect(self._clear)
 
     def _open(self, filepath: str):
         try:
             QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
             self.win.doc.load_from_markdown(filepath)
             self.win.set_current_filepath(filepath)
-            self.win.statusbar.showMessage(f"Geöffnet: {filepath}", 3000)
+            self.win.statusbar.showMessage(self.tr("Opened: {0}").format(filepath), 3000)
         except Exception as err:
             QMessageBox.critical(
                 self.win,
-                "Fehler beim Öffnen",
-                f"Datei konnte nicht geöffnet werden:\n{err}",
+                self.tr("Error opening file"),
+                self.tr("The file could not be opened:\n{0}").format(err),
             )
         finally:
             QApplication.restoreOverrideCursor()
@@ -162,11 +167,11 @@ class RecentFilesMenu(QMenu):
 
 class SaveAction(RosidaAction):
     def __init__(self, main_window, parent=None):
-        super().__init__("&Speichern", parent)
+        super().__init__(QCoreApplication.translate("SaveAction", "&Save"), parent)
         self.win = main_window
 
         self.setShortcut(QKeySequence.StandardKey.Save)
-        self.setToolTip("Dokument speichern (Cmd+S / Ctrl+S)")
+        self.setToolTip(self.tr("Save the document (Cmd+S / Ctrl+S)"))
         self.set_icon_name("fa5s.save")
 
         self.triggered.connect(self._execute)
@@ -185,24 +190,24 @@ class SaveAction(RosidaAction):
         try:
             self.win.doc.save_to_markdown(self.win.current_filepath)
             self.win.statusbar.showMessage(
-                f"Gespeichert: {self.win.current_filepath}", 3000
+                self.tr("Saved: {0}").format(self.win.current_filepath), 3000
             )
         except Exception as err:
             QMessageBox.critical(
                 self.win,
-                "Fehler beim Speichern",
-                f"Datei konnte nicht gespeichert werden:\n{err}",
+                self.tr("Error saving file"),
+                self.tr("The file could not be saved:\n{0}").format(err),
             )
 
 
 class SaveAsAction(RosidaAction):
     def __init__(self, main_window, parent=None):
-        super().__init__("Speichern &unter...", parent)
+        super().__init__(QCoreApplication.translate("SaveAsAction", "Save &as..."), parent)
         self.win = main_window
 
         self.setShortcut(QKeySequence.StandardKey.SaveAs)
         self.setToolTip(
-            "Dokument unter neuem Namen speichern (Cmd+Shift+S / Ctrl+Shift+S)"
+            self.tr("Save the document under a new name (Cmd+Shift+S / Ctrl+Shift+S)")
         )
         self.set_icon_name("fa5s.file-export")
 
@@ -211,31 +216,31 @@ class SaveAsAction(RosidaAction):
     def _execute(self):
         filepath, _ = QFileDialog.getSaveFileName(
             self.win,
-            "Dokument speichern unter",
-            "berechnung.md",
-            "Markdown-Dokument (*.md);;Alle Dateien (*)",
+            self.tr("Save document as"),
+            self.tr("calculation.md"),
+            self.tr("Markdown document (*.md)") + ";;" + self.tr("All files (*)"),
         )
         if not filepath:
             return
         try:
             self.win.doc.save_to_markdown(filepath)
             self.win.set_current_filepath(filepath)
-            self.win.statusbar.showMessage(f"Gespeichert: {filepath}", 3000)
+            self.win.statusbar.showMessage(self.tr("Saved: {0}").format(filepath), 3000)
         except Exception as err:
             QMessageBox.critical(
                 self.win,
-                "Fehler beim Speichern",
-                f"Datei konnte nicht gespeichert werden:\n{err}",
+                self.tr("Error saving file"),
+                self.tr("The file could not be saved:\n{0}").format(err),
             )
 
 
 class ExportPdfAction(RosidaAction):
     def __init__(self, main_window, parent=None):
-        super().__init__("&PDF exportieren...", parent)
+        super().__init__(QCoreApplication.translate("ExportPdfAction", "Export &PDF..."), parent)
         self.win = main_window
 
         self.setShortcut(QKeySequence("Ctrl+Shift+P"))
-        self.setToolTip("Dokument als PDF-Datei exportieren (Ctrl+Shift+P)")
+        self.setToolTip(self.tr("Export the document as a PDF file (Ctrl+Shift+P)"))
         self.set_icon_name("fa5s.file-pdf")
 
         self.triggered.connect(self._execute)
@@ -243,19 +248,23 @@ class ExportPdfAction(RosidaAction):
     def _execute(self):
         filepath, _ = QFileDialog.getSaveFileName(
             self.win,
-            "Dokument als PDF exportieren",
-            "rosida_dokument.pdf",
-            "PDF-Dokument (*.pdf)",
+            self.tr("Export document as PDF"),
+            self.tr("rosida_document.pdf"),
+            self.tr("PDF document (*.pdf)"),
         )
         if not filepath:
             return
         try:
             QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
             self.win.doc.export_pdf(filepath)
-            self.win.statusbar.showMessage(f"PDF-Export erfolgreich: {filepath}", 4000)
+            self.win.statusbar.showMessage(
+                self.tr("PDF export successful: {0}").format(filepath), 4000
+            )
         except Exception as err:
             QMessageBox.critical(
-                self.win, "Exportfehler", f"Fehler beim PDF-Export:\n{err}"
+                self.win,
+                self.tr("Export error"),
+                self.tr("PDF export failed:\n{0}").format(err),
             )
         finally:
             QApplication.restoreOverrideCursor()
@@ -263,11 +272,13 @@ class ExportPdfAction(RosidaAction):
 
 class ExportHtmlAction(RosidaAction):
     def __init__(self, main_window, parent=None):
-        super().__init__("&HTML exportieren...", parent)
+        super().__init__(QCoreApplication.translate("ExportHtmlAction", "Export &HTML..."), parent)
         self.win = main_window
 
         self.setShortcut(QKeySequence("Ctrl+Shift+H"))
-        self.setToolTip("Dokument als HTML-Seite exportieren, Formeln mit KaTeX (Ctrl+Shift+H)")
+        self.setToolTip(
+            self.tr("Export the document as an HTML page, formulas via KaTeX (Ctrl+Shift+H)")
+        )
         self.set_icon_name("fa5s.file-code")
 
         self.triggered.connect(self._execute)
@@ -275,19 +286,23 @@ class ExportHtmlAction(RosidaAction):
     def _execute(self):
         filepath, _ = QFileDialog.getSaveFileName(
             self.win,
-            "Dokument als HTML exportieren",
-            "rosida_dokument.html",
-            "HTML-Seite (*.html)",
+            self.tr("Export document as HTML"),
+            self.tr("rosida_document.html"),
+            self.tr("HTML page (*.html)"),
         )
         if not filepath:
             return
         try:
             QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
             self.win.doc.export_html(filepath)
-            self.win.statusbar.showMessage(f"HTML-Export erfolgreich: {filepath}", 4000)
+            self.win.statusbar.showMessage(
+                self.tr("HTML export successful: {0}").format(filepath), 4000
+            )
         except Exception as err:
             QMessageBox.critical(
-                self.win, "Exportfehler", f"Fehler beim HTML-Export:\n{err}"
+                self.win,
+                self.tr("Export error"),
+                self.tr("HTML export failed:\n{0}").format(err),
             )
         finally:
             QApplication.restoreOverrideCursor()
@@ -295,11 +310,13 @@ class ExportHtmlAction(RosidaAction):
 
 class ExportQmdAction(RosidaAction):
     def __init__(self, main_window, parent=None):
-        super().__init__("&Quarto exportieren...", parent)
+        super().__init__(QCoreApplication.translate("ExportQmdAction", "Export &Quarto..."), parent)
         self.win = main_window
 
         self.setShortcut(QKeySequence("Ctrl+Shift+Q"))
-        self.setToolTip("Dokument als Quarto-Datei (.qmd) exportieren (Ctrl+Shift+Q)")
+        self.setToolTip(
+            self.tr("Export the document as a Quarto file (.qmd) (Ctrl+Shift+Q)")
+        )
         self.set_icon_name("fa5s.file-alt")
 
         self.triggered.connect(self._execute)
@@ -307,30 +324,32 @@ class ExportQmdAction(RosidaAction):
     def _execute(self):
         filepath, _ = QFileDialog.getSaveFileName(
             self.win,
-            "Dokument als Quarto exportieren",
-            "rosida_dokument.qmd",
-            "Quarto-Dokument (*.qmd)",
+            self.tr("Export document as Quarto"),
+            self.tr("rosida_document.qmd"),
+            self.tr("Quarto document (*.qmd)"),
         )
         if not filepath:
             return
         try:
             self.win.doc.export_qmd(filepath)
             self.win.statusbar.showMessage(
-                f"Quarto-Export erfolgreich: {filepath}", 4000
+                self.tr("Quarto export successful: {0}").format(filepath), 4000
             )
         except Exception as err:
             QMessageBox.critical(
-                self.win, "Exportfehler", f"Fehler beim Quarto-Export:\n{err}"
+                self.win,
+                self.tr("Export error"),
+                self.tr("Quarto export failed:\n{0}").format(err),
             )
 
 
 class QuitAction(RosidaAction):
     def __init__(self, main_window, parent=None):
-        super().__init__("&Beenden", parent)
+        super().__init__(QCoreApplication.translate("QuitAction", "&Quit"), parent)
         self.win = main_window
 
         self.setShortcut(QKeySequence.StandardKey.Quit)
-        self.setToolTip("Rosida beenden")
+        self.setToolTip(self.tr("Quit Rosida"))
         self.set_icon_name("fa5s.sign-out-alt")
 
         self.triggered.connect(self.win.close)

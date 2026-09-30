@@ -8,6 +8,7 @@ Ohne Netz bleibt statt der Formeln der LaTeX-Quelltext lesbar stehen.
 import base64
 from collections.abc import Iterable
 import html
+import json
 from io import BytesIO
 import mimetypes
 from pathlib import Path
@@ -23,6 +24,7 @@ import yaml
 
 from config.settings import FONTS_DIR
 from exporters.bibtex import Citations, bibliography_files, load_bibliography
+from exporters.terms import document_language, terms
 from widgets.math_text import evaluate_templates, markdown_to_html
 
 KATEX_VERSION = "0.18.9"
@@ -183,15 +185,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "copy";
-    button.setAttribute("aria-label", "Code kopieren");
-    button.innerHTML = COPY_ICON + "<span>Kopieren</span>";
+    button.setAttribute("aria-label", LABELS.copyCode);
+    button.innerHTML = COPY_ICON + "<span>" + LABELS.copy + "</span>";
     button.addEventListener("click", async () => {
       await copyText(code.innerText.replace(/\\n$/, ""));
       button.classList.add("done");
-      button.lastChild.textContent = "Kopiert";
+      button.lastChild.textContent = LABELS.copied;
       setTimeout(() => {
         button.classList.remove("done");
-        button.lastChild.textContent = "Kopieren";
+        button.lastChild.textContent = LABELS.copy;
       }, 1500);
     });
     block.appendChild(button);
@@ -323,7 +325,15 @@ def export_html(
     out_path = Path(filepath)
     base_dir = base_dir or out_path.parent
     properties = _parse_properties(frontmatter)
-    citations = Citations(load_bibliography(bibliography_files(properties, base_dir)))
+    lang = document_language(properties)
+    t = terms(lang)
+    citations = Citations(
+        load_bibliography(bibliography_files(properties, base_dir)), lang
+    )
+    labels = json.dumps(
+        {"copy": t["copy"], "copied": t["copied"], "copyCode": t["copy_code"]},
+        ensure_ascii=False,
+    )
 
     body = []
     for cell in cells:
@@ -340,11 +350,11 @@ def export_html(
             body.append(_python_cell_html(code, cell.last_stdout, cell.last_val))
 
     # Wie Quartos Literaturverzeichnis: nur tatsächlich zitierte Einträge
-    body.append(citations.references_html("Quellen"))
+    body.append(citations.references_html())
 
     title = properties.get("title") or out_path.stem
     page = f"""<!DOCTYPE html>
-<html lang="de">
+<html lang="{html.escape(lang)}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -363,7 +373,7 @@ def export_html(
 {_header_html(properties)}
 {_embed_images(chr(10).join(body), base_dir)}
 </main>
-<script>{_KATEX_RENDER_JS}{_COPY_JS}</script>
+<script>const LABELS = {labels};{_KATEX_RENDER_JS}{_COPY_JS}</script>
 </body>
 </html>
 """

@@ -65,7 +65,7 @@ class FrontmatterCell(QWidget):
         layout.addWidget(self.stack)
 
         # Zustand 0: Eingeklappt (Kompakter Button)
-        self.btn_collapsed = QPushButton("⏵ Dokcument Properties")
+        self.btn_collapsed = QPushButton(self.tr("⏵ Document properties"))
         self.btn_collapsed.setStyleSheet("text-align: left; color: gray; border: none;")
         self.btn_collapsed.clicked.connect(self.expand)
 
@@ -84,7 +84,7 @@ class FrontmatterCell(QWidget):
         metadata = self.metadata()
 
         # Text im Button anpassen (z.B. Titel anzeigen)
-        title = metadata.get("title", "Properties")
+        title = metadata.get("title") or self.tr("Document properties")
         self.btn_collapsed.setText(f"⏵ {title}")
 
         # Zelle einklappen

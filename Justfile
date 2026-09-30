@@ -10,6 +10,12 @@ run:
 lock:
     uv lock
 
+# Übersetzungen: neue/geänderte tr()-Texte in die .ts übernehmen und .qm bauen.
+# Übersetzt wird in assets/i18n/rosida_de.ts (Texteditor oder `uv run pyside6-linguist`).
+i18n:
+    uv run pyside6-lupdate $(git ls-files 'src/*.py') -ts assets/i18n/rosida_de.ts -source-language en -target-language de -no-obsolete
+    uv run pyside6-lrelease assets/i18n/rosida_de.ts -qm assets/i18n/rosida_de.qm
+
 icons:
     # Create PNG and ICO icons for Linux and Windows
     magick logo.svg -define icon:auto-resize=256,48,32,16 logo.ico
