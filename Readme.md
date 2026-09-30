@@ -2,7 +2,7 @@
 
 Rosida ist eine leichtgewichtige, native mathematische Notizbuch-Umgebung für macOS und Linux, entwickelt mit Python und PySide6 (Qt6).
 
-Rosida sezt komplett auf **reines Markdown (`.md`) als natives Speicherformat**, eine direkte In-Memory-Berechnung via SymPy/NumPy/Polars und eine ruhige, reaktionsschnelle Benutzeroberfläche im Papier-Stil. Eine ausführlichere Einführung mit Beispielen (Python, NumPy, Matplotlib, SymPy, Polars) findest du in [docs/quickstart.md](docs/quickstart.md).
+Rosida sezt komplett auf **reines Markdown (`.md`) als natives Speicherformat**, eine direkte In-Memory-Berechnung via SymPy/NumPy/Polars und eine ruhige, reaktionsschnelle Benutzeroberfläche im Papier-Stil. Eine ausführlichere Einführung mit Beispielen (Python, NumPy, Matplotlib, SymPy, Polars) findest du in [docs/quickstart.md](docs/quickstart.md), das ausführliche Handbuch mit Screenshots in [docs/manual_de.md](docs/manual_de.md).
 
 ---
 ![Rosida mit geladenem Dokument](docs/screenshot.png){#fig-arch}

@@ -10,6 +10,21 @@ run:
 lock:
     uv lock
 
+# Screenshots aller Komponenten (isoliert, offscreen) nach out/screenshots
+# z.B. `just screenshots --lang en` oder `just screenshots docs/anderes.md --show`
+screenshots *args:
+    uv run scripts/screenshots.py {{args}}
+
+# Übersicht der Architekturentscheidungen nach docs/adr/README.md
+adr-report *args:
+    uv run scripts/adr_report.py {{args}}
+
+# Übersetzungen: neue/geänderte tr()-Texte in die .ts übernehmen und .qm bauen.
+# Übersetzt wird in assets/i18n/rosida_de.ts (Texteditor oder `uv run pyside6-linguist`).
+i18n:
+    uv run pyside6-lupdate $(git ls-files 'src/*.py') -ts assets/i18n/rosida_de.ts -source-language en -target-language de -no-obsolete
+    uv run pyside6-lrelease assets/i18n/rosida_de.ts -qm assets/i18n/rosida_de.qm
+
 icons:
     # Create PNG and ICO icons for Linux and Windows
     magick logo.svg -define icon:auto-resize=256,48,32,16 logo.ico

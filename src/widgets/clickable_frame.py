@@ -12,7 +12,7 @@ class ClickableOutputFrame(QFrame):
         super().__init__(parent)
         self.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.setToolTip(
-            "Klicken, um Inhalt zu bearbeiten (Escape im Editor zum Schließen)"
+            self.tr("Click to edit the content (Escape in the editor to close)")
         )
         self.setStyleSheet("""
             ClickableOutputFrame {

@@ -1,3 +1,4 @@
+from PySide6.QtCore import QCoreApplication
 from PySide6.QtGui import QKeySequence
 
 from .base import RosidaAction
@@ -19,35 +20,43 @@ class ToggleDockAction(RosidaAction):
 
 class ToggleStructureDockAction(ToggleDockAction):
     def __init__(self, dock_widget, parent=None):
-        super().__init__(dock_widget, "Dokumentstruktur", parent)
+        super().__init__(
+            dock_widget, QCoreApplication.translate("ToggleStructureDockAction", "Document outline"), parent
+        )
 
         self.setShortcut(QKeySequence("F3"))
-        self.setToolTip("Dokumentstruktur ein-/ausblenden (F3)")
+        self.setToolTip(self.tr("Show/hide the document outline (F3)"))
         self.set_icon_name("fa5s.sitemap")
 
 
 class TogglePaletteDockAction(ToggleDockAction):
     def __init__(self, dock_widget, parent=None):
-        super().__init__(dock_widget, "LaTeX-Palette", parent)
+        super().__init__(
+            dock_widget, QCoreApplication.translate("TogglePaletteDockAction", "LaTeX palette"), parent
+        )
 
         self.setShortcut(QKeySequence("F4"))
-        self.setToolTip("LaTeX-Palette ein-/ausblenden (F4)")
+        self.setToolTip(self.tr("Show/hide the LaTeX palette (F4)"))
         self.set_icon_name("fa5s.square-root-alt")
 
 
 class ToggleBibitemsDockAction(ToggleDockAction):
     def __init__(self, dock_widget, parent=None):
-        super().__init__(dock_widget, "Bibliographie", parent)
+        super().__init__(
+            dock_widget, QCoreApplication.translate("ToggleBibitemsDockAction", "Bibliography"), parent
+        )
 
         self.setShortcut(QKeySequence("F4"))
-        self.setToolTip("Bibliographieliste ein-/ausblenden (F4)")
+        self.setToolTip(self.tr("Show/hide the bibliography (F4)"))
         self.set_icon_name("fa5s.book")
 
 
 class ToggleVariablesDockAction(ToggleDockAction):
     def __init__(self, dock_widget, parent=None):
-        super().__init__(dock_widget, "Variablen (Sidebar)", parent)
+        super().__init__(
+            dock_widget, QCoreApplication.translate("ToggleVariablesDockAction", "Variables (sidebar)"), parent
+        )
 
         self.setShortcut(QKeySequence("F3"))
-        self.setToolTip("Variablen-Inspektor ein-/ausblenden (F3)")
+        self.setToolTip(self.tr("Show/hide the variable inspector (F3)"))
         self.set_icon_name("fa5s.table")

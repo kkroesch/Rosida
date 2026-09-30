@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
     QStackedWidget,
     QFileDialog,
 )
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import QCoreApplication, Signal, Qt
 
 from exporters.bibtex import load_bibliography
 
@@ -28,8 +28,8 @@ class BibItemWidget(QWidget):
         layout.setSpacing(2)
 
         # Fallbacks für unsaubere BibTeX-Daten
-        display_author = author if author else "Unbekannter Autor"
-        display_title = title if title else "Kein Titel"
+        display_author = author if author else self.tr("Unknown author")
+        display_title = title if title else self.tr("No title")
 
         layout.addWidget(QLabel(f"<b>[{key}]</b>"))
         layout.addWidget(QLabel(f"<i>{display_author}</i>"))
@@ -49,14 +49,14 @@ class BibDock(QDockWidget):
     bib_file_chosen = Signal(str)
 
     def __init__(self, parent=None):
-        super().__init__("References", parent)
+        super().__init__(QCoreApplication.translate("BibDock", "References"), parent)
         self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
 
         self.stack = QStackedWidget()
         self.setWidget(self.stack)
 
         # Seite 0: Initialer Lade-Button
-        self.btn_load = QPushButton("Load References (.bib)")
+        self.btn_load = QPushButton(self.tr("Load references (.bib)"))
         self.btn_load.clicked.connect(self.choose_bib_file)
         self.lbl_hint = QLabel()
         self.lbl_hint.setWordWrap(True)
@@ -71,8 +71,8 @@ class BibDock(QDockWidget):
         # Seite 1: Die scrollbare Literatur-Liste mit Dateiname und Wechsel-Button
         self.lbl_source = QLabel()
         self.lbl_source.setStyleSheet("color: #64748b; font-size: 11px;")
-        btn_change = QPushButton("Ändern …")
-        btn_change.setToolTip("Andere Literaturdatei wählen")
+        btn_change = QPushButton(self.tr("Change …"))
+        btn_change.setToolTip(self.tr("Choose another bibliography file"))
         btn_change.clicked.connect(self.choose_bib_file)
         header = QHBoxLayout()
         header.setContentsMargins(4, 4, 4, 0)
@@ -95,9 +95,9 @@ class BibDock(QDockWidget):
     def choose_bib_file(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            "BibTeX-Datei wählen",
+            self.tr("Choose BibTeX file"),
             self._start_dir,
-            "BibTeX (*.bib);;Alle Dateien (*)",
+            self.tr("BibTeX (*.bib)") + ";;" + self.tr("All files (*)"),
         )
         if file_path:
             self.bib_file_chosen.emit(file_path)
@@ -122,7 +122,7 @@ class BibDock(QDockWidget):
             self.stack.setCurrentIndex(1)
         else:
             self.lbl_hint.setText(
-                f"Nicht gefunden: {', '.join(missing)}" if missing else ""
+                self.tr("Not found: {0}").format(", ".join(missing)) if missing else ""
             )
             self.stack.setCurrentIndex(0)
 

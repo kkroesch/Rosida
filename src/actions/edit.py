@@ -1,3 +1,4 @@
+from PySide6.QtCore import QCoreApplication
 from PySide6.QtGui import QKeySequence, QUndoCommand
 from PySide6.QtWidgets import QApplication, QPlainTextEdit
 
@@ -14,9 +15,11 @@ class InsertCellCommand(QUndoCommand):
         text: str = "",
         mode: str = "auto",
         auto_run: bool = False,
-        description: str = "Zelle einfügen",
+        description: str | None = None,
     ):
-        super().__init__(description)
+        super().__init__(
+            description or QCoreApplication.translate("InsertCellCommand", "Insert cell")
+        )
         self.doc = doc_canvas
         self.index = index
         self.text = text
@@ -46,8 +49,10 @@ class InsertCellCommand(QUndoCommand):
 class DeleteCellCommand(QUndoCommand):
     """Undoable command for deleting a notebook cell."""
 
-    def __init__(self, doc_canvas, cell, description: str = "Zelle löschen"):
-        super().__init__(description)
+    def __init__(self, doc_canvas, cell, description: str | None = None):
+        super().__init__(
+            description or QCoreApplication.translate("DeleteCellCommand", "Delete cell")
+        )
         self.doc = doc_canvas
         self.cell = cell
         self.index = self.doc.cells.index(cell) if cell in self.doc.cells else -1
@@ -73,7 +78,11 @@ class MoveCellCommand(QUndoCommand):
     """Undoable command for moving a notebook cell up (offset < 0) or down (offset > 0)."""
 
     def __init__(self, doc_canvas, cell, offset: int):
-        super().__init__("Zelle nach oben" if offset < 0 else "Zelle nach unten")
+        super().__init__(
+            QCoreApplication.translate("MoveCellCommand", "Move cell up")
+            if offset < 0
+            else QCoreApplication.translate("MoveCellCommand", "Move cell down")
+        )
         self.doc = doc_canvas
         self.cell = cell
         self.offset = offset
@@ -101,11 +110,11 @@ class MoveCellCommand(QUndoCommand):
 
 class UndoAction(RosidaAction):
     def __init__(self, document_canvas, parent=None):
-        super().__init__("&Rückgängig", parent)
+        super().__init__(QCoreApplication.translate("UndoAction", "&Undo"), parent)
         self.doc = document_canvas
 
         self.setShortcut(QKeySequence.StandardKey.Undo)
-        self.setStatusTip("Letzte Aktion rückgängig machen (Ctrl+Z)")
+        self.setStatusTip(self.tr("Undo the last action (Ctrl+Z)"))
         self.set_icon_name("fa5s.undo")
 
         self.triggered.connect(self._execute)
@@ -122,11 +131,11 @@ class UndoAction(RosidaAction):
 
 class RedoAction(RosidaAction):
     def __init__(self, document_canvas, parent=None):
-        super().__init__("&Wiederholen", parent)
+        super().__init__(QCoreApplication.translate("RedoAction", "&Redo"), parent)
         self.doc = document_canvas
 
         self.setShortcut(QKeySequence.StandardKey.Redo)
-        self.setStatusTip("Letzte rückgängig gemachte Aktion wiederholen (Ctrl+Y)")
+        self.setStatusTip(self.tr("Redo the last undone action (Ctrl+Y)"))
         self.set_icon_name("fa5s.redo")
 
         self.triggered.connect(self._execute)
@@ -142,11 +151,13 @@ class RedoAction(RosidaAction):
 
 class InsertCellAction(RosidaAction):
     def __init__(self, document_canvas, parent=None):
-        super().__init__("Zelle einfügen", parent)
+        super().__init__(QCoreApplication.translate("InsertCellAction", "Insert cell"), parent)
         self.doc = document_canvas
 
         self.setShortcut(QKeySequence("Ctrl+Shift+A"))
-        self.setToolTip("Neue Zelle vor der aktiven Zelle einfügen (Ctrl+Shift+A)")
+        self.setToolTip(
+            self.tr("Insert a new cell before the active cell (Ctrl+Shift+A)")
+        )
         self.set_icon_name("fa5s.plus-circle")
 
         self.triggered.connect(self.doc.insert_cell_before_active)
@@ -154,11 +165,13 @@ class InsertCellAction(RosidaAction):
 
 class MoveCellAboveAction(RosidaAction):
     def __init__(self, document_canvas, parent=None):
-        super().__init__("Zelle nach oben verschieben", parent)
+        super().__init__(QCoreApplication.translate("MoveCellAboveAction", "Move cell up"), parent)
         self.doc = document_canvas
 
         self.setShortcut(QKeySequence("Ctrl+Shift+Up"))
-        self.setToolTip("Aktive Zelle eine Position nach oben verschieben (Ctrl+Shift+Up)")
+        self.setToolTip(
+            self.tr("Move the active cell up by one position (Ctrl+Shift+Up)")
+        )
         self.set_icon_name("fa5s.arrow-circle-up")
 
         self.triggered.connect(lambda: self.doc.move_active_cell(-1))
@@ -166,12 +179,12 @@ class MoveCellAboveAction(RosidaAction):
 
 class MoveCellBelowAction(RosidaAction):
     def __init__(self, document_canvas, parent=None):
-        super().__init__("Zelle nach unten verschieben", parent)
+        super().__init__(QCoreApplication.translate("MoveCellBelowAction", "Move cell down"), parent)
         self.doc = document_canvas
 
         self.setShortcut(QKeySequence("Ctrl+Shift+Down"))
         self.setToolTip(
-            "Aktive Zelle eine Position nach unten verschieben (Ctrl+Shift+Down)"
+            self.tr("Move the active cell down by one position (Ctrl+Shift+Down)")
         )
         self.set_icon_name("fa5s.arrow-circle-down")
 
@@ -180,11 +193,11 @@ class MoveCellBelowAction(RosidaAction):
 
 class DeleteCellAction(RosidaAction):
     def __init__(self, document_canvas, parent=None):
-        super().__init__("Zelle löschen", parent)
+        super().__init__(QCoreApplication.translate("DeleteCellAction", "Delete cell"), parent)
         self.doc = document_canvas
 
         self.setShortcut(QKeySequence("Ctrl+Shift+D"))
-        self.setToolTip("Aktive Zelle löschen (Ctrl+Shift+D)")
+        self.setToolTip(self.tr("Delete the active cell (Ctrl+Shift+D)"))
         self.set_icon_name("fa5s.trash-alt")
 
         self.triggered.connect(self.doc.delete_active_cell)
@@ -192,11 +205,11 @@ class DeleteCellAction(RosidaAction):
 
 class ToggleModeAction(RosidaAction):
     def __init__(self, document_canvas, parent=None):
-        super().__init__("Modus umschalten (Auto/Python/Text)", parent)
+        super().__init__(QCoreApplication.translate("ToggleModeAction", "Toggle mode (Auto/Python/Text)"), parent)
         self.doc = document_canvas
 
         self.setShortcut(QKeySequence("Ctrl+M"))
-        self.setToolTip("Zellmodus umschalten: Auto → Python → Text (Ctrl+M)")
+        self.setToolTip(self.tr("Toggle cell mode: Auto → Python → Text (Ctrl+M)"))
         self.set_icon_name("fa5s.sync-alt")
 
         self.triggered.connect(self.doc.toggle_active_mode)

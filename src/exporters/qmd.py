@@ -3,6 +3,7 @@ import re
 import matplotlib.pyplot as plt
 import polars as pl
 import sympy as sp
+from PySide6.QtCore import QCoreApplication
 
 
 def df_to_qmd_table(
@@ -83,7 +84,10 @@ class QmdRenderer:
                 is_block = prefix == "" and suffix == ""
                 return self.format_value(val, is_block=is_block)
             except Exception as e:
-                return f"`[Fehler: {expr} -> {e}]`"
+                message = QCoreApplication.translate(
+                    "Templates", "Error: {0} → {1}"
+                ).format(expr, e)
+                return f"`[{message}]`"
 
         body = re.sub(r"\{\{\s*(.*?)\s*\}\}", replacer, template)
         return frontmatter + body

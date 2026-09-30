@@ -6,11 +6,12 @@ Monats-Makros und die üblichen LaTeX-Maskierungen.
 """
 
 from dataclasses import dataclass, field
-from datetime import date
 import html
 from pathlib import Path
 import re
 import unicodedata
+
+from exporters.terms import format_date, terms
 
 # Pandoc/Quarto-Zitierschlüssel: beginnt und endet mit Wortzeichen,
 # dazwischen ist auch interne Interpunktion erlaubt.
@@ -87,8 +88,8 @@ class BibEntry:
 
     @property
     def year(self) -> str:
-        year = self.get("year") or self.get("date")[:4]
-        return year or "o. J."
+        """Year, or "" if unknown (callers print the localized "n.d.")."""
+        return self.get("year") or self.get("date")[:4]
 
     @property
     def authors(self) -> list[str]:
@@ -288,16 +289,21 @@ def _family(name: str) -> str:
     return parts[-1] if parts else name
 
 
-def cite_label(entry: BibEntry) -> str:
+def _year(entry: BibEntry, lang: str) -> str:
+    return entry.year or terms(lang)["no_year"]
+
+
+def cite_label(entry: BibEntry, lang: str = "de") -> str:
     """Author part of an in-text citation: "Pleger", "Freiknecht und Papp", "Gutman et al."."""
     names = [_family(a) for a in entry.authors]
     if not names:
         title = entry.get("shorttitle") or entry.get("title")
-        return f"„{title}“"
+        opening, closing = terms(lang)["quotes"]
+        return f"{opening}{title}{closing}"
     if len(names) == 1:
         return names[0]
     if len(names) == 2:
-        return f"{names[0]} und {names[1]}"
+        return f"{names[0]} {terms(lang)['and']} {names[1]}"
     return f"{names[0]} et al."
 
 
@@ -306,22 +312,16 @@ def sort_key(entry: BibEntry) -> tuple:
     return (_family(first).casefold(), entry.year, entry.get("title").casefold())
 
 
-def _format_date(iso: str) -> str:
-    try:
-        d = date.fromisoformat(iso[:10])
-    except ValueError:
-        return iso
-    return f"{d.day}.{d.month}.{d.year}"
-
-
 def _sentence(text: str) -> str:
     """Appends a full stop unless the text already ends with punctuation."""
     return text if re.search(r"[.!?]\s*(</em>)?$", text) else f"{text}."
 
 
-def reference_html(entry: BibEntry) -> str:
-    """One bibliography entry, roughly in German author-date style."""
+def reference_html(entry: BibEntry, lang: str = "de") -> str:
+    """One bibliography entry, roughly in author-date style."""
     e = lambda s: html.escape(s, quote=False)  # noqa: E731
+    t = terms(lang)
+    year = _year(entry, lang)
     parts = []
     authors = "; ".join(entry.authors)
     title = entry.get("title")
@@ -333,11 +333,11 @@ def reference_html(entry: BibEntry) -> str:
     )
 
     if authors:
-        parts.append(f"{e(authors)} ({e(entry.year)}):")
+        parts.append(f"{e(authors)} ({e(year)}):")
         title_html = e(title) if in_container else f"<em>{e(title)}</em>"
         parts.append(_sentence(title_html))
     else:
-        parts.append(f"{_sentence(f'<em>{e(title)}</em>')[:-1]} ({e(entry.year)}).")
+        parts.append(f"{_sentence(f'<em>{e(title)}</em>')[:-1]} ({e(year)}).")
 
     if container:
         details = [f"<em>{e(container)}</em>"]
@@ -345,11 +345,11 @@ def reference_html(entry: BibEntry) -> str:
         if volume and number and volume != entry.year:
             details.append(f"{e(volume)} ({e(number)})")
         elif number:
-            details.append(f"Nr. {e(number)}")
+            details.append(f"{t['number']} {e(number)}")
         elif volume and volume != entry.year:
             details.append(e(volume))
         if entry.get("pages"):
-            details.append(f"S. {e(entry.get('pages'))}")
+            details.append(f"{t['pages']} {e(entry.get('pages'))}")
         parts.append(_sentence(", ".join(details)))
 
     for name in ("series", "edition", "publisher", "address"):
@@ -361,7 +361,8 @@ def reference_html(entry: BibEntry) -> str:
     if url:
         link = f'<a href="{html.escape(url)}">{e(url)}</a>'
         if entry.get("urldate"):
-            link += f" (abgerufen am {e(_format_date(entry.get('urldate')))})"
+            accessed = format_date(entry.get("urldate"), lang)
+            link += f" ({e(t['accessed'].format(accessed))})"
         parts.append(link)
 
     return " ".join(parts)
@@ -370,8 +371,9 @@ def reference_html(entry: BibEntry) -> str:
 class Citations:
     """Renders Quarto citations for markdown_to_html(cite=...) and collects the used entries."""
 
-    def __init__(self, entries: dict[str, BibEntry]):
+    def __init__(self, entries: dict[str, BibEntry], lang: str = "de"):
         self.entries = entries
+        self.lang = lang
         self.used: dict[str, BibEntry] = {}
 
     def _link(self, entry: BibEntry, text: str) -> str:
@@ -386,7 +388,7 @@ class Citations:
             entry = self.entries.get(text)
             if entry is None:
                 return None  # z.B. @decorator im Fließtext
-            label = f"{cite_label(entry)} ({entry.year})"
+            label = f"{cite_label(entry, self.lang)} ({_year(entry, self.lang)})"
             return f'<span class="citation">{self._link(entry, label)}</span>'
 
         items = []
@@ -401,9 +403,11 @@ class Citations:
             if entry is None:
                 ref = f'<span class="unknown">?{html.escape(key)}</span>'
             elif suppress:
-                ref = self._link(entry, entry.year)
+                ref = self._link(entry, _year(entry, self.lang))
             else:
-                ref = self._link(entry, f"{cite_label(entry)} {entry.year}")
+                ref = self._link(
+                    entry, f"{cite_label(entry, self.lang)} {_year(entry, self.lang)}"
+                )
             if prefix and prefix.strip():
                 ref = f"{html.escape(prefix.strip())} {ref}"
             if locator:
@@ -411,15 +415,16 @@ class Citations:
             items.append(ref)
         return f'<span class="citation">({"; ".join(items)})</span>'
 
-    def references_html(self, heading: str = "Quellen") -> str:
+    def references_html(self, heading: str | None = None) -> str:
         """The cited entries as a list, sorted by author and year."""
         if not self.used:
             return ""
+        heading = heading or terms(self.lang)["references"]
         items = "\n".join(
-            f'<li id="ref-{html.escape(e.key)}">{reference_html(e)}</li>'
+            f'<li id="ref-{html.escape(e.key)}">{reference_html(e, self.lang)}</li>'
             for e in sorted(self.used.values(), key=sort_key)
         )
         return (
-            f'<section class="references">\n<h2 id="quellen">{html.escape(heading)}</h2>\n'
+            f'<section class="references">\n<h2 id="references">{html.escape(heading)}</h2>\n'
             f"<ul>\n{items}\n</ul>\n</section>"
         )

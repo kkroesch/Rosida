@@ -1,7 +1,22 @@
-## ADR 0003: Prozessmodell & Ausführungsarchitektur (Execution Model)
+---
+adr: 3
+title: "Prozessmodell & Ausführungsarchitektur (Execution Model)"
+status: Implementiert
+date: 2026-09-22
+author: Karsten Kroesch
+implemented: v0.3.0
+aliases:
+  - ADR 003
+related:
+  - "[[ADR 005]]"
+tags:
+  - adr
+---
 
-* **Status:** In Evaluierung (Zweistufige Migration)
-* **Datum:** 2026-09
+# ADR 003: Prozessmodell & Ausführungsarchitektur (Execution Model)
+
+* **Stand:** Zweistufige Migration. Stufe 1 (Ausführung in einem `QThread`-Worker) ist umgesetzt;
+  Stufe 2 (Subprozess) beschreibt [ADR 005](adr-005-qprocess-kernel.md).
 * **Kontext:**
 Aktuell führt Rosida Python-Code via `exec()` direkt im Hauptprozess der Qt-Anwendung aus. Die Zellen teilen sich ein globales Namespace-Dictionary.
 > *„Für flüssiges Arbeiten bei schwereren Rechnungen reicht es oft schon, die Ausführung mittelfristig in einen QThread (oder einen schlanken Subprozess via multiprocessing) auszulagern, damit die Qt-Oberfläche jederzeit responsiv bleibt.“*

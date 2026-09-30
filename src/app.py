@@ -53,6 +53,7 @@ from docks.latex import LatexPaletteDock
 from docks.structure_outline import StructureOutlineDock
 from docks.inspector import VariableInspectorDock
 from docks.bibitems import BibDock
+from config.i18n import install_translators
 from config.settings import FONTS_DIR
 from exporters.bibtex import bibliography_files
 
@@ -132,7 +133,7 @@ class RosidaApp(QMainWindow):
             "QStatusBar { background: #f1f5f9; border-top: 1px solid #e2e8f0; font-size: 11px; }"
         )
 
-        self.lbl_cell_info = QLabel("Zelle 1 von 1")
+        self.lbl_cell_info = QLabel(self.tr("Cell {0} of {1}").format(1, 1))
         self.lbl_cell_info.setStyleSheet(
             "color: #475569; padding: 0 10px; font-weight: 500;"
         )
@@ -142,7 +143,7 @@ class RosidaApp(QMainWindow):
             "background-color: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 4px; font-weight: 500;"
         )
 
-        self.lbl_kernel_status = QLabel("● Kernel: Bereit")
+        self.lbl_kernel_status = QLabel(self.tr("● Kernel: ready"))
         self.lbl_kernel_status.setStyleSheet(
             "color: #16a34a; font-weight: bold; padding: 0 10px;"
         )
@@ -150,7 +151,7 @@ class RosidaApp(QMainWindow):
         self.statusbar.addPermanentWidget(self.lbl_cell_info)
         self.statusbar.addPermanentWidget(self.lbl_mode_badge)
         self.statusbar.addPermanentWidget(self.lbl_kernel_status)
-        self.statusbar.showMessage("Rosida betriebsbereit", 3000)
+        self.statusbar.showMessage(self.tr("Rosida is ready"), 3000)
 
     def _setup_docks(self):
         self.dock_structure = StructureOutlineDock(self)
@@ -220,7 +221,7 @@ class RosidaApp(QMainWindow):
     def _setup_menus(self):
         menubar = self.menuBar()
 
-        menu_file = menubar.addMenu("&Datei")
+        menu_file = menubar.addMenu(self.tr("&File"))
         menu_file.addAction(self.act_new)
         menu_file.addAction(self.act_open)
         menu_file.addMenu(self.menu_recent_files)
@@ -229,7 +230,7 @@ class RosidaApp(QMainWindow):
         menu_file.addAction(self.act_save_as)
 
         menu_file.addSeparator()
-        menu_export = menu_file.addMenu("E&xportieren")
+        menu_export = menu_file.addMenu(self.tr("E&xport"))
         menu_export.addAction(self.act_export_pdf)
         menu_export.addAction(self.act_export_html)
         menu_export.addAction(self.act_export_qmd)
@@ -239,7 +240,7 @@ class RosidaApp(QMainWindow):
         menu_file.addSeparator()
         menu_file.addAction(self.act_quit)
 
-        menu_edit = menubar.addMenu("&Bearbeiten")
+        menu_edit = menubar.addMenu(self.tr("&Edit"))
         menu_edit.addAction(self.act_undo)
         menu_edit.addAction(self.act_redo)
         menu_edit.addSeparator()
@@ -250,23 +251,23 @@ class RosidaApp(QMainWindow):
         menu_edit.addSeparator()
         menu_edit.addAction(self.act_toggle_mode)
 
-        menu_cell = menubar.addMenu("&Zelle")
+        menu_cell = menubar.addMenu(self.tr("&Cell"))
         menu_cell.addAction(self.act_run_cell)
         menu_cell.addAction(self.act_run_all)
 
-        menu_view = menubar.addMenu("&Ansicht")
+        menu_view = menubar.addMenu(self.tr("&View"))
         menu_view.addAction(self.act_toggle_structure)
         menu_view.addAction(self.act_toggle_palette)
         menu_view.addAction(self.act_toggle_variables)
         menu_view.addAction(self.act_toogle_bibitem)
 
-        menu_help = menubar.addMenu("&Hilfe")
+        menu_help = menubar.addMenu(self.tr("&Help"))
         menu_help.addAction(self.act_manual)
         menu_help.addSeparator()
         menu_help.addAction(self.act_about)
 
     def _setup_toolbars(self):
-        toolbar = QToolBar("Hauptaktionen", self)
+        toolbar = QToolBar(self.tr("Main actions"), self)
         toolbar.setObjectName("toolbar")
         toolbar.setMovable(False)
         toolbar.setIconSize(QSize(18, 18))
@@ -349,12 +350,14 @@ class RosidaApp(QMainWindow):
         dirty_flag = " *" if hasattr(self, "doc") and self.doc.is_modified() else ""
         if self.current_filepath:
             name = os.path.basename(self.current_filepath)
-            self.setWindowTitle(f"Rosida – {name}{dirty_flag}")
         else:
-            self.setWindowTitle(f"Rosida – Unbenanntes Dokument{dirty_flag}")
+            name = self.tr("Untitled document")
+        self.setWindowTitle(f"Rosida – {name}{dirty_flag}")
 
     def _on_active_cell_changed(self, cell: InPlaceCell, index: int, total: int):
-        self.lbl_cell_info.setText(f"Zelle {index + 1} von {max(1, total)}")
+        self.lbl_cell_info.setText(
+            self.tr("Cell {0} of {1}").format(index + 1, max(1, total))
+        )
         mode = cell.get_mode()
         if mode == "auto":
             self.lbl_mode_badge.setText("⚡ Auto")
@@ -362,12 +365,12 @@ class RosidaApp(QMainWindow):
                 "background-color: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 4px; font-weight: 500;"
             )
         elif mode == "markdown":
-            self.lbl_mode_badge.setText("📝 Text (fix)")
+            self.lbl_mode_badge.setText(self.tr("📝 Text (fixed)"))
             self.lbl_mode_badge.setStyleSheet(
                 "background-color: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 4px; font-weight: bold;"
             )
         else:
-            self.lbl_mode_badge.setText("⚡ Python (fix)")
+            self.lbl_mode_badge.setText(self.tr("⚡ Python (fixed)"))
             self.lbl_mode_badge.setStyleSheet(
                 "background-color: #dbeafe; color: #1e40af; padding: 2px 8px; border-radius: 4px; font-weight: bold;"
             )
@@ -376,15 +379,15 @@ class RosidaApp(QMainWindow):
     def _on_cell_executed(self, cell):
         if self.doc.kernel.is_busy():
             return
-        self.lbl_kernel_status.setText("● Kernel: Zelle berechnet")
+        self.lbl_kernel_status.setText(self.tr("● Kernel: cell computed"))
         self.lbl_kernel_status.setStyleSheet(
             "color: #0284c7; font-weight: bold; padding: 0 10px;"
         )
-        self.statusbar.showMessage("Ausführung abgeschlossen", 2500)
+        self.statusbar.showMessage(self.tr("Execution finished"), 2500)
 
     def _on_kernel_busy_changed(self, busy: bool):
         if busy:
-            self.lbl_kernel_status.setText("● Kernel: rechnet …")
+            self.lbl_kernel_status.setText(self.tr("● Kernel: computing …"))
             self.lbl_kernel_status.setStyleSheet(
                 "color: #d97706; font-weight: bold; padding: 0 10px;"
             )
@@ -395,7 +398,7 @@ class RosidaApp(QMainWindow):
                 self.doc.load_from_markdown(self.current_filepath)
                 add_recent_file(self.current_filepath)
             except Exception as err:
-                self.statusbar.showMessage(f"Warnung: {err}", 3000)
+                self.statusbar.showMessage(self.tr("Warning: {0}").format(err), 3000)
                 self.doc.insert_cell()
         else:
             self.doc.insert_cell()
@@ -420,12 +423,14 @@ class RosidaApp(QMainWindow):
         filename = (
             Path(self.current_filepath).name
             if self.current_filepath
-            else "Unbenanntes Dokument"
+            else self.tr("Untitled document")
         )
         box = QMessageBox(self)
-        box.setWindowTitle("Änderungen speichern?")
+        box.setWindowTitle(self.tr("Save changes?"))
         box.setText(
-            f"Möchtest du die Änderungen in »{filename}« vor dem Beenden speichern?"
+            self.tr(
+                "Do you want to save the changes to “{0}” before quitting?"
+            ).format(filename)
         )
         box.setStandardButtons(
             QMessageBox.StandardButton.Save
@@ -472,6 +477,8 @@ def main():
     load_application_fonts()
     app.setOrganizationDomain("kroesch.ch")
     app.setApplicationName("Rosida")
+    # Nach setApplicationName (QSettings) und vor dem ersten Fenster
+    install_translators(app)
 
     # Debugger
     if os.environ.get("DEBUG") == "1" or "--debug" in sys.argv:

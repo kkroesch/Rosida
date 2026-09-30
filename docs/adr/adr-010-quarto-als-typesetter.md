@@ -1,6 +1,18 @@
-# ADR 0010: Quarto als reiner Typesetter (Statischer Export)
+---
+adr: 10
+title: "Quarto als reiner Typesetter (Statischer Export)"
+status: Akzeptiert
+date: 2026-09-27
+author: Karsten Kroesch
+implemented:
+aliases:
+  - ADR 010
+tags:
+  - adr
+---
 
-**Status:** Akzeptiert
+# ADR 010: Quarto als reiner Typesetter (Statischer Export)
+
 **Kontext:**
 Rosida verarbeitet und berechnet Code-Zellen interaktiv und hält den Session-State im lokalen Speicher. Für den hochwertigen Dokumenten-Export (PDF via Typst oder LaTeX) wird Quarto verwendet. Standardmäßig interpretiert Quarto Blöcke mit der Syntax ````{python}` als interaktive Zellen und startet eine eigene Jupyter-Engine, um den Code erneut auszuführen. Dies führt zu redundanten Berechnungen, zwingt Quarto in die Rolle einer Ausführungsumgebung und verlangsamt den finalen Rendering-Prozess enorm.
 

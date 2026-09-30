@@ -45,7 +45,7 @@ class FigureWidget(QFrame):
             )
             self.img_lbl.setPixmap(scaled)
         else:
-            self.img_lbl.setText(f"⚠️ Bild nicht gefunden: {src}")
+            self.img_lbl.setText(self.tr("⚠️ Image not found: {0}").format(src))
             self.img_lbl.setStyleSheet(
                 "color: #dc2626; font-family: monospace; font-size: 12px;"
             )
@@ -70,7 +70,9 @@ class FigureWidget(QFrame):
             cap_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             prefix = (
-                f"Abbildung {fig_number}:" if fig_number is not None else "Abbildung:"
+                self.tr("Figure {0}:").format(fig_number)
+                if fig_number is not None
+                else self.tr("Figure:")
             )
 
             # Textzeile mit hervorgehobenem Präfix
@@ -82,7 +84,7 @@ class FigureWidget(QFrame):
             # Dezenter QMD-Referenz-Badge (#fig-name) am rechten Rand
             if label_id:
                 badge = QLabel(f"#{label_id}")
-                badge.setToolTip(f"Quarto-Referenzanker: @{label_id}")
+                badge.setToolTip(self.tr("Quarto reference anchor: @{0}").format(label_id))
                 badge.setStyleSheet("""
                     background-color: #e2e8f0;
                     color: #64748b;

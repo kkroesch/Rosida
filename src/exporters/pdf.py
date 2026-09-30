@@ -9,6 +9,7 @@ from PySide6.QtCore import QMarginsF, QUrl
 from PySide6.QtGui import QImage, QPageLayout, QPageSize, QPdfWriter, QTextDocument
 
 from config.settings import markdown_css
+from exporters.terms import document_language, terms
 from exporters.bibtex import (
     Citations,
     bibliography_files,
@@ -26,7 +27,7 @@ from widgets.math_text import (
 
 
 def _references_fragment(citations: Citations) -> str:
-    """The cited entries under "Quellen", styled like the text cells.
+    """The cited entries under "References"/"Quellen", styled like the text cells.
 
     Qt's rich text has no hanging list indent, so each entry is a paragraph
     with a negative text-indent.
@@ -35,12 +36,13 @@ def _references_fragment(citations: Citations) -> str:
         return ""
     entries = "".join(
         f'<p style="margin-left: 24px; text-indent: -24px;">'
-        f'<a name="ref-{html.escape(e.key)}"></a>{reference_html(e)}</p>'
+        f'<a name="ref-{html.escape(e.key)}"></a>{reference_html(e, citations.lang)}</p>'
         for e in sorted(citations.used.values(), key=sort_key)
     )
     browser = MathTextBrowser()
     browser.document().setDefaultStyleSheet(markdown_css())
-    browser.setHtml(f"<h2>Quellen</h2>{entries}")
+    heading = html.escape(terms(citations.lang)["references"])
+    browser.setHtml(f"<h2>{heading}</h2>{entries}")
     return browser.document().toHtml()
 
 
@@ -50,13 +52,15 @@ def export_pdf(
     """Renders notebook cells directly to a vector-grade A4 PDF using Qt QPdfWriter.
 
     Quarto citations ([@key], @key) are resolved against the bibliography
-    named in the frontmatter and the cited entries appended under "Quellen".
+    named in the frontmatter and the cited entries appended under "References"
+    ("Quellen" in German documents, see exporters.terms).
     """
     doc = QTextDocument()
     doc.setDocumentMargin(24)
     properties = parse_yaml_properties(frontmatter)
     citations = Citations(
-        load_bibliography(bibliography_files(properties, base_dir or Path.cwd()))
+        load_bibliography(bibliography_files(properties, base_dir or Path.cwd())),
+        document_language(properties),
     )
 
     res_counter = 0

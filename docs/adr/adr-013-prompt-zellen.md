@@ -1,6 +1,23 @@
-# ADR 0013: KI-Integration via deterministischer Prompt-Zellen
+---
+adr: 13
+title: "KI-Integration via deterministischer Prompt-Zellen"
+status: Akzeptiert
+date: 2026-09-27
+author: Karsten Kroesch
+implemented:
+aliases:
+  - ADR 013
+related:
+  - "[[ADR 007]]"
+tags:
+  - adr
+---
 
-**Status:** Akzeptiert
+# ADR 013: KI-Integration via deterministischer Prompt-Zellen
+
+> **Siehe auch:** [ADR 007: Flüchtige Prompt-Zellen zur KI-gestützten Inhalts- und Code-Generierung](adr-007-fluechtige-prompt-zellen.md)
+> beschreibt die nicht weiterverfolgte Alternative mit flüchtigen, nicht gespeicherten Prompts.
+
 **Kontext:**
 Die Einbindung von Sprachmodellen (LLMs) und lokalen Klassifikatoren (z. B. das Jev-Modell zur Relevanzprüfung) fördert den kreativen und analytischen Schreibprozess enorm. Herkömmliche Editoren lösen dies meist über schwebende, transiente Chat-Fenster (Copilot-Ansatz). Das bricht jedoch mit Rosidas Kernprinzipien: flüchtige Chats sind nicht versionierbar, nicht im Text verankert und stören den SDI-Flow. Es wird ein Weg benötigt, KI-Interaktionen als reproduzierbaren Bestandteil des Plain-Text-Dokuments zu behandeln.
 

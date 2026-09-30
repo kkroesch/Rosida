@@ -1,7 +1,18 @@
-# ADR 0006: Nicht-modales Fehler-Handling via Inline-Akkordeon und System-Log-Drawer
+---
+adr: 6
+title: "Nicht-modales Fehler-Handling via Inline-Akkordeon und System-Log-Drawer"
+status: Akzeptiert
+date: 2026-09-25
+author: Karsten Kroesch
+implemented:
+aliases:
+  - ADR 006
+tags:
+  - adr
+---
 
-* **Status:** Akzeptiert
-* **Datum:** 2026-09-25
+# ADR 006: Nicht-modales Fehler-Handling via Inline-Akkordeon und System-Log-Drawer
+
 * **Kontext:** Rosida (UI/UX, Fehlerbehandlung, Kernel-Monitoring, SDI-Architektur)
 
 ---

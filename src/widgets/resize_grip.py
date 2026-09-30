@@ -14,7 +14,9 @@ class MacResizeGrip(QWidget):
         self.drag_start_y = 0
         self.initial_height = 0
         self.is_dragging = False
-        self.setToolTip("Ziehen, um Eingabefeld zu vergrößern (Doppelklick: zurücksetzen)")
+        self.setToolTip(
+            self.tr("Drag to enlarge the input field (double-click: reset)")
+        )
 
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.MouseButton.LeftButton:

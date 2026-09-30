@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QCoreApplication, Qt, Signal
 from PySide6.QtWidgets import (
     QDockWidget,
     QTreeWidget,
@@ -16,7 +16,7 @@ class StructureOutlineDock(QDockWidget):
     item_selected = Signal(int)
 
     def __init__(self, parent=None):
-        super().__init__("Dokumentstruktur", parent)
+        super().__init__(QCoreApplication.translate("StructureOutlineDock", "Document outline"), parent)
         self.setObjectName("DocumentStructureDock")
         self.setFeatures(
             QDockWidget.DockWidgetFeature.DockWidgetMovable

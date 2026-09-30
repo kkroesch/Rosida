@@ -16,7 +16,7 @@ from widgets.frontmatter import (
 from widgets.inplace import InPlaceCell
 from worker.kernel import Kernel
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QCoreApplication, Qt, Signal
 from PySide6.QtGui import QUndoStack
 from PySide6.QtWidgets import QSizePolicy, QVBoxLayout, QWidget
 
@@ -50,7 +50,9 @@ def get_namespace_snapshot(ns: dict) -> list[dict]:
         elif isinstance(val, (list, tuple, set)):
             value_str = f"len {len(val)}"
         elif isinstance(val, dict):
-            value_str = f"{len(val)} Schlüssel"
+            value_str = QCoreApplication.translate("VariableInspector", "keys: {0}").format(
+                len(val)
+            )
         else:
             raw = repr(val)
             value_str = raw[:37] + "..." if len(raw) > 40 else raw
@@ -204,7 +206,7 @@ class DocumentCanvas(QWidget):
 
     def insert_cell_before_active(self):
         idx = max(0, self.get_active_index())
-        cmd = InsertCellCommand(self, index=idx, description="Zelle einfügen")
+        cmd = InsertCellCommand(self, index=idx)
         self.undo_stack.push(cmd)
 
     def move_active_cell(self, offset: int):
@@ -225,7 +227,7 @@ class DocumentCanvas(QWidget):
             active.editor.clear()
             active.switch_to_edit()
             return
-        cmd = DeleteCellCommand(self, active, description="Zelle löschen")
+        cmd = DeleteCellCommand(self, active)
         self.undo_stack.push(cmd)
 
     def insert_text_into_active(self, text: str):

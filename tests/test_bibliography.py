@@ -12,8 +12,11 @@ def _open(win, path: Path):
   win.set_current_filepath(str(path))
 
 
-def test_bibliography_from_frontmatter_is_loaded(rosida_win):
-  _open(rosida_win, DOCS / "example.md")
+def test_bibliography_from_frontmatter_is_loaded(rosida_win, tmp_path):
+  (tmp_path / "example.bib").write_text((DOCS / "example.bib").read_text(encoding="utf-8"), encoding="utf-8")
+  doc_file = tmp_path / "doc.md"
+  doc_file.write_text("---\ntitle: X\nbibliography: example.bib\n---\n\nText\n", encoding="utf-8")
+  _open(rosida_win, doc_file)
 
   dock = rosida_win.dock_bibitems
   assert dock.stack.currentIndex() == 1

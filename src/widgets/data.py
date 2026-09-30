@@ -60,7 +60,7 @@ class PolarsTableWidget(QWidget):
         header.setStretchLastSection(True)
 
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Polars DataFrame durchsuchen...")
+        self.search_input.setPlaceholderText(self.tr("Search Polars DataFrame..."))
         self.search_input.setClearButtonEnabled(True)
         self.search_input.textChanged.connect(self.proxy_model.setFilterFixedString)
 
