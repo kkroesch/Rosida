@@ -17,6 +17,14 @@ def _find_assets_dir() -> Path:
 
 
 ASSETS_DIR = _find_assets_dir()
+
+
+def find_logo() -> Path | None:
+    """logo.svg liegt in den App-Paketen neben app.py, im Repo eine Ebene höher."""
+    for candidate in (_SRC_DIR / "logo.svg", _SRC_DIR.parent / "logo.svg"):
+        if candidate.exists():
+            return candidate
+    return None
 FONTS_DIR = ASSETS_DIR / "fonts"
 
 MARKDOWN_CSS_KEY = "render/markdown_css"

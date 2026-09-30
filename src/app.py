@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QToolBar,
 )
 
+import smoke
 from actions.cell import RunAllAction, RunCellAction
 from actions.edit import (
     DeleteCellAction,
@@ -54,7 +55,7 @@ from docks.structure_outline import StructureOutlineDock
 from docks.inspector import VariableInspectorDock
 from docks.bibitems import BibDock
 from config.i18n import install_translators
-from config.settings import FONTS_DIR
+from config.settings import FONTS_DIR, find_logo
 from exporters.bibtex import bibliography_files
 
 try:
@@ -473,6 +474,11 @@ def main():
     # Icon & App Name for MacOS
     sys.argv[0] = "Rosida"
 
+    smoke_test = smoke.requested()
+    if smoke_test:
+        smoke.strip_flag()
+        smoke.isolate_settings()
+
     app = QApplication(["Rosida"] + sys.argv[1:])
     load_application_fonts()
     app.setOrganizationDomain("kroesch.ch")
@@ -489,8 +495,8 @@ def main():
         print("==> Click-Debugging aktiviert.")
 
     # Icon for Linux/Wayland
-    icon_path = Path(__file__).parent / "logo.svg"
-    if icon_path.exists():
+    icon_path = find_logo()
+    if icon_path is not None:
         app.setWindowIcon(QIcon(str(icon_path)))
 
     # Load file
@@ -500,9 +506,14 @@ def main():
     win = RosidaApp(initial_filepath=initial_file)
     win.show()
 
-    maybe_show_manual_on_first_run(win)
+    if smoke_test:
+        smoke.run(app, win, initial_file)
+    else:
+        maybe_show_manual_on_first_run(win)
 
     exit_code = app.exec()
+    if smoke_test:
+        exit_code = smoke.exit_code() or exit_code
     if win.doc.kernel.is_computing():
         # Python-Code in einem Thread lässt sich nicht abbrechen (auch
         # QThread.terminate() hängt am GIL), und ein noch laufender QThread

@@ -10,7 +10,7 @@ export QT_PLUGIN_PATH="${HERE}/usr/lib/python3.12/site-packages/PySide6/Qt/plugi
 export QML2_IMPORT_PATH="${HERE}/usr/lib/python3.12/site-packages/PySide6/Qt/qml"
 export PYTHONPATH="${HERE}/usr/lib/python3.12/site-packages:${HERE}/usr/lib/rosida:${PYTHONPATH}"
 
-# Wayland- und Font-Integration für Qt6
-export QT_QPA_PLATFORM="wayland;xcb"
+# Wayland mit X11-Fallback, außer der Aufrufer wählt selbst (z. B. offscreen in CI)
+export QT_QPA_PLATFORM="${QT_QPA_PLATFORM:-wayland;xcb}"
 
 exec "${HERE}/usr/bin/python3" "${HERE}/usr/lib/rosida/app.py" "$@"

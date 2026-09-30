@@ -1,0 +1,149 @@
+# Baut das Linux-AppImage und die Windows-Version (ZIP mit Rosida.exe).
+#
+# * Tag v*:          Pakete bauen, testen und als Entwurf eines GitHub-Releases
+#                    hochladen (Text aus RELEASE.md). Das signierte macOS-DMG wird
+#                    lokal gebaut und von Hand an den Entwurf gehängt, dann
+#                    veröffentlichen.
+# * Pull Request:    nur bauen und testen, wenn sich am Build etwas ändert.
+# * Manuell:         Actions → Release builds → Run workflow; die Pakete liegen
+#                    danach als Artefakte am Lauf.
+#
+# Jedes Paket wird vor dem Hochladen mit `--smoke-test docs/example.md` gestartet:
+# Fenster, Schriften, Übersetzungen, Handbuch, Formelsatz, Berechnung und
+# HTML/PDF-Export müssen im fertigen Paket funktionieren.
+name: Release builds
+
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths:
+      - "build/linux/**"
+      - "build/win/**"
+      - ".github/workflows/release.yaml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - "src/smoke.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  version:
+    name: Version prüfen
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        name: Version aus pyproject.toml
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Rosida $version"
+          app_version=$(sed -n 's/^APP_VERSION = "\(.*\)"/\1/p' src/actions/help.py)
+          if [ "$app_version" != "$version" ]; then
+            echo "::error::src/actions/help.py hat APP_VERSION $app_version, pyproject.toml $version"
+            exit 1
+          fi
+          if [ "${GITHUB_REF_TYPE}" = "tag" ] && [ "${GITHUB_REF_NAME}" != "v$version" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} passt nicht zur Version $version in pyproject.toml"
+            exit 1
+          fi
+
+  appimage:
+    name: Linux AppImage
+    needs: version
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Qt-Systembibliotheken (für den Rauchtest)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libegl1 libgl1 libxkbcommon0 libfontconfig1 libdbus-1-3
+
+      - name: AppImage bauen
+        env:
+          # appimagetool ist selbst ein AppImage; auf dem Runner gibt es kein FUSE
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+        run: uvx --from rust-just just linux appimage
+
+      - name: Rauchtest
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          ./build/linux/dist/Rosida-${{ needs.version.outputs.version }}-x86_64.AppImage \
+            --smoke-test "$GITHUB_WORKSPACE/docs/example.md"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rosida-linux
+          path: build/linux/dist/Rosida-*.AppImage
+          if-no-files-found: error
+
+  windows:
+    name: Windows
+    needs: version
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Rosida.exe bauen
+        shell: pwsh
+        run: .\build\win\build.ps1
+
+      - name: Rauchtest
+        shell: pwsh
+        run: |
+          # Rosida.exe hat kein Konsolenfenster, die Ergebnisse kommen über eine Datei
+          $env:QT_QPA_PLATFORM = "offscreen"
+          $env:ROSIDA_SMOKE_LOG = "$env:RUNNER_TEMP\smoke.log"
+          $doc = Join-Path $env:GITHUB_WORKSPACE "docs\example.md"
+          $p = Start-Process -FilePath dist\Rosida\Rosida.exe `
+            -ArgumentList "--smoke-test", "`"$doc`"" -Wait -PassThru
+          if (Test-Path $env:ROSIDA_SMOKE_LOG) { Get-Content $env:ROSIDA_SMOKE_LOG }
+          if ($p.ExitCode -ne 0) { throw "Rauchtest fehlgeschlagen (Exit-Code $($p.ExitCode))" }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rosida-windows
+          path: dist/Rosida-*-windows-x64.zip
+          if-no-files-found: error
+
+  release:
+    name: Release-Entwurf
+    if: github.ref_type == 'tag'
+    needs: [version, appimage, windows]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: packages
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Rosida ${{ github.ref_name }}
+          body_path: RELEASE.md
+          draft: true
+          files: packages/*
+          fail_on_unmatched_files: true

@@ -1,8 +1,9 @@
-MOD_DIR    := justfile_directory()
+MOD_DIR    := module_directory()
 REPO_ROOT  := clean(MOD_DIR / "../..")
 APP_DIR    := MOD_DIR / "AppDir"
 DIST_DIR   := MOD_DIR / "dist"
-VERSION    := "0.2.0"
+# Version aus pyproject.toml, damit Paketname und App-Version nicht auseinanderlaufen
+VERSION    := `sed -n 's/^version = "\(.*\)"/\1/p' "$(git rev-parse --show-toplevel)/pyproject.toml"`
 OUTPUT_IMG := DIST_DIR / "Rosida-" + VERSION + "-x86_64.AppImage"
 
 default: appimage
@@ -67,8 +68,9 @@ prepare:
     rm -rf "$PY_LIB"/test "$PY_LIB"/idlelib "$PY_LIB"/turtledemo "$PY_LIB"/ensurepip
     rm -rf "$PY_LIB"/lib2to3 "$PY_LIB"/tkinter "$PY_LIB"/turtle.py
 
-    # PySide6-Ballast (Translations, ungenutzte Binaries)
-    rm -rf "$SITE"/PySide6/Qt/translations
+    # PySide6-Ballast (ungenutzte Übersetzungen und Binaries).
+    # qtbase_*.qm bleibt: Qts eigene Dialoge und Tastenkürzel ("Strg+N") auf Deutsch.
+    find "$SITE"/PySide6/Qt/translations -type f ! -name 'qtbase_*.qm' -delete
     rm -rf "$SITE"/PySide6/Qt/libexec
     rm -rf "$SITE"/PySide6/scripts
     rm -rf "{{APP_DIR}}"/usr/bin/pyside6-*

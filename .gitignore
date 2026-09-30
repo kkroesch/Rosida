@@ -7,6 +7,8 @@ __pycache__/
 # legt sie im Repo-Root an; build/{macos,linux} legen ihre Kopie im jeweiligen Modulverzeichnis an)
 /requirements.lock.txt
 .build-venv/
+# Arbeitsverzeichnis von PyInstaller (build/win/build.ps1)
+/build/Rosida/
 
 # Generierter Code-Metriken-Report (just metrics)
 /metrics-report.md

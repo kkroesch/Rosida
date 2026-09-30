@@ -127,6 +127,12 @@ Alle Änderungen seit v0.2.0.
 ## Builds & Deployment
 
 * Native Installer für Windows und Linux.
+* **Release-Builds auf GitHub:** Ein `v*`-Tag baut das Linux-AppImage und die Windows-Version (ZIP
+  mit `Rosida.exe`), startet beide mit `--smoke-test` (Fenster, Schriften, Übersetzungen, Handbuch,
+  Formelsatz, Berechnung, HTML- und PDF-Export) und legt einen Release-Entwurf an. Das signierte
+  macOS-DMG wird lokal gebaut und angehängt.
+* Behoben: `just linux appimage` fand aus der Repo-Wurzel die Projektdateien nicht; das AppImage
+  enthielt keine deutschen Qt-Übersetzungen und hatte noch die Versionsnummer 0.2.0.
 * macOS: Code Signing der App korrigiert und abgeschlossen.
 * Schriften, Übersetzungen und Handbücher werden in alle Pakete eingebaut (Linux und Windows hatten
   bisher kein Handbuch).

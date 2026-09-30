@@ -38,7 +38,11 @@ aber nur `.github/workflows/`, der Workflow wird daher nie ausgeführt.
      ADR-Übersicht sind aktuell).
 2. Bei Pull Requests erzeugt der Workflow zusätzlich die Screenshots (`just screenshots`) und hängt
    sie als Artefakt an, damit Oberflächenänderungen im Review sichtbar sind.
-3. Der Release-Workflow zieht nach `.github/workflows/` um und läuft wie vorgesehen bei `v*`-Tags.
+3. Release-Builds: `.github/workflows/release.yaml` baut bei `v*`-Tags das Linux-AppImage und die
+   Windows-Version, startet beide mit `--smoke-test` und legt einen Release-Entwurf an (umgesetzt
+   in v0.3.0). Das macOS-DMG wird weiterhin lokal gebaut und signiert, damit der private
+   Signierschlüssel nicht in GitHub liegt; `.github/workflow/macos-app.yaml` bleibt deshalb
+   inaktiv.
 
 ## Alternativen
 
@@ -53,4 +57,5 @@ aber nur `.github/workflows/`, der Workflow wird daher nie ausgeführt.
 * **Positiv:** Screenshots im Pull Request machen UI-Änderungen reviewbar.
 * **Negativ:** Offscreen-Tests sehen keine plattformspezifischen Effekte (macOS-Menüleiste,
   Tastenkürzel mit `Cmd`); dafür bleiben der Release-Build und manuelle Tests.
-* **Hinweis:** Mit dem Umzug des Release-Workflows baut jeder `v*`-Tag automatisch ein DMG.
+* **Hinweis:** Ein `v*`-Tag muss zur Version in `pyproject.toml` passen, sonst bricht der
+  Release-Workflow ab.
