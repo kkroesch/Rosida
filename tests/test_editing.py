@@ -60,14 +60,22 @@ def test_editor_grows_with_new_lines(rosida_win, qtbot):
 
 
 def test_collapsed_properties_are_compact(rosida_win, qtbot):
-  """Eingeklappt nur so hoch wie der Knopf, nicht wie der (lange) YAML-Editor."""
+  """Eingeklappt nur so hoch wie der Knopf, nicht wie der (lange) YAML-Editor,
+  und auch bei kurzen Dokumenten in großen Fenstern keine Lücke darüber."""
+  rosida_win.resize(1200, 900)
   props = rosida_win.doc.frontmatter_cell
-  props.editor.setPlainText("\n".join(f"key{i}: value" for i in range(20)))
-  props.expand()
-  qtbot.wait(20)
-  expanded = props.sizeHint().height()
+  first_cell = rosida_win.doc.cells[0]
 
-  props.commit_and_collapse()
-  qtbot.wait(20)
+  for text in ("\n".join(f"key{i}: value" for i in range(20)), ""):
+    props.editor.setPlainText(text)
+    props.expand()
+    qtbot.wait(20)
+    expanded = props.height()
 
-  assert props.sizeHint().height() < 60 < expanded
+    props.commit_and_collapse()
+    qtbot.wait(20)
+
+    assert props.height() < 40, text[:20]
+    gap = first_cell.y() - (props.y() + props.height())
+    assert gap < 30
+  assert expanded > 40  # leerer Editor: Mindesthöhe

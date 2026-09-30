@@ -65,6 +65,11 @@ class FrontmatterCell(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
+        # Nie höher als nötig: Ein QStackedWidget meldet sich sonst über sein
+        # Layout als ausdehnbar und teilt sich bei kurzen Dokumenten den freien
+        # Platz mit dem Füllabstand am Ende (Lücke über der ersten Zelle).
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+
         self.stack = QStackedWidget(self)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
