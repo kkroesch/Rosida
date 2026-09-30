@@ -3,7 +3,13 @@ import re
 
 import yaml
 
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QStackedWidget
+from PySide6.QtWidgets import (
+    QPushButton,
+    QSizePolicy,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+)
 from PySide6.QtCore import Qt, Signal
 
 from .inline_editor import InlineEditor
@@ -71,11 +77,36 @@ class FrontmatterCell(QWidget):
 
         self.editor = InlineEditor()
         self.editor.run_requested.connect(self.commit_and_collapse)
+        # Container statt des Editors direkt: Dessen feste Höhe (Auto-Wachsen)
+        # würde sonst als Mindesthöhe auch den eingeklappten Zustand aufblähen.
+        editor_page = QWidget()
+        editor_layout = QVBoxLayout(editor_page)
+        editor_layout.setContentsMargins(0, 0, 0, 0)
+        editor_layout.addWidget(self.editor)
         self.stack.addWidget(self.btn_collapsed)
-        self.stack.addWidget(self.editor)
+        self.stack.addWidget(editor_page)
 
         # Standardmäßig ausgeklappt starten
-        self.stack.setCurrentIndex(1)
+        self._show_page(1)
+
+    def _show_page(self, index: int):
+        """Switches between collapsed button and editor.
+
+        QStackedWidget sizes itself to its largest page, so without ignoring the
+        hidden page the collapsed button kept the full height of the editor.
+        """
+        for i in range(self.stack.count()):
+            self.stack.widget(i).setSizePolicy(
+                QSizePolicy.Policy.Preferred,
+                QSizePolicy.Policy.Preferred if i == index else QSizePolicy.Policy.Ignored,
+            )
+        self.stack.setCurrentIndex(index)
+        self.stack.adjustSize()
+        self.updateGeometry()
+
+    def collapse(self):
+        """Shows the compact button without taking over the edited text."""
+        self._show_page(0)
 
     def metadata(self) -> dict:
         return parse_yaml_properties(self.editor.toPlainText())
@@ -88,7 +119,7 @@ class FrontmatterCell(QWidget):
         self.btn_collapsed.setText(f"⏵ {title}")
 
         # Zelle einklappen
-        self.stack.setCurrentIndex(0)
+        self._show_page(0)
         self.frontmatter_updated.emit(metadata)
 
     def set_property(self, key: str, value: str):
@@ -99,5 +130,5 @@ class FrontmatterCell(QWidget):
         self.commit_and_collapse()
 
     def expand(self):
-        self.stack.setCurrentIndex(1)
+        self._show_page(1)
         self.editor.setFocus()

@@ -10,6 +10,11 @@ run:
 lock:
     uv lock
 
+# Screenshots aller Komponenten (isoliert, offscreen) nach out/screenshots
+# z.B. `just screenshots --lang en` oder `just screenshots docs/anderes.md --show`
+screenshots *args:
+    uv run scripts/screenshots.py {{args}}
+
 # Übersetzungen: neue/geänderte tr()-Texte in die .ts übernehmen und .qm bauen.
 # Übersetzt wird in assets/i18n/rosida_de.ts (Texteditor oder `uv run pyside6-linguist`).
 i18n:

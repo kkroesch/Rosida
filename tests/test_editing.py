@@ -57,3 +57,17 @@ def test_editor_grows_with_new_lines(rosida_win, qtbot):
 
   assert editor.height() > start
   assert editor.verticalScrollBar().maximum() == 0
+
+
+def test_collapsed_properties_are_compact(rosida_win, qtbot):
+  """Eingeklappt nur so hoch wie der Knopf, nicht wie der (lange) YAML-Editor."""
+  props = rosida_win.doc.frontmatter_cell
+  props.editor.setPlainText("\n".join(f"key{i}: value" for i in range(20)))
+  props.expand()
+  qtbot.wait(20)
+  expanded = props.sizeHint().height()
+
+  props.commit_and_collapse()
+  qtbot.wait(20)
+
+  assert props.sizeHint().height() < 60 < expanded

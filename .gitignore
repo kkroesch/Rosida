@@ -11,6 +11,9 @@ __pycache__/
 # Generierter Code-Metriken-Report (just metrics)
 /metrics-report.md
 
+# Generierte Screenshots (just screenshots)
+/out/screenshots/
+
 # C extensions
 *.so
 
