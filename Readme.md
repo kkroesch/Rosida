@@ -1,3 +1,5 @@
+![](logo.png)
+
 # Rosida
 
 Rosida ist eine leichtgewichtige, native mathematische Notizbuch-Umgebung für macOS und Linux, entwickelt mit Python und PySide6 (Qt6).
