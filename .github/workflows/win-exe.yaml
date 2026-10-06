@@ -1,0 +1,56 @@
+name: Build Rosida Windows
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: uv installieren
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Python einrichten
+        run: uv python install 3.12
+
+      - name: Abhängigkeiten & PyInstaller installieren
+        run: |
+          uv export --frozen --no-hashes --no-emit-project -o requirements.txt
+          uv pip install --python 3.12 -r requirements.txt
+          uv pip install --python 3.12 pyinstaller
+
+      - name: Standalone .exe bauen
+        run: |
+          # PowerShell verwendet Backticks (`) für Zeilenumbrüche
+          # Unter Windows ist das Trennzeichen für Pfade ein Semikolon (;)
+          uv run --python 3.12 pyinstaller `
+            --noconsole `
+            --onefile `
+            --icon "logo.ico" `
+            --name "Rosida-${{ github.ref_name }}-windows-x86_64" `
+            --add-data "src;src" `
+            --add-data "assets;assets" `
+            --add-data "docs;docs" `
+            src/app.py
+
+      - name: Release hochladen
+        uses: softprops/action-gh-release@v2
+        with:
+          # PyInstaller legt die fertige Datei im Ordner "dist" ab
+          files: dist/Rosida-${{ github.ref_name }}-windows-x86_64.exe
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
