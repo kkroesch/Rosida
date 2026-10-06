@@ -28,14 +28,13 @@ jobs:
       - name: Abhängigkeiten & PyInstaller installieren
         run: |
           uv export --frozen --no-hashes --no-emit-project -o requirements.txt
-          uv pip install --python 3.12 -r requirements.txt
-          uv pip install --python 3.12 pyinstaller
+          uv venv --python 3.12
+          uv pip install -r requirements.txt
+          uv pip install pyinstaller
 
       - name: Standalone .exe bauen
         run: |
-          # PowerShell verwendet Backticks (`) für Zeilenumbrüche
-          # Unter Windows ist das Trennzeichen für Pfade ein Semikolon (;)
-          uv run --python 3.12 pyinstaller `
+          uv run pyinstaller `
             --noconsole `
             --onefile `
             --icon "logo.ico" `
