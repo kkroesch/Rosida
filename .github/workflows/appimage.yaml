@@ -1,0 +1,90 @@
+name: Build Rosida AppImage
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: uv installieren
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: FUSE für appimagetool installieren
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libfuse2
+
+      - name: AppImage bauen
+        run: |
+          set -euo pipefail
+          APP_DIR="AppDir"
+          DIST_DIR="dist"
+          VERSION="${{ github.ref_name }}"
+          
+          rm -rf "$APP_DIR" "$DIST_DIR"
+          mkdir -p "$APP_DIR/usr/bin" "$APP_DIR/usr/lib/rosida/assets" "$APP_DIR/usr/lib/rosida/docs" "$APP_DIR/usr/share/icons/hicolor/scalable/apps" "$DIST_DIR"
+
+          echo "1. Standalone Python laden..."
+          uv python install 3.12
+          PY_BIN=$(uv python find --python-preference only-managed 3.12)
+          PY_ROOT=$(dirname $(dirname "$PY_BIN"))
+          cp -a "$PY_ROOT/"* "$APP_DIR/usr/"
+
+          echo "2. Abhängigkeiten installieren..."
+          uv export --frozen --no-hashes --no-emit-project -o requirements.txt
+          uv pip install --no-cache --break-system-packages --python "$APP_DIR/usr/bin/python3" -r requirements.txt
+          rm requirements.txt
+
+          echo "3. Dateien kopieren..."
+          cp -a src/* "$APP_DIR/usr/lib/rosida/"
+          
+          # Ordner optional kopieren, falls sie existieren
+          cp -a assets/fonts assets/i18n "$APP_DIR/usr/lib/rosida/assets/" 2>/dev/null || true
+          cp docs/quickstart*.md "$APP_DIR/usr/lib/rosida/docs/" 2>/dev/null || true
+          
+          cp build/AppRun "$APP_DIR/AppRun"
+          cp build/rosida.desktop "$APP_DIR/rosida.desktop"
+          chmod +x "$APP_DIR/AppRun"
+          
+          cp logo.svg "$APP_DIR/rosida.svg"
+          cp logo.svg "$APP_DIR/usr/share/icons/hicolor/scalable/apps/rosida.svg"
+          cp logo.svg "$APP_DIR/usr/lib/rosida/logo.svg"
+          ln -sf rosida.svg "$APP_DIR/.DirIcon"
+
+          echo "4. Ballast strippen..."
+          SITE="$APP_DIR/usr/lib/python3.12/site-packages"
+          PY_LIB="$APP_DIR/usr/lib/python3.12"
+          
+          rm -rf "$PY_LIB"/test "$PY_LIB"/idlelib "$PY_LIB"/turtledemo "$PY_LIB"/ensurepip "$PY_LIB"/lib2to3 "$PY_LIB"/tkinter "$PY_LIB"/turtle.py
+          rm -rf "$SITE"/PySide6/Qt/translations "$SITE"/PySide6/Qt/libexec "$SITE"/PySide6/scripts "$APP_DIR"/usr/bin/pyside6-*
+          
+          find "$SITE" -type d \( -name "tests" -o -name "test" -o -name "testing" \) -prune -exec rm -rf {} +
+          find "$APP_DIR" -type f \( -name "*.a" -o -name "*.o" -o -name "*.h" -o -name "*.cmake" \) -delete
+          find "$APP_DIR" -type d -name "__pycache__" -prune -exec rm -rf {} +
+
+          echo "5. AppImage packen..."
+          curl -L -o appimagetool "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+          chmod +x appimagetool
+          ARCH=x86_64 ./appimagetool --comp zstd "$APP_DIR" "$DIST_DIR/Rosida-${VERSION}-x86_64.AppImage"
+
+      - name: Release hochladen
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/Rosida-${{ github.ref_name }}-x86_64.AppImage
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
