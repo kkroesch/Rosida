@@ -54,3 +54,24 @@ tag version="":
 
     echo "✅ Tag $VERSION erfolgreich lokal erstellt."
     echo "👉 Zum Veröffentlichen: git push origin $VERSION"
+
+
+update-version:
+    #!/usr/bin/env python3
+    import subprocess
+    import re
+
+    # Aktuellen Tag abfragen (z.B. v0.3.1)
+    tag = subprocess.check_output(['git', 'describe', '--tags', '--abbrev=0']).decode('utf-8').strip()
+
+    path = 'src/actions/help.py'
+    with open(path, 'r') as f:
+        content = f.read()
+
+    # Regex-Ersetzung
+    new_content = re.sub(r'APP_VERSION\s*=\s*".*"', f'APP_VERSION = "{tag}"', content)
+
+    with open(path, 'w') as f:
+        f.write(new_content)
+
+    print(f"✅ APP_VERSION in {path} auf {tag} aktualisiert.")
