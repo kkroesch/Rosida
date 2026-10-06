@@ -55,9 +55,9 @@ jobs:
           cp -a assets/fonts assets/i18n "$APP_DIR/usr/lib/rosida/assets/" 2>/dev/null || true
           cp docs/quickstart*.md "$APP_DIR/usr/lib/rosida/docs/" 2>/dev/null || true
           
-          cp build/AppRun "$APP_DIR/build/linux/AppRun"
-          cp build/rosida.desktop "$APP_DIR/build/linux/rosida.desktop"
-          chmod +x "$APP_DIR/build/linux/AppRun"
+          cp build/linux/AppRun "$APP_DIR/AppRun"
+          cp build/linux/rosida.desktop "$APP_DIR/rosida.desktop"
+          chmod +x "$APP_DIR/AppRun"
           
           cp logo.svg "$APP_DIR/rosida.svg"
           cp logo.svg "$APP_DIR/usr/share/icons/hicolor/scalable/apps/rosida.svg"
