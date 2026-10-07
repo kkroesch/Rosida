@@ -27,6 +27,7 @@ from actions.edit import (
 )
 from actions.file import (
     ExportHtmlAction,
+    ExportIpynbAction,
     ExportPdfAction,
     ExportQmdAction,
     NewDocumentAction,
@@ -192,6 +193,7 @@ class RosidaApp(QMainWindow):
         self.act_export_pdf = ExportPdfAction(self, self)
         self.act_export_html = ExportHtmlAction(self, self)
         self.act_export_qmd = ExportQmdAction(self, self)
+        self.act_export_ipynb = ExportIpynbAction(self, self)
         self.act_settings = SettingsAction(self, self)
         self.act_quit = QuitAction(self, self)
         self.menu_recent_files = RecentFilesMenu(self, self)
@@ -234,6 +236,7 @@ class RosidaApp(QMainWindow):
         menu_export.addAction(self.act_export_pdf)
         menu_export.addAction(self.act_export_html)
         menu_export.addAction(self.act_export_qmd)
+        menu_export.addAction(self.act_export_ipynb)
 
         menu_file.addSeparator()
         menu_file.addAction(self.act_settings)

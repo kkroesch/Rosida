@@ -119,3 +119,23 @@ def test_pdf_export_resolves_citations_and_appends_sources(rosida_win, tmp_path,
   assert "Quellen" in text
   assert "Wohlenberg, Johannes (2023)" in text
   assert "[@" not in text
+
+
+def test_ipynb_export_builds_valid_notebook(rosida_win, tmp_path, wait_idle):
+  import json
+
+  doc = rosida_win.doc
+  doc.frontmatter_cell.editor.setPlainText("title: T")
+  doc.cells[0].editor.setPlainText("# Hallo")
+  doc.insert_cell(initial_text="print('x')\n1 + 1", mode="python", auto_run=True)
+  wait_idle(doc)
+
+  out = tmp_path / "nb" / "doc.ipynb"
+  doc.export_ipynb(str(out))
+  nb = json.loads(out.read_text(encoding="utf-8"))
+
+  assert nb["nbformat"] == 4
+  types = [c["cell_type"] for c in nb["cells"]]
+  assert types[:2] == ["raw", "markdown"] and "code" in types
+  code = next(c for c in nb["cells"] if c["cell_type"] == "code")
+  assert "".join(code["source"]).startswith("print('x')")

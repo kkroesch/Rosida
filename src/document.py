@@ -6,6 +6,7 @@ import inspect
 
 from exporters.bibtex import bibliography_files
 from exporters.html import export_html as render_html
+from exporters.ipynb import IpynbRenderer
 from exporters.pdf import export_pdf as render_pdf
 from exporters.qmd import QmdRenderer
 from widgets.frontmatter import (
@@ -324,6 +325,31 @@ class DocumentCanvas(QWidget):
         out_path.write_text(
             frontmatter + "\n\n".join(body_chunks) + "\n", encoding="utf-8"
         )
+
+    def export_ipynb(self, filepath: str):
+        """Exports the document as a Jupyter notebook (.ipynb): markdown cells stay markdown
+        ({{ }} templates evaluated), Python cells become code cells with their current results."""
+        out_path = Path(filepath)
+        # Figures in markdown templates are written as files next to the notebook.
+        renderer = QmdRenderer(output_dir=out_path.parent)
+        nb = IpynbRenderer()
+
+        props = self.frontmatter_cell.editor.toPlainText().strip()
+        if props:
+            nb.add_raw(f"---\n{props}\n---")
+
+        for cell in self.cells:
+            content = cell.editor.toPlainText().strip()
+            if not content:
+                continue
+            if cell._detect_effective_mode(content) == "markdown":
+                nb.add_markdown(
+                    renderer.render(template=content, context=cell.namespace).strip()
+                )
+            else:
+                nb.add_code(content, stdout=cell.last_stdout, value=cell.last_val)
+
+        nb.dump(filepath)
 
     def _qmd_properties(self, out_dir: Path) -> str:
         """Document properties for the .qmd: bibliography paths relative to out_dir,
