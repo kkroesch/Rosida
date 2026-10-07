@@ -20,6 +20,7 @@ Write-Host "==> 3. Windows Executable mit PyInstaller packen..."
     --add-data "src;src" `
     --add-data "assets/fonts;assets/fonts" `
     --add-data "assets/i18n;assets/i18n" `
+    --add-data "assets/splash.png;assets" `
     --add-data "docs/quickstart*.md;docs" `
     --collect-data ziamath `
     --collect-data latex2mathml `
