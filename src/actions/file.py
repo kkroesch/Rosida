@@ -343,6 +343,43 @@ class ExportQmdAction(RosidaAction):
             )
 
 
+class ExportIpynbAction(RosidaAction):
+    def __init__(self, main_window, parent=None):
+        super().__init__(
+            QCoreApplication.translate("ExportIpynbAction", "Export &Jupyter Notebook..."), parent
+        )
+        self.win = main_window
+
+        self.setShortcut(QKeySequence("Ctrl+Shift+J"))
+        self.setToolTip(
+            self.tr("Export the document as a Jupyter notebook (.ipynb) (Ctrl+Shift+J)")
+        )
+        self.set_icon_name("fa5s.book")
+
+        self.triggered.connect(self._execute)
+
+    def _execute(self):
+        filepath, _ = QFileDialog.getSaveFileName(
+            self.win,
+            self.tr("Export document as Jupyter notebook"),
+            self.tr("rosida_document.ipynb"),
+            self.tr("Jupyter notebook (*.ipynb)"),
+        )
+        if not filepath:
+            return
+        try:
+            self.win.doc.export_ipynb(filepath)
+            self.win.statusbar.showMessage(
+                self.tr("Jupyter export successful: {0}").format(filepath), 4000
+            )
+        except Exception as err:
+            QMessageBox.critical(
+                self.win,
+                self.tr("Export error"),
+                self.tr("Jupyter export failed:\n{0}").format(err),
+            )
+
+
 class QuitAction(RosidaAction):
     def __init__(self, main_window, parent=None):
         super().__init__(QCoreApplication.translate("QuitAction", "&Quit"), parent)
