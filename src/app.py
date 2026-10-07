@@ -15,6 +15,13 @@ from PySide6.QtWidgets import (
     QToolBar,
 )
 
+# Splash first, before the heavy imports below.
+_splash = None
+if __name__ == "__main__":
+    from splash import start_splash
+
+    _, _splash = start_splash()
+
 from actions.cell import RunAllAction, RunCellAction
 from actions.edit import (
     DeleteCellAction,
@@ -476,7 +483,7 @@ def main():
     # Icon & App Name for MacOS
     sys.argv[0] = "Rosida"
 
-    app = QApplication(["Rosida"] + sys.argv[1:])
+    app = QApplication.instance() or QApplication(["Rosida"] + sys.argv[1:])
     load_application_fonts()
     app.setOrganizationDomain("kroesch.ch")
     app.setApplicationName("Rosida")
@@ -502,6 +509,8 @@ def main():
     )
     win = RosidaApp(initial_filepath=initial_file)
     win.show()
+    if _splash is not None:
+        _splash.close()
 
     maybe_show_manual_on_first_run(win)
 

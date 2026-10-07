@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication, QSettings
-from PySide6.QtGui import QAction, QKeySequence
+from PySide6.QtCore import QCoreApplication, QSettings, Qt
+from PySide6.QtGui import QAction, QColor, QKeySequence, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from config.settings import ASSETS_DIR
 from config.i18n import (
     LANGUAGES,
     SYSTEM,
@@ -25,6 +26,7 @@ from config.i18n import (
 from .base import RosidaAction
 
 APP_VERSION = "v0.3.1"
+AUTHOR_URL = "https://kroesch.ch/"
 
 _FIRST_RUN_SETTINGS_KEY = "help/manual_shown_on_first_run"
 
@@ -108,9 +110,11 @@ class AboutAction(RosidaAction):
         self.triggered.connect(self._execute)
 
     def _execute(self):
-        QMessageBox.about(
-            self.win,
-            self.tr("About Rosida"),
+        dialog = AboutDialog(self.win, self.tr("About Rosida"), self._text())
+        dialog.exec()
+
+    def _text(self) -> str:
+        return (
             "<h3>Rosida</h3>"
             + self.tr("<p>Version {0}</p>").format(APP_VERSION)
             + self.tr(
@@ -118,8 +122,40 @@ class AboutAction(RosidaAction):
                 "SymPy, NumPy, Matplotlib and Polars right in the document, "
                 "saved as plain Markdown.</p>"
             )
-            + self.tr("<p>MIT license.</p>"),
+            + self.tr("<p>MIT license.</p>")
+            + self.tr("<p>Author: {0}</p>").format(
+                f'Karsten Kroesch · <a href="{AUTHOR_URL}">{AUTHOR_URL}</a>'
+            )
         )
+
+
+class AboutDialog(QDialog):
+    """About box on the splash image, softened by a white veil for readability."""
+
+    def __init__(self, parent, title: str, text: str):
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self._background = QPixmap(str(ASSETS_DIR / "splash.png"))
+        self.setFixedSize(self._background.size())
+
+        label = QLabel(text)
+        label.setWordWrap(True)
+        label.setTextFormat(Qt.TextFormat.RichText)
+        label.setOpenExternalLinks(True)
+        label.setStyleSheet("color: #3b1f2b; background: transparent; font-size: 14px;")
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(self.reject)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(150, 60, 150, 24)
+        layout.addWidget(label, 1)
+        layout.addWidget(buttons)
+
+    def paintEvent(self, _event):
+        painter = QPainter(self)
+        painter.drawPixmap(0, 0, self._background)
+        painter.fillRect(self.rect(), QColor(255, 255, 255, 225))
 
 
 class SettingsAction(RosidaAction):
