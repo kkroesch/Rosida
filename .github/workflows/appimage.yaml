@@ -52,7 +52,7 @@ jobs:
           cp -a src/* "$APP_DIR/usr/lib/rosida/"
           
           # Ordner optional kopieren, falls sie existieren
-          cp -a assets/fonts assets/i18n "$APP_DIR/usr/lib/rosida/assets/" 2>/dev/null || true
+          cp -a assets/fonts assets/i18n assets/splash.png "$APP_DIR/usr/lib/rosida/assets/" 2>/dev/null || true
           cp docs/quickstart*.md "$APP_DIR/usr/lib/rosida/docs/" 2>/dev/null || true
           
           cp build/linux/AppRun "$APP_DIR/AppRun"
