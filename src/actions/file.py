@@ -1,5 +1,5 @@
+import getpass
 import os
-
 from pathlib import Path
 from PySide6.QtCore import QCoreApplication, Qt, QSettings
 from PySide6.QtGui import QKeySequence
@@ -29,6 +29,13 @@ def get_recent_files() -> list[str]:
     return [f for f in files if f and os.path.exists(f)]
 
 
+def _system_username() -> str:
+    try:
+        return getpass.getuser()
+    except Exception:
+        return ""
+
+
 class NewDocumentAction(RosidaAction):
     def __init__(self, main_window, parent=None):
         super().__init__(QCoreApplication.translate("NewDocumentAction", "&New document"), parent)
@@ -47,8 +54,11 @@ class NewDocumentAction(RosidaAction):
             doc.layout.removeWidget(cell)
             cell.deleteLater()
 
-        # Eigenschaften (Titel, bibliography, ...) nicht ins neue Dokument erben
-        doc.frontmatter_cell.editor.setPlainText("")
+        # Eigenschaften (bibliography, ...) nicht ins neue Dokument erben; nur
+        # Titel und Autor (Systembenutzer) vorbelegen.
+        doc.frontmatter_cell.editor.setPlainText(
+            f"title: {self.tr('New document')}\nauthor: {_system_username()}"
+        )
         doc.frontmatter_cell.commit_and_collapse()
         self.win.set_current_filepath(None)
         doc.undo_stack.clear()
