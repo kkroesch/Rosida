@@ -139,3 +139,92 @@ def test_ipynb_export_builds_valid_notebook(rosida_win, tmp_path, wait_idle):
   assert types[:2] == ["raw", "markdown"] and "code" in types
   code = next(c for c in nb["cells"] if c["cell_type"] == "code")
   assert "".join(code["source"]).startswith("print('x')")
+
+
+def test_zotero_parse_entries():
+  import json
+
+  from exporters.zotero import is_ready_response, parse_entries
+
+  data = json.dumps(
+    {
+      "result": [
+        {
+          "citekey": "weitz2021",
+          "title": "Konkrete Mathematik",
+          "author": [{"family": "Weitz", "given": "Edmund"}],
+          "issued": {"date-parts": [["2021"]]},
+        },
+        {
+          "citekey": "abc2020",
+          "title": "T",
+          "author": [{"family": "A"}, {"family": "B"}, {"family": "C"}],
+        },
+        {"title": "Ohne Key"},
+      ]
+    }
+  ).encode()
+  entries = parse_entries(data)
+
+  assert [(e.key, e.authors, e.year) for e in entries] == [
+    ("weitz2021", "Weitz", "2021"),
+    ("abc2020", "A et al.", ""),
+  ]
+  assert parse_entries(b"kaputt") == []
+  assert is_ready_response(b'{"result":{"zotero":"7","betterbibtex":"9"}}')
+  assert not is_ready_response(b"<html>")
+
+
+def test_zotero_dock_searches_and_inserts_citation(rosida_win, qtbot, monkeypatch):
+  import json
+  import threading
+  from http.server import BaseHTTPRequestHandler, HTTPServer
+
+  class Handler(BaseHTTPRequestHandler):
+    def do_POST(self):
+      req = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
+      if req["method"] == "api.ready":
+        result = {"zotero": "7", "betterbibtex": "9"}
+      else:
+        result = [
+          {
+            "citekey": "weitz2021",
+            "title": "Konkrete Mathematik",
+            "author": [{"family": "Weitz"}],
+            "issued": {"date-parts": [["2021"]]},
+          }
+        ]
+      body = json.dumps({"jsonrpc": "2.0", "result": result, "id": req["id"]}).encode()
+      self.send_response(200)
+      self.send_header("Content-Type", "application/json")
+      self.send_header("Content-Length", str(len(body)))
+      self.end_headers()
+      self.wfile.write(body)
+
+    def log_message(self, *args):
+      pass
+
+  server = HTTPServer(("127.0.0.1", 0), Handler)
+  threading.Thread(target=server.serve_forever, daemon=True).start()
+  try:
+    monkeypatch.setattr(
+      "exporters.zotero.ZOTERO_RPC_URL", f"http://127.0.0.1:{server.server_port}/"
+    )
+    dock = rosida_win.dock_bibitems
+    dock.show_bibliography([])
+    # a ping against the real port may still be in flight from window start-up
+    qtbot.waitUntil(lambda: dock._ping_reply is None, timeout=5000)
+    dock._zotero_ok = False
+    dock._check_zotero()
+    qtbot.waitUntil(lambda: dock.stack.currentIndex() == 2, timeout=5000)
+
+    dock.search_edit.setText("Weitz")
+    qtbot.waitUntil(lambda: dock.zotero_list.count() == 1, timeout=5000)
+    widget = dock.zotero_list.itemWidget(dock.zotero_list.item(0))
+    assert "Konkrete Mathematik" in widget.text() and "Weitz 2021" in widget.text()
+
+    with qtbot.waitSignal(dock.citation_selected) as sig:
+      widget.linkActivated.emit("weitz2021")
+    assert sig.args == ["[@weitz2021]"]
+  finally:
+    server.shutdown()

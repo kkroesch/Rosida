@@ -58,6 +58,12 @@ def slow_step(qtbot):
   return _wait
 
 
+@pytest.fixture(autouse=True)
+def no_real_zotero(monkeypatch):
+  """Tests must not depend on a Zotero running on the developer's machine."""
+  monkeypatch.setattr("exporters.zotero.ZOTERO_RPC_URL", "http://127.0.0.1:1/")
+
+
 @pytest.fixture
 def rosida_win(qtbot):
   """Eine frische RosidaApp-Instanz mit einer leeren Startzelle, sichtbar für den Watch-Modus."""
