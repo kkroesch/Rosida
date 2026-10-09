@@ -8,6 +8,39 @@ from widgets.syntax import CellHighlighter
 
 MIN_HEIGHT = 56
 
+PYTHON_STYLE = """
+    QPlainTextEdit {
+        background-color: #ffffff;
+        color: #0f172a;
+        border: 1px solid #cbd5e1;
+        border-left: 3px solid #2563eb;
+        border-radius: 6px;
+        padding: 8px 18px 10px 8px;
+    }
+    QPlainTextEdit:focus {
+        border-color: #93c5fd;
+        border-left: 3px solid #1d4ed8;
+    }
+"""
+
+# Textzellen: Schrift und Farbe wie die gerenderte Ansicht (CMU Serif 16pt,
+# #334155, transparent), damit der Klick in den Absatz kaum überrascht. Der
+# linke Rand ist die einzige Markierung "hier wird editiert"; das Padding
+# gleicht den Rahmen der Ansicht aus, damit der Text nicht verspringt.
+MARKDOWN_STYLE = """
+    QPlainTextEdit {
+        background-color: transparent;
+        color: #334155;
+        border: 1px solid transparent;
+        border-left: 3px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 4px 18px 6px 8px;
+    }
+    QPlainTextEdit:focus {
+        border-left: 3px solid #93c5fd;
+    }
+"""
+
 
 class InlineEditor(QPlainTextEdit):
     """Plain text editor supporting Shift+Enter, Escape, Focus-Reporting, and resizing."""
@@ -23,25 +56,30 @@ class InlineEditor(QPlainTextEdit):
         font = QFont("JetBrains Mono", 11)
         font.setStyleHint(QFont.StyleHint.Monospace)
         self.setFont(font)
-        self.setStyleSheet("""
-            QPlainTextEdit {
-                background-color: #ffffff;
-                color: #0f172a;
-                border: 1px solid #cbd5e1;
-                border-left: 3px solid #2563eb;
-                border-radius: 6px;
-                padding: 8px 18px 10px 8px;
-            }
-            QPlainTextEdit:focus {
-                border-color: #93c5fd;
-                border-left: 3px solid #1d4ed8;
-            }
-        """)
+        self._kind = "python"
+        self.setStyleSheet(PYTHON_STYLE)
         # Der Editor wächst mit dem Inhalt; gescrollt wird nur der Canvas.
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.manual_height = 0  # per Grip gezogene Mindesthöhe
         self.grip = MacResizeGrip(self, self)
         self.textChanged.connect(self.fit_to_content)
+        self.fit_to_content()
+
+    def set_kind(self, kind: str):
+        """Styles the editor as "markdown" (looks like the rendered text) or "python"."""
+        if kind == self._kind:
+            return
+        self._kind = kind
+        self.highlighter.set_mode(kind)
+        if kind == "markdown":
+            font = QFont("CMU Serif", 16)
+            font.setStyleHint(QFont.StyleHint.Serif)
+            self.setStyleSheet(MARKDOWN_STYLE)
+        else:
+            font = QFont("JetBrains Mono", 11)
+            font.setStyleHint(QFont.StyleHint.Monospace)
+            self.setStyleSheet(PYTHON_STYLE)
+        self.setFont(font)
         self.fit_to_content()
 
     def focusInEvent(self, event):
@@ -61,8 +99,15 @@ class InlineEditor(QPlainTextEdit):
         """Sets the height so that all (wrapped) lines are visible without scrolling."""
         # Beim QPlainTextEdit liefert document().size().height() die Anzahl
         # sichtbarer Zeilen (inkl. Umbrüche), nicht Pixel.
-        lines = max(1, int(self.document().size().height()))
-        text_h = lines * self.fontMetrics().lineSpacing()
+        self.document().size()  # erzwingt das Layout
+        # Summe der Blockhöhen statt Zeilen * Zeilenhöhe: Überschriften und
+        # Formeln in Textzellen sind höher als normale Zeilen.
+        text_h = 0.0
+        block = self.document().firstBlock()
+        while block.isValid():
+            text_h += self.blockBoundingRect(block).height()
+            block = block.next()
+        text_h = int(max(text_h, self.fontMetrics().lineSpacing()))
         text_h += int(self.document().documentMargin() * 2)
         chrome = self.height() - self.viewport().height()  # Rahmen + Padding
         target = max(MIN_HEIGHT, self.manual_height, text_h + chrome + 4)

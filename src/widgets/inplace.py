@@ -104,6 +104,7 @@ class InPlaceCell(QWidget):
         self.editor.mode_toggle_requested.connect(self.cycle_mode)
         self.editor.focused_in.connect(lambda: self.cell_focused.emit(self))
         self.editor.textChanged.connect(self.content_updated.emit)
+        self.editor.textChanged.connect(self._sync_editor_kind)
         self.edit_layout.addWidget(self.editor)
 
         self.stack.addWidget(self.edit_container)
@@ -146,13 +147,18 @@ class InPlaceCell(QWidget):
         modes = ["auto", "python", "markdown"]
         cur_idx = modes.index(self.mode) if self.mode in modes else 0
         self.mode = modes[(cur_idx + 1) % len(modes)]
-        self.editor.highlighter.set_mode(self.mode)
+        self._sync_editor_kind()
         self._update_mode_pill()
         self.content_updated.emit()
 
     def set_mode(self, mode: str):
         self.mode = mode if mode in ("auto", "python", "markdown") else "auto"
+        self._sync_editor_kind()
         self._update_mode_pill()
+
+    def _sync_editor_kind(self):
+        """Editor look follows the effective mode: serif text for prose, mono for code."""
+        self.editor.set_kind(self._detect_effective_mode(self.editor.toPlainText()))
 
     def get_mode(self) -> str:
         return self.mode
