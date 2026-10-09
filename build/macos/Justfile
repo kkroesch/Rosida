@@ -31,7 +31,7 @@ macapp: icons
     mkdir -p "{{APP}}/Contents/MacOS" "{{RES}}"
     cp -a "{{REPO_ROOT}}"/src/* "{{RES}}/"
     mkdir -p "{{RES}}/assets"
-    cp -a "{{REPO_ROOT}}/assets/fonts" "{{REPO_ROOT}}/assets/i18n" "{{RES}}/assets/"
+    cp -a "{{REPO_ROOT}}/assets/fonts" "{{REPO_ROOT}}/assets/i18n" "{{REPO_ROOT}}/assets/splash.png" "{{RES}}/assets/"
     cp "{{MOD_DIR}}/Info.plist" "{{APP}}/Contents/Info.plist"
     cp "{{MOD_DIR}}/launch" "{{APP}}/Contents/MacOS/launch"
     chmod +x "{{APP}}/Contents/MacOS/launch"
