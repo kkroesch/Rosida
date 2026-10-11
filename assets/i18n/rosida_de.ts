@@ -4,84 +4,129 @@
 <context>
     <name>AboutAction</name>
     <message>
-        <location filename="../../src/actions/help.py" line="101"/>
+        <location filename="../../src/actions/help.py" line="103"/>
         <source>&amp;About Rosida</source>
         <translation>&amp;Über Rosida</translation>
     </message>
     <message>
-        <location filename="../../src/actions/help.py" line="105"/>
+        <location filename="../../src/actions/help.py" line="107"/>
         <location filename="../../src/actions/help.py" line="113"/>
         <source>About Rosida</source>
         <translation>Über Rosida</translation>
     </message>
     <message>
-        <location filename="../../src/actions/help.py" line="115"/>
+        <location filename="../../src/actions/help.py" line="119"/>
         <source>&lt;p&gt;Version {0}&lt;/p&gt;</source>
         <translation>&lt;p&gt;Version {0}&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../../src/actions/help.py" line="117"/>
+        <location filename="../../src/actions/help.py" line="121"/>
         <source>&lt;p&gt;Native computational notebook for macOS &amp;amp; Linux – Python, SymPy, NumPy, Matplotlib and Polars right in the document, saved as plain Markdown.&lt;/p&gt;</source>
         <translation>&lt;p&gt;Natives, rechenfähiges Notizbuch für macOS &amp;amp; Linux – Python, SymPy, NumPy, Matplotlib und Polars direkt im Dokument, gespeichert als reines Markdown.&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../../src/actions/help.py" line="121"/>
+        <location filename="../../src/actions/help.py" line="125"/>
         <source>&lt;p&gt;MIT license.&lt;/p&gt;</source>
         <translation>&lt;p&gt;MIT-Lizenz.&lt;/p&gt;</translation>
+    </message>
+    <message>
+        <location filename="../../src/actions/help.py" line="126"/>
+        <source>&lt;p&gt;Author: {0}&lt;/p&gt;</source>
+        <translation>&lt;p&gt;Autor: {0}&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
     <name>BibDock</name>
     <message>
-        <location filename="../../src/docks/bibitems.py" line="52"/>
+        <location filename="../../src/docks/bibitems.py" line="77"/>
         <source>References</source>
         <translation>Literatur</translation>
     </message>
     <message>
-        <location filename="../../src/docks/bibitems.py" line="59"/>
+        <location filename="../../src/docks/bibitems.py" line="84"/>
         <source>Load references (.bib)</source>
         <translation>Literatur laden (.bib)</translation>
     </message>
     <message>
-        <location filename="../../src/docks/bibitems.py" line="74"/>
+        <location filename="../../src/docks/bibitems.py" line="99"/>
         <source>Change …</source>
         <translation>Ändern …</translation>
     </message>
     <message>
-        <location filename="../../src/docks/bibitems.py" line="75"/>
+        <location filename="../../src/docks/bibitems.py" line="100"/>
         <source>Choose another bibliography file</source>
         <translation>Andere Literaturdatei wählen</translation>
     </message>
     <message>
-        <location filename="../../src/docks/bibitems.py" line="98"/>
+        <location filename="../../src/docks/bibitems.py" line="117"/>
+        <source>Zotero</source>
+        <translation>Zotero</translation>
+    </message>
+    <message>
+        <location filename="../../src/docks/bibitems.py" line="118"/>
+        <source>Search the Zotero library</source>
+        <translation>Zotero-Bibliothek durchsuchen</translation>
+    </message>
+    <message>
+        <location filename="../../src/docks/bibitems.py" line="123"/>
+        <source>Zotero library</source>
+        <translation>Zotero-Bibliothek</translation>
+    </message>
+    <message>
+        <location filename="../../src/docks/bibitems.py" line="125"/>
+        <source>Use .bib …</source>
+        <translation>.bib verwenden …</translation>
+    </message>
+    <message>
+        <location filename="../../src/docks/bibitems.py" line="126"/>
+        <source>Use a BibTeX file instead of Zotero</source>
+        <translation>Statt Zotero eine BibTeX-Datei verwenden</translation>
+    </message>
+    <message>
+        <location filename="../../src/docks/bibitems.py" line="135"/>
+        <source>Author, title or citation key</source>
+        <translation>Autor, Titel oder Zitierschlüssel</translation>
+    </message>
+    <message>
+        <location filename="../../src/docks/bibitems.py" line="175"/>
         <source>Choose BibTeX file</source>
         <translation>BibTeX-Datei wählen</translation>
     </message>
     <message>
-        <location filename="../../src/docks/bibitems.py" line="100"/>
+        <location filename="../../src/docks/bibitems.py" line="177"/>
         <source>BibTeX (*.bib)</source>
         <translation>BibTeX (*.bib)</translation>
     </message>
     <message>
-        <location filename="../../src/docks/bibitems.py" line="100"/>
+        <location filename="../../src/docks/bibitems.py" line="177"/>
         <source>All files (*)</source>
         <translation>Alle Dateien (*)</translation>
     </message>
     <message>
-        <location filename="../../src/docks/bibitems.py" line="125"/>
+        <location filename="../../src/docks/bibitems.py" line="202"/>
         <source>Not found: {0}</source>
         <translation>Nicht gefunden: {0}</translation>
+    </message>
+    <message>
+        <location filename="../../src/docks/bibitems.py" line="274"/>
+        <source>Zotero is not reachable.</source>
+        <translation>Zotero ist nicht erreichbar.</translation>
+    </message>
+    <message>
+        <location filename="../../src/docks/bibitems.py" line="277"/>
+        <source>No results.</source>
+        <translation>Keine Treffer.</translation>
     </message>
 </context>
 <context>
     <name>BibItemWidget</name>
     <message>
-        <location filename="../../src/docks/bibitems.py" line="31"/>
+        <location filename="../../src/docks/bibitems.py" line="35"/>
         <source>Unknown author</source>
         <translation>Unbekannter Autor</translation>
     </message>
     <message>
-        <location filename="../../src/docks/bibitems.py" line="32"/>
+        <location filename="../../src/docks/bibitems.py" line="36"/>
         <source>No title</source>
         <translation>Kein Titel</translation>
     </message>
@@ -118,42 +163,42 @@
 <context>
     <name>ExportHtmlAction</name>
     <message>
-        <location filename="../../src/actions/file.py" line="275"/>
+        <location filename="../../src/actions/file.py" line="285"/>
         <source>Export &amp;HTML...</source>
         <translation>&amp;HTML exportieren...</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="280"/>
+        <location filename="../../src/actions/file.py" line="290"/>
         <source>Export the document as an HTML page, formulas via KaTeX (Ctrl+Shift+H)</source>
         <translation>Dokument als HTML-Seite exportieren, Formeln mit KaTeX (Ctrl+Shift+H)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="289"/>
+        <location filename="../../src/actions/file.py" line="299"/>
         <source>Export document as HTML</source>
         <translation>Dokument als HTML exportieren</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="290"/>
+        <location filename="../../src/actions/file.py" line="300"/>
         <source>rosida_document.html</source>
         <translation>rosida_dokument.html</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="291"/>
+        <location filename="../../src/actions/file.py" line="301"/>
         <source>HTML page (*.html)</source>
         <translation>HTML-Seite (*.html)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="299"/>
+        <location filename="../../src/actions/file.py" line="309"/>
         <source>HTML export successful: {0}</source>
         <translation>HTML-Export erfolgreich: {0}</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="304"/>
+        <location filename="../../src/actions/file.py" line="314"/>
         <source>Export error</source>
         <translation>Exportfehler</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="305"/>
+        <location filename="../../src/actions/file.py" line="315"/>
         <source>HTML export failed:
 {0}</source>
         <translation>Fehler beim HTML-Export:
@@ -161,44 +206,89 @@
     </message>
 </context>
 <context>
-    <name>ExportPdfAction</name>
+    <name>ExportIpynbAction</name>
     <message>
-        <location filename="../../src/actions/file.py" line="239"/>
-        <source>Export &amp;PDF...</source>
-        <translation>&amp;PDF exportieren...</translation>
+        <location filename="../../src/actions/file.py" line="359"/>
+        <source>Export &amp;Jupyter Notebook...</source>
+        <translation>&amp;Jupyter-Notebook exportieren...</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="243"/>
-        <source>Export the document as a PDF file (Ctrl+Shift+P)</source>
-        <translation>Dokument als PDF-Datei exportieren (Ctrl+Shift+P)</translation>
+        <location filename="../../src/actions/file.py" line="365"/>
+        <source>Export the document as a Jupyter notebook (.ipynb) (Ctrl+Shift+J)</source>
+        <translation>Dokument als Jupyter-Notebook (.ipynb) exportieren (Strg+Umschalt+J)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="251"/>
-        <source>Export document as PDF</source>
-        <translation>Dokument als PDF exportieren</translation>
+        <location filename="../../src/actions/file.py" line="374"/>
+        <source>Export document as Jupyter notebook</source>
+        <translation>Dokument als Jupyter-Notebook exportieren</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="252"/>
-        <source>rosida_document.pdf</source>
-        <translation>rosida_dokument.pdf</translation>
+        <location filename="../../src/actions/file.py" line="375"/>
+        <source>rosida_document.ipynb</source>
+        <translation>rosida_dokument.ipynb</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="253"/>
-        <source>PDF document (*.pdf)</source>
-        <translation>PDF-Dokument (*.pdf)</translation>
+        <location filename="../../src/actions/file.py" line="376"/>
+        <source>Jupyter notebook (*.ipynb)</source>
+        <translation>Jupyter-Notebook (*.ipynb)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="261"/>
-        <source>PDF export successful: {0}</source>
-        <translation>PDF-Export erfolgreich: {0}</translation>
+        <location filename="../../src/actions/file.py" line="383"/>
+        <source>Jupyter export successful: {0}</source>
+        <translation>Jupyter-Export erfolgreich: {0}</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="266"/>
+        <location filename="../../src/actions/file.py" line="388"/>
         <source>Export error</source>
         <translation>Exportfehler</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="267"/>
+        <location filename="../../src/actions/file.py" line="389"/>
+        <source>Jupyter export failed:
+{0}</source>
+        <translation>Jupyter-Export fehlgeschlagen:
+{0}</translation>
+    </message>
+</context>
+<context>
+    <name>ExportPdfAction</name>
+    <message>
+        <location filename="../../src/actions/file.py" line="249"/>
+        <source>Export &amp;PDF...</source>
+        <translation>&amp;PDF exportieren...</translation>
+    </message>
+    <message>
+        <location filename="../../src/actions/file.py" line="253"/>
+        <source>Export the document as a PDF file (Ctrl+Shift+P)</source>
+        <translation>Dokument als PDF-Datei exportieren (Ctrl+Shift+P)</translation>
+    </message>
+    <message>
+        <location filename="../../src/actions/file.py" line="261"/>
+        <source>Export document as PDF</source>
+        <translation>Dokument als PDF exportieren</translation>
+    </message>
+    <message>
+        <location filename="../../src/actions/file.py" line="262"/>
+        <source>rosida_document.pdf</source>
+        <translation>rosida_dokument.pdf</translation>
+    </message>
+    <message>
+        <location filename="../../src/actions/file.py" line="263"/>
+        <source>PDF document (*.pdf)</source>
+        <translation>PDF-Dokument (*.pdf)</translation>
+    </message>
+    <message>
+        <location filename="../../src/actions/file.py" line="271"/>
+        <source>PDF export successful: {0}</source>
+        <translation>PDF-Export erfolgreich: {0}</translation>
+    </message>
+    <message>
+        <location filename="../../src/actions/file.py" line="276"/>
+        <source>Export error</source>
+        <translation>Exportfehler</translation>
+    </message>
+    <message>
+        <location filename="../../src/actions/file.py" line="277"/>
         <source>PDF export failed:
 {0}</source>
         <translation>Fehler beim PDF-Export:
@@ -208,42 +298,42 @@
 <context>
     <name>ExportQmdAction</name>
     <message>
-        <location filename="../../src/actions/file.py" line="313"/>
+        <location filename="../../src/actions/file.py" line="323"/>
         <source>Export &amp;Quarto...</source>
         <translation>&amp;Quarto exportieren...</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="318"/>
+        <location filename="../../src/actions/file.py" line="328"/>
         <source>Export the document as a Quarto file (.qmd) (Ctrl+Shift+Q)</source>
         <translation>Dokument als Quarto-Datei (.qmd) exportieren (Ctrl+Shift+Q)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="327"/>
+        <location filename="../../src/actions/file.py" line="337"/>
         <source>Export document as Quarto</source>
         <translation>Dokument als Quarto exportieren</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="328"/>
+        <location filename="../../src/actions/file.py" line="338"/>
         <source>rosida_document.qmd</source>
         <translation>rosida_dokument.qmd</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="329"/>
+        <location filename="../../src/actions/file.py" line="339"/>
         <source>Quarto document (*.qmd)</source>
         <translation>Quarto-Dokument (*.qmd)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="336"/>
+        <location filename="../../src/actions/file.py" line="346"/>
         <source>Quarto export successful: {0}</source>
         <translation>Quarto-Export erfolgreich: {0}</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="341"/>
+        <location filename="../../src/actions/file.py" line="351"/>
         <source>Export error</source>
         <translation>Exportfehler</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="342"/>
+        <location filename="../../src/actions/file.py" line="352"/>
         <source>Quarto export failed:
 {0}</source>
         <translation>Fehler beim Quarto-Export:
@@ -276,12 +366,12 @@
 <context>
     <name>FrontmatterCell</name>
     <message>
-        <location filename="../../src/widgets/frontmatter.py" line="68"/>
+        <location filename="../../src/widgets/frontmatter.py" line="79"/>
         <source>⏵ Document properties</source>
         <translation>⏵ Dokumenteigenschaften</translation>
     </message>
     <message>
-        <location filename="../../src/widgets/frontmatter.py" line="87"/>
+        <location filename="../../src/widgets/frontmatter.py" line="123"/>
         <source>Document properties</source>
         <translation>Dokumenteigenschaften</translation>
     </message>
@@ -299,17 +389,17 @@
         <translation>Shift+Enter zum Ausführen</translation>
     </message>
     <message>
-        <location filename="../../src/widgets/inplace.py" line="319"/>
+        <location filename="../../src/widgets/inplace.py" line="325"/>
         <source>Computing …</source>
         <translation>Wird berechnet …</translation>
     </message>
     <message>
-        <location filename="../../src/widgets/inplace.py" line="319"/>
+        <location filename="../../src/widgets/inplace.py" line="325"/>
         <source>Waiting …</source>
         <translation>Wartet …</translation>
     </message>
     <message>
-        <location filename="../../src/widgets/inplace.py" line="382"/>
+        <location filename="../../src/widgets/inplace.py" line="388"/>
         <source>No output – click to edit</source>
         <translation>Kein Output – klicken zum Bearbeiten</translation>
     </message>
@@ -463,12 +553,12 @@
 <context>
     <name>Manual</name>
     <message>
-        <location filename="../../src/actions/help.py" line="47"/>
+        <location filename="../../src/actions/help.py" line="49"/>
         <source>Rosida – Manual</source>
         <translation>Rosida – Handbuch</translation>
     </message>
     <message>
-        <location filename="../../src/actions/help.py" line="64"/>
+        <location filename="../../src/actions/help.py" line="66"/>
         <source>The manual (docs/quickstart.md) was not found.
 
 In a development checkout it is located at docs/quickstart.md.</source>
@@ -480,12 +570,12 @@ Im Entwicklungs-Checkout liegt es unter docs/quickstart.md.</translation>
 <context>
     <name>ManualAction</name>
     <message>
-        <location filename="../../src/actions/help.py" line="86"/>
+        <location filename="../../src/actions/help.py" line="88"/>
         <source>&amp;Manual...</source>
         <translation>&amp;Handbuch...</translation>
     </message>
     <message>
-        <location filename="../../src/actions/help.py" line="90"/>
+        <location filename="../../src/actions/help.py" line="92"/>
         <source>Show the quick start guide with examples (F1)</source>
         <translation>Kurzanleitung mit Beispielen anzeigen (F1)</translation>
     </message>
@@ -532,17 +622,17 @@ Im Entwicklungs-Checkout liegt es unter docs/quickstart.md.</translation>
 <context>
     <name>NewDocumentAction</name>
     <message>
-        <location filename="../../src/actions/file.py" line="34"/>
+        <location filename="../../src/actions/file.py" line="41"/>
         <source>&amp;New document</source>
         <translation>&amp;Neues Dokument</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="38"/>
+        <location filename="../../src/actions/file.py" line="45"/>
         <source>Create a new, empty document (Cmd+N / Ctrl+N)</source>
         <translation>Neues, leeres Dokument erstellen (Cmd+N / Ctrl+N)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="58"/>
+        <location filename="../../src/actions/file.py" line="68"/>
         <source>New document created</source>
         <translation>Neues Dokument erstellt</translation>
     </message>
@@ -550,57 +640,57 @@ Im Entwicklungs-Checkout liegt es unter docs/quickstart.md.</translation>
 <context>
     <name>OpenDocumentAction</name>
     <message>
-        <location filename="../../src/actions/file.py" line="63"/>
+        <location filename="../../src/actions/file.py" line="73"/>
         <source>&amp;Open...</source>
         <translation>&amp;Öffnen...</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="67"/>
+        <location filename="../../src/actions/file.py" line="77"/>
         <source>Open a document (Cmd+O / Ctrl+O)</source>
         <translation>Dokument öffnen (Cmd+O / Ctrl+O)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="75"/>
+        <location filename="../../src/actions/file.py" line="85"/>
         <source>Supported documents (*.md *.markdown *.qmd *.ipynb)</source>
         <translation>Unterstützte Dokumente (*.md *.markdown *.qmd *.ipynb)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="76"/>
+        <location filename="../../src/actions/file.py" line="86"/>
         <source>Markdown &amp; Quarto (*.md *.markdown *.qmd)</source>
         <translation>Markdown &amp; Quarto (*.md *.markdown *.qmd)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="77"/>
+        <location filename="../../src/actions/file.py" line="87"/>
         <source>Jupyter notebooks (*.ipynb)</source>
         <translation>Jupyter Notebooks (*.ipynb)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="78"/>
+        <location filename="../../src/actions/file.py" line="88"/>
         <source>All files (*)</source>
         <translation>Alle Dateien (*)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="84"/>
+        <location filename="../../src/actions/file.py" line="94"/>
         <source>Open Rosida document</source>
         <translation>Rosida Dokument öffnen</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="104"/>
+        <location filename="../../src/actions/file.py" line="114"/>
         <source>Imported: {0} → will be saved as {1}</source>
         <translation>Importiert: {0} → Speichern als {1}</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="113"/>
+        <location filename="../../src/actions/file.py" line="123"/>
         <source>Opened: {0}</source>
         <translation>Geöffnet: {0}</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="118"/>
+        <location filename="../../src/actions/file.py" line="128"/>
         <source>Error opening file</source>
         <translation>Fehler beim Öffnen</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="119"/>
+        <location filename="../../src/actions/file.py" line="129"/>
         <source>The file could not be opened:
 {0}</source>
         <translation>Datei konnte nicht geöffnet werden:
@@ -618,12 +708,12 @@ Im Entwicklungs-Checkout liegt es unter docs/quickstart.md.</translation>
 <context>
     <name>QuitAction</name>
     <message>
-        <location filename="../../src/actions/file.py" line="348"/>
+        <location filename="../../src/actions/file.py" line="395"/>
         <source>&amp;Quit</source>
         <translation>&amp;Beenden</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="352"/>
+        <location filename="../../src/actions/file.py" line="399"/>
         <source>Quit Rosida</source>
         <translation>Rosida beenden</translation>
     </message>
@@ -631,32 +721,32 @@ Im Entwicklungs-Checkout liegt es unter docs/quickstart.md.</translation>
 <context>
     <name>RecentFilesMenu</name>
     <message>
-        <location filename="../../src/actions/file.py" line="129"/>
+        <location filename="../../src/actions/file.py" line="139"/>
         <source>Open &amp;recent</source>
         <translation>Zuletzt &amp;geöffnet</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="137"/>
+        <location filename="../../src/actions/file.py" line="147"/>
         <source>(none)</source>
         <translation>(keine)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="147"/>
+        <location filename="../../src/actions/file.py" line="157"/>
         <source>Clear list</source>
         <translation>Liste leeren</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="154"/>
+        <location filename="../../src/actions/file.py" line="164"/>
         <source>Opened: {0}</source>
         <translation>Geöffnet: {0}</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="158"/>
+        <location filename="../../src/actions/file.py" line="168"/>
         <source>Error opening file</source>
         <translation>Fehler beim Öffnen</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="159"/>
+        <location filename="../../src/actions/file.py" line="169"/>
         <source>The file could not be opened:
 {0}</source>
         <translation>Datei konnte nicht geöffnet werden:
@@ -679,99 +769,99 @@ Im Entwicklungs-Checkout liegt es unter docs/quickstart.md.</translation>
 <context>
     <name>RosidaApp</name>
     <message>
-        <location filename="../../src/app.py" line="136"/>
-        <location filename="../../src/app.py" line="359"/>
+        <location filename="../../src/app.py" line="144"/>
+        <location filename="../../src/app.py" line="369"/>
         <source>Cell {0} of {1}</source>
         <translation>Zelle {0} von {1}</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="146"/>
+        <location filename="../../src/app.py" line="154"/>
         <source>● Kernel: ready</source>
         <translation>● Kernel: Bereit</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="154"/>
+        <location filename="../../src/app.py" line="162"/>
         <source>Rosida is ready</source>
         <translation>Rosida betriebsbereit</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="224"/>
+        <location filename="../../src/app.py" line="233"/>
         <source>&amp;File</source>
         <translation>&amp;Datei</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="233"/>
+        <location filename="../../src/app.py" line="242"/>
         <source>E&amp;xport</source>
         <translation>E&amp;xportieren</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="243"/>
+        <location filename="../../src/app.py" line="253"/>
         <source>&amp;Edit</source>
         <translation>&amp;Bearbeiten</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="254"/>
+        <location filename="../../src/app.py" line="264"/>
         <source>&amp;Cell</source>
         <translation>&amp;Zelle</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="258"/>
+        <location filename="../../src/app.py" line="268"/>
         <source>&amp;View</source>
         <translation>&amp;Ansicht</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="264"/>
+        <location filename="../../src/app.py" line="274"/>
         <source>&amp;Help</source>
         <translation>&amp;Hilfe</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="270"/>
+        <location filename="../../src/app.py" line="280"/>
         <source>Main actions</source>
         <translation>Hauptaktionen</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="354"/>
-        <location filename="../../src/app.py" line="426"/>
+        <location filename="../../src/app.py" line="364"/>
+        <location filename="../../src/app.py" line="436"/>
         <source>Untitled document</source>
         <translation>Unbenanntes Dokument</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="368"/>
+        <location filename="../../src/app.py" line="378"/>
         <source>📝 Text (fixed)</source>
         <translation>📝 Text (fix)</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="373"/>
+        <location filename="../../src/app.py" line="383"/>
         <source>⚡ Python (fixed)</source>
         <translation>⚡ Python (fix)</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="382"/>
+        <location filename="../../src/app.py" line="392"/>
         <source>● Kernel: cell computed</source>
         <translation>● Kernel: Zelle berechnet</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="386"/>
+        <location filename="../../src/app.py" line="396"/>
         <source>Execution finished</source>
         <translation>Ausführung abgeschlossen</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="390"/>
+        <location filename="../../src/app.py" line="400"/>
         <source>● Kernel: computing …</source>
         <translation>● Kernel: rechnet …</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="401"/>
+        <location filename="../../src/app.py" line="411"/>
         <source>Warning: {0}</source>
         <translation>Warnung: {0}</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="429"/>
+        <location filename="../../src/app.py" line="439"/>
         <source>Save changes?</source>
         <translation>Änderungen speichern?</translation>
     </message>
     <message>
-        <location filename="../../src/app.py" line="432"/>
+        <location filename="../../src/app.py" line="442"/>
         <source>Do you want to save the changes to “{0}” before quitting?</source>
         <translation>Möchtest du die Änderungen in »{0}« vor dem Beenden speichern?</translation>
     </message>
@@ -805,27 +895,27 @@ Im Entwicklungs-Checkout liegt es unter docs/quickstart.md.</translation>
 <context>
     <name>SaveAction</name>
     <message>
-        <location filename="../../src/actions/file.py" line="170"/>
+        <location filename="../../src/actions/file.py" line="180"/>
         <source>&amp;Save</source>
         <translation>&amp;Speichern</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="174"/>
+        <location filename="../../src/actions/file.py" line="184"/>
         <source>Save the document (Cmd+S / Ctrl+S)</source>
         <translation>Dokument speichern (Cmd+S / Ctrl+S)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="193"/>
+        <location filename="../../src/actions/file.py" line="203"/>
         <source>Saved: {0}</source>
         <translation>Gespeichert: {0}</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="198"/>
+        <location filename="../../src/actions/file.py" line="208"/>
         <source>Error saving file</source>
         <translation>Fehler beim Speichern</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="199"/>
+        <location filename="../../src/actions/file.py" line="209"/>
         <source>The file could not be saved:
 {0}</source>
         <translation>Datei konnte nicht gespeichert werden:
@@ -835,47 +925,47 @@ Im Entwicklungs-Checkout liegt es unter docs/quickstart.md.</translation>
 <context>
     <name>SaveAsAction</name>
     <message>
-        <location filename="../../src/actions/file.py" line="205"/>
+        <location filename="../../src/actions/file.py" line="215"/>
         <source>Save &amp;as...</source>
         <translation>Speichern &amp;unter...</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="210"/>
+        <location filename="../../src/actions/file.py" line="220"/>
         <source>Save the document under a new name (Cmd+Shift+S / Ctrl+Shift+S)</source>
         <translation>Dokument unter neuem Namen speichern (Cmd+Shift+S / Ctrl+Shift+S)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="219"/>
+        <location filename="../../src/actions/file.py" line="229"/>
         <source>Save document as</source>
         <translation>Dokument speichern unter</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="220"/>
+        <location filename="../../src/actions/file.py" line="230"/>
         <source>calculation.md</source>
         <translation>berechnung.md</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="221"/>
+        <location filename="../../src/actions/file.py" line="231"/>
         <source>Markdown document (*.md)</source>
         <translation>Markdown-Dokument (*.md)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="221"/>
+        <location filename="../../src/actions/file.py" line="231"/>
         <source>All files (*)</source>
         <translation>Alle Dateien (*)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="228"/>
+        <location filename="../../src/actions/file.py" line="238"/>
         <source>Saved: {0}</source>
         <translation>Gespeichert: {0}</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="232"/>
+        <location filename="../../src/actions/file.py" line="242"/>
         <source>Error saving file</source>
         <translation>Fehler beim Speichern</translation>
     </message>
     <message>
-        <location filename="../../src/actions/file.py" line="233"/>
+        <location filename="../../src/actions/file.py" line="243"/>
         <source>The file could not be saved:
 {0}</source>
         <translation>Datei konnte nicht gespeichert werden:
@@ -885,37 +975,37 @@ Im Entwicklungs-Checkout liegt es unter docs/quickstart.md.</translation>
 <context>
     <name>SettingsAction</name>
     <message>
-        <location filename="../../src/actions/help.py" line="127"/>
+        <location filename="../../src/actions/help.py" line="163"/>
         <source>&amp;Settings...</source>
         <translation>&amp;Einstellungen...</translation>
     </message>
     <message>
-        <location filename="../../src/actions/help.py" line="132"/>
+        <location filename="../../src/actions/help.py" line="168"/>
         <source>Settings (Cmd+, / Ctrl+,)</source>
         <translation>Einstellungen (Cmd+, / Ctrl+,)</translation>
     </message>
     <message>
-        <location filename="../../src/actions/help.py" line="139"/>
+        <location filename="../../src/actions/help.py" line="175"/>
         <source>Settings</source>
         <translation>Einstellungen</translation>
     </message>
     <message>
-        <location filename="../../src/actions/help.py" line="148"/>
+        <location filename="../../src/actions/help.py" line="184"/>
         <source>System language ({0})</source>
         <translation>Systemsprache ({0})</translation>
     </message>
     <message>
-        <location filename="../../src/actions/help.py" line="152"/>
+        <location filename="../../src/actions/help.py" line="188"/>
         <source>Language:</source>
         <translation>Sprache:</translation>
     </message>
     <message>
-        <location filename="../../src/actions/help.py" line="154"/>
+        <location filename="../../src/actions/help.py" line="190"/>
         <source>Changes to the language take effect after a restart.</source>
         <translation>Änderungen der Sprache werden nach einem Neustart wirksam.</translation>
     </message>
     <message>
-        <location filename="../../src/actions/help.py" line="173"/>
+        <location filename="../../src/actions/help.py" line="209"/>
         <source>Language will change after restarting Rosida.</source>
         <translation>Die Sprache wechselt nach einem Neustart von Rosida.</translation>
     </message>
@@ -1018,7 +1108,7 @@ Im Entwicklungs-Checkout liegt es unter docs/quickstart.md.</translation>
 <context>
     <name>VariableInspector</name>
     <message>
-        <location filename="../../src/document.py" line="53"/>
+        <location filename="../../src/document.py" line="54"/>
         <source>keys: {0}</source>
         <translation>Schlüssel: {0}</translation>
     </message>
@@ -1044,6 +1134,19 @@ Im Entwicklungs-Checkout liegt es unter docs/quickstart.md.</translation>
         <location filename="../../src/docks/inspector.py" line="26"/>
         <source>Value</source>
         <translation>Wert</translation>
+    </message>
+</context>
+<context>
+    <name>ZoteroItemWidget</name>
+    <message>
+        <location filename="../../src/docks/bibitems.py" line="57"/>
+        <source>No title</source>
+        <translation>Kein Titel</translation>
+    </message>
+    <message>
+        <location filename="../../src/docks/bibitems.py" line="59"/>
+        <source>Unknown author</source>
+        <translation>Unbekannter Autor</translation>
     </message>
 </context>
 </TS>

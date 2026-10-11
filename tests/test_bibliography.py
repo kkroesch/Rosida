@@ -57,7 +57,9 @@ def test_new_document_forgets_bibliography(rosida_win):
 
   rosida_win.act_new.trigger()
 
-  assert rosida_win.doc.frontmatter_cell.editor.toPlainText() == ""
+  props = rosida_win.doc.frontmatter_cell.editor.toPlainText()
+  assert props.startswith("title: ") and "bibliography" not in props
+  assert "author: " in props
   assert rosida_win.dock_bibitems.stack.currentIndex() == 0
 
 
